@@ -1,0 +1,1 @@
+export const BASE_URL = 'https://api.sportsdata.io/v3/csgo/scores/json'
