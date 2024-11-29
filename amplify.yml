@@ -6,15 +6,15 @@ frontend:
         - curl -fsSL https://bun.sh/install | bash
         - export BUN_INSTALL=$HOME/.bun
         - export PATH=$BUN_INSTALL/bin:$PATH
-        - bun install
+        - bun install  # Usa Bun para instalar as dependências
     build:
       commands:
-        - bun build src/app/page.tsx
+        - bun run build  # Usando o script de build do package.json que chama "next build"
   artifacts:
-    baseDirectory: out
+    baseDirectory: .next  # Diretório onde o Next.js compila os arquivos estáticos
     files:
       - '**/*'
   cache:
     paths:
       - node_modules
-      - bun.lockb
+      - .next/cache
