@@ -9,7 +9,7 @@ frontend:
         - bun install
     build:
       commands:
-        - bun build src/index.tsx
+        - bun build src/app/page.tsx
   artifacts:
     baseDirectory: out
     files:
