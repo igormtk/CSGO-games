@@ -1,0 +1,20 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - curl -fsSL https://bun.sh/install | bash # Instala o bun
+        - export BUN_INSTALL=$HOME/.bun
+        - export PATH=$BUN_INSTALL/bin:$PATH
+        - bun install
+    build:
+      commands:
+        - bun build # ou o comando que seu projeto Next.js requer
+  artifacts:
+    baseDirectory: out
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules
+      - bun.lockb
