@@ -11,7 +11,7 @@ export default function Home() {
           animate={{ opacity: 1, y: "0" }}
           transition={{ duration: 0.5 }}
         >
-          <DefaultCard title="Dayli Skin" description="Can you guess the skin of the day?" linkTo="/dayli-skin"/>
+          <DefaultCard title="Dayli Skin" description="Coming soon..." linkTo="/dayli-skin"/>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: "-100%" }}

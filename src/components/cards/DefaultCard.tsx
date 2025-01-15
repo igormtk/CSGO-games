@@ -21,7 +21,7 @@ export function DefaultCard({
   description,
   linkTo,
 }: CardProps) {
-    const disabled = title === 'Bingo'
+    const disabled = title === 'Daily Skin'
   return (
     <Card className="w-[350px]">
       <CardHeader>
