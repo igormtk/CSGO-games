@@ -20,7 +20,7 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 const components: { title: string; href: string; description: string }[] = [
   {
     title: "Guess the dayli skin",
-    href: "/dayli-skin",
+    href: "#",
     description: "Can you guess the dayli skin?",
   },
   {
