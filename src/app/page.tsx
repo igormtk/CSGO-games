@@ -11,14 +11,14 @@ export default function Home() {
           animate={{ opacity: 1, y: "0" }}
           transition={{ duration: 0.5 }}
         >
-          <DefaultCard title="Bingo" description="Can you complete the Bingo card? (Coming up...)" linkTo="/bingo"/>
+          <DefaultCard title="Dayli Skin" description="Can you guess the skin of the day?" linkTo="/dayli-skin"/>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: "-100%" }}
           animate={{ opacity: 1, y: "0" }}
           transition={{ duration: 1 }}
         >
-          <DefaultCard title="Guess the skin" description="Can you guess the players real names?" linkTo="/guess-name"/>
+          <DefaultCard title="Guess the name" description="Can you guess the players real names?" linkTo="/guess-name"/>
         </motion.div>
       </div>
     </main>

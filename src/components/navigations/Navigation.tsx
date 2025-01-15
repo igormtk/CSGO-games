@@ -19,14 +19,14 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 
 const components: { title: string; href: string; description: string }[] = [
   {
-    title: "Bingo",
-    href: "/bingo",
-    description: "Can you complete the Bingo card?",
+    title: "Guess the dayli skin",
+    href: "/dayli-skin",
+    description: "Can you guess the dayli skin?",
   },
   {
     title: "Guess the name",
     href: "/guess-name",
-    description: "Can you guess the Real name?",
+    description: "Can you guess the Real name of the Pro Players?",
   },
 ];
 
