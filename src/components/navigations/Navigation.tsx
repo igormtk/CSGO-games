@@ -19,14 +19,14 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 
 const components: { title: string; href: string; description: string }[] = [
   {
-    title: "Guess the dayli skin",
-    href: "#",
-    description: "Can you guess the dayli skin?",
+    title: "CS Bingo Daily",
+    href: "/bingo",
+    description: "Complete the Counter-Strike bingo card with players that match each row and column.",
   },
   {
     title: "Guess the name",
     href: "/guess-name",
-    description: "Can you guess the Real name of the Pro Players?",
+    description: "Can you guess the real name of the pro players?",
   },
 ];
 
@@ -44,7 +44,7 @@ export function Navigation() {
         <NavigationMenuItem>
           <NavigationMenuTrigger>Games</NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="grid w-[00px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+            <ul className="grid w-[320px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
               {components.map((component) => (
                 <ListItem
                   key={component.title}
