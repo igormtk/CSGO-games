@@ -14,26 +14,28 @@ type CardProps = {
   title: string;
   description: string;
   linkTo: string;
+  disabled?: boolean;
 };
 
-export function DefaultCard({
-  title,
-  description,
-  linkTo,
-}: CardProps) {
-    const disabled = title === 'Daily Skin'
+export function DefaultCard({ title, description, linkTo, disabled = false }: CardProps) {
   return (
-    <Card className="w-[350px]">
+    <Card className="h-full overflow-hidden border-slate-800 bg-slate-950/80 text-slate-100 shadow-2xl shadow-black/30">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-3xl font-black">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-      <CardDescription>{description}</CardDescription>
+        <CardDescription className="min-h-16 text-base leading-7 text-slate-300">{description}</CardDescription>
       </CardContent>
-      <CardFooter className="flex flex-col item-center">
-        <Link href={disabled ? '#' : linkTo}>
-          <Button disabled={disabled}>Start</Button>
-        </Link>
+      <CardFooter>
+        {disabled ? (
+          <Button disabled className="bg-orange-500 text-white hover:bg-orange-600">
+            Start
+          </Button>
+        ) : (
+          <Button asChild className="bg-orange-500 text-white hover:bg-orange-600">
+            <Link href={linkTo}>Start</Link>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
