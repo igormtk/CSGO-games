@@ -1,13 +1,20 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { Check, Globe2, RotateCcw, Trophy, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  BarChart3,
+  Check,
+  Globe2,
+  HelpCircle,
+  Menu,
+  RotateCcw,
+  SkipForward,
+  Trophy,
+  X,
+} from "lucide-react";
 import {
   bingoCriteria,
   csPlayers,
-  csTeams,
-  getTeamName,
   playerMatchesCell,
 } from "@/data/csBingoDatabase";
 import type { BingoCriterion, CsPlayer } from "@/data/csBingoDatabase";
@@ -61,6 +68,8 @@ type TranslationCopy = {
   namesLeft: string;
   wrongPenalty: string;
   skippedLabel: string;
+  skip: string;
+  remaining: string;
   boardCorner: string;
   rowAxis: string;
   columnAxis: string;
@@ -103,6 +112,8 @@ const translations: Record<Language, TranslationCopy> = {
     namesLeft: "Nomes restantes",
     wrongPenalty: "Erro: perde o nome atual + o próximo",
     skippedLabel: "Nome perdido",
+    skip: "Pular",
+    remaining: "restantes",
     boardCorner: "Linha x Coluna",
     rowAxis: "linha",
     columnAxis: "coluna",
@@ -146,6 +157,8 @@ const translations: Record<Language, TranslationCopy> = {
     namesLeft: "Names left",
     wrongPenalty: "Miss: lose current name + next name",
     skippedLabel: "Lost name",
+    skip: "Skip",
+    remaining: "remaining",
     boardCorner: "Row x Column",
     rowAxis: "row",
     columnAxis: "column",
@@ -189,6 +202,8 @@ const translations: Record<Language, TranslationCopy> = {
     namesLeft: "Nombres restantes",
     wrongPenalty: "Error: pierdes el nombre actual + el próximo",
     skippedLabel: "Nombre perdido",
+    skip: "Saltar",
+    remaining: "restantes",
     boardCorner: "Fila x Columna",
     rowAxis: "fila",
     columnAxis: "columna",
@@ -365,11 +380,6 @@ const getStoredLanguage = (): Language => {
   return "pt";
 };
 
-const formatPlayerMeta = (player: CsPlayer, copy: TranslationCopy) => {
-  const teams = player.teams.map(getTeamName).join(", ");
-  return `${player.fullName} • ${player.nationality} • ${teams} • ${player.active ? copy.statusActive : copy.statusLegend}`;
-};
-
 const getCriterionCopy = (criterion: BingoCriterion, language: Language) =>
   criterionTranslations[language][criterion.id] ?? {
     label: criterion.label,
@@ -462,83 +472,88 @@ export default function BingoPage() {
     setFlashKey(0);
   };
 
-  return (
-    <main className="min-h-screen overflow-hidden bg-[#090b10] text-slate-100">
-      <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="absolute inset-x-0 top-0 -z-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.25),_transparent_60%)]" />
+  const handleSkip = () => {
+    if (!currentPlayer || gameStatus !== "playing") return;
 
-        <header className="relative z-10 grid gap-6 rounded-3xl border border-orange-500/20 bg-slate-950/80 p-6 shadow-2xl shadow-orange-950/30 backdrop-blur md:grid-cols-[1.4fr_0.6fr] md:p-8">
-          <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-1 text-sm font-semibold uppercase tracking-[0.3em] text-orange-300">
-                {copy.dailyBadge}
-              </div>
-              <label className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-200">
-                <Globe2 className="h-4 w-4 text-orange-300" />
+    const nextSkippedPlayerIds = [...skippedPlayerIds, currentPlayer.id];
+    advanceGame(picks, playerIndex + 1, nextSkippedPlayerIds);
+    setMessage(`${copy.skippedLabel}: ${currentPlayer.nickname}.`);
+  };
+
+  return (
+    <main className="min-h-screen overflow-hidden bg-[#1a082a] text-white">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(78,70,229,0.28),_transparent_34rem)]">
+        <nav className="border-b border-white/10 bg-[#1b0734]/95">
+          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+            <div className="flex items-center gap-4 text-white">
+              <Menu className="h-6 w-6" />
+              <HelpCircle className="h-5 w-5" />
+            </div>
+            <div className="text-center text-2xl font-black uppercase tracking-tight text-white">CS BINGO</div>
+            <div className="flex items-center gap-3 text-white">
+              <label className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2 py-1 text-xs text-white/80 ring-1 ring-white/10">
+                <Globe2 className="h-4 w-4" />
                 <span className="sr-only">{copy.selectLanguage}</span>
                 <select
                   value={language}
                   onChange={(event) => handleLanguageChange(event.target.value as Language)}
-                  className="bg-transparent text-sm font-semibold outline-none"
+                  className="bg-transparent text-xs font-bold outline-none"
                   aria-label={copy.selectLanguage}
                 >
                   {Object.entries(translations).map(([key, value]) => (
-                    <option key={key} value={key} className="bg-slate-950 text-slate-100">
+                    <option key={key} value={key} className="bg-[#1b0734] text-white">
                       {value.languageName}
                     </option>
                   ))}
                 </select>
               </label>
-            </div>
-            <div className="space-y-3">
-              <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">{copy.title}</h1>
-              <p className="max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">{copy.subtitle}</p>
-            </div>
-            <div className="flex flex-wrap gap-3 text-sm text-slate-300">
-              <span className="rounded-full bg-slate-900 px-4 py-2 ring-1 ring-white/10">
-                {copy.puzzleDate}: {dateKey}
-              </span>
-              <span className="rounded-full bg-slate-900 px-4 py-2 ring-1 ring-white/10">
-                {copy.playersInDb}: {csPlayers.length}
-              </span>
-              <span className="rounded-full bg-slate-900 px-4 py-2 ring-1 ring-white/10">
-                {copy.teamsInDb}: {csTeams.length}
-              </span>
+              <BarChart3 className="h-5 w-5" />
             </div>
           </div>
+        </nav>
 
-          <aside className="flex flex-col justify-between gap-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-            <div>
-              <p className="text-sm uppercase tracking-[0.25em] text-slate-400">{copy.progress}</p>
-              <div className="mt-3 flex items-end gap-2">
-                <span className="text-5xl font-black text-orange-300">{completedCells}</span>
-                <span className="pb-2 text-slate-400">/ 9 {copy.cells}</span>
+        <div className="bg-[#3f37a8] px-4 py-2 text-center text-sm text-white/90">
+          Counter-Strike bingo • {copy.puzzleDate}: <span className="font-bold text-lime-300">{dateKey}</span>
+        </div>
+
+        <section className="mx-auto flex w-full max-w-[520px] flex-col px-4 py-6 sm:py-8">
+          <div className="overflow-hidden rounded-lg bg-[#3d37a8] shadow-2xl shadow-black/30">
+            <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-2xl font-black text-[#1a082a]">
+                  {namesLeft}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black uppercase leading-none text-white/85">{copy.currentPlayerEyebrow}</p>
+                  {currentPlayer ? (
+                    <>
+                      <h1 className="truncate text-3xl font-black uppercase leading-none tracking-tight text-white">{currentPlayer.nickname}</h1>
+                      <p className="mt-1 truncate text-xs font-bold uppercase text-white/55">{currentPlayer.fullName}</p>
+                    </>
+                  ) : (
+                    <h1 className="text-2xl font-black uppercase leading-none tracking-tight text-white">{copy.noCurrentPlayerTitle}</h1>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  disabled={gameStatus !== "playing"}
+                  className="inline-flex items-center gap-1 text-xl font-black uppercase text-white transition hover:text-lime-300 disabled:cursor-not-allowed disabled:text-white/30"
+                >
+                  {copy.skip} <SkipForward className="h-5 w-5 fill-current" />
+                </button>
+                <span className="text-xs font-bold uppercase text-white/45">{Math.max(namesLeft - 1, 0)} {copy.remaining}</span>
               </div>
             </div>
-            {isCompleted ? (
-              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-emerald-200">
-                <Trophy className="mb-2 h-6 w-6" />
-                {copy.completed}
-              </div>
-            ) : gameStatus === "out-of-names" ? (
-              <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-red-100">
-                <X className="mb-2 h-6 w-6" />
-                {copy.outOfNames}
-              </div>
-            ) : null}
-            <Button onClick={handleReset} variant="outline" className="border-orange-300/40 bg-transparent text-orange-100 hover:bg-orange-500/20">
-              <RotateCcw className="h-4 w-4" /> {copy.reset}
-            </Button>
-          </aside>
-        </header>
 
-        <section className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div
-            key={flashKey}
-            className={`rounded-3xl border border-slate-800 bg-slate-950/80 p-3 shadow-2xl shadow-black/30 sm:p-5 ${flashKey > 0 ? "animate-bingo-error" : ""}`}
-          >
-            <div className="grid grid-cols-4 gap-2 sm:gap-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-center text-xs font-bold uppercase tracking-[0.2em] text-slate-500 sm:p-4">
+            <div
+              key={flashKey}
+              className={`grid grid-cols-4 bg-[#30233e] ${flashKey > 0 ? "animate-bingo-error" : ""}`}
+            >
+              <div className="grid min-h-[84px] place-items-center border-b border-r border-[#4b3a5c] bg-[#3a2d48] p-2 text-center text-[10px] font-black uppercase leading-tight text-white/45 sm:min-h-[98px]">
                 {copy.boardCorner}
               </div>
               {board.columns.map((criterion) => (
@@ -553,7 +568,6 @@ export default function BingoPage() {
                     const pick = picks[cellKey];
                     const rowCopy = getCriterionCopy(row, language);
                     const columnCopy = getCriterionCopy(column, language);
-                    const currentFits = currentPlayer ? playerMatchesCell(currentPlayer, row, column) : false;
 
                     return (
                       <button
@@ -561,37 +575,23 @@ export default function BingoPage() {
                         type="button"
                         onClick={() => handleCellClick(rowIndex, columnIndex)}
                         disabled={gameStatus !== "playing" || Boolean(pick?.correct)}
-                        className={`group min-h-32 rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-orange-300/70 hover:bg-orange-500/10 disabled:cursor-not-allowed disabled:hover:translate-y-0 sm:min-h-40 sm:p-4 ${
-                          pick?.correct
-                            ? "border-emerald-400/40 bg-emerald-500/15"
-                            : currentFits
-                              ? "border-slate-700 bg-slate-900/70"
-                              : "border-slate-800 bg-slate-900/70"
+                        aria-label={`${rowCopy.label} + ${columnCopy.label}`}
+                        className={`group grid min-h-[84px] place-items-center border-b border-r border-[#4b3a5c] p-2 text-center transition hover:bg-[#5a4869] disabled:cursor-not-allowed sm:min-h-[98px] ${
+                          pick?.correct ? "bg-emerald-500/30" : "bg-[#453752]"
                         }`}
                       >
-                        <div className="flex h-full flex-col justify-between gap-3">
-                          <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
-                            <span>{rowCopy.label}</span>
-                            <span>+</span>
-                            <span>{columnCopy.label}</span>
+                        {pick ? (
+                          <div className="space-y-1">
+                            <Check className="mx-auto h-5 w-5 text-lime-300" />
+                            <p className="break-words text-sm font-black uppercase leading-none text-white sm:text-base">{pick.player.nickname}</p>
+                            <p className="hidden text-[10px] font-bold uppercase leading-tight text-white/50 sm:block">{copy.matchedBy}</p>
                           </div>
-
-                          {pick ? (
-                            <div className="space-y-2">
-                              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-200">{copy.matchedBy}</p>
-                              <div className="flex items-center gap-2">
-                                <Check className="h-5 w-5 text-emerald-300" />
-                                <span className="text-xl font-black text-white">{pick.player.nickname}</span>
-                              </div>
-                              <p className="text-xs leading-5 text-slate-300">{pick.player.fullName}</p>
-                            </div>
-                          ) : (
-                            <div>
-                              <p className="text-lg font-bold text-white">{copy.chooseCell}</p>
-                              <p className="mt-1 text-xs leading-5 text-slate-400">{copy.chooseCellHelper}</p>
-                            </div>
-                          )}
-                        </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <p className="break-words text-sm font-black uppercase leading-tight text-white sm:text-base">{rowCopy.label}</p>
+                            <p className="text-[10px] font-black uppercase text-lime-300/90">+ {columnCopy.label}</p>
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -600,62 +600,61 @@ export default function BingoPage() {
             </div>
           </div>
 
-          <aside className="rounded-3xl border border-slate-800 bg-slate-950/80 p-5 shadow-2xl shadow-black/30">
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.25em] text-orange-300">{copy.currentPlayerEyebrow}</p>
-                {currentPlayer ? (
-                  <>
-                    <h2 className="mt-2 text-2xl font-black text-white">{copy.currentPlayerTitle}</h2>
-                    <div className="mt-4 rounded-3xl border border-orange-400/30 bg-orange-500/10 p-5">
-                      <p className="text-4xl font-black text-white">{currentPlayer.nickname}</p>
-                      <p className="mt-2 text-sm leading-6 text-orange-100">{formatPlayerMeta(currentPlayer, copy)}</p>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-400">{copy.currentPlayerInstructions}</p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="mt-2 text-2xl font-black text-white">{copy.noCurrentPlayerTitle}</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">{copy.noCurrentPlayerInstructions}</p>
-                  </>
-                )}
+          <div className="mt-4 flex items-center justify-between text-sm font-black uppercase text-white/80">
+            <button type="button" onClick={handleReset} className="inline-flex items-center gap-2 transition hover:text-lime-300">
+              <RotateCcw className="h-4 w-4" /> {copy.reset}
+            </button>
+            <span className="text-white/45">#{hashDate(dateKey)}</span>
+          </div>
+
+          <div className="mt-6 space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-white/5 p-4 ring-1 ring-white/10">
+                <p className="text-xs font-black uppercase text-white/45">{copy.progress}</p>
+                <p className="mt-1 text-3xl font-black text-lime-300">{completedCells}<span className="text-base text-white/45"> / 9</span></p>
               </div>
-
-              <div className="grid gap-3 text-sm text-slate-200 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{copy.namesLeft}</p>
-                  <p className="mt-2 text-3xl font-black text-orange-300">{namesLeft}</p>
-                </div>
-                <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-red-100">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-200">{copy.wrongPenalty}</p>
-                  {latestSkippedPlayer ? (
-                    <p className="mt-2 text-sm">
-                      {copy.skippedLabel}: <strong>{latestSkippedPlayer.nickname}</strong>
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-
-              <p
-                className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${
-                  message.includes("não combina") || message.includes("does not match") || message.includes("no combina") || gameStatus === "out-of-names"
-                    ? "border-red-400/30 bg-red-500/10 text-red-100"
-                    : "border-orange-400/20 bg-orange-500/10 text-orange-100"
-                }`}
-              >
-                {gameStatus === "out-of-names" && !isCompleted ? copy.outOfNamesMessage : message}
-              </p>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300">
-                <p className="font-bold text-white">{copy.openCell}</p>
-                <p className="mt-2 leading-6">
-                  {board.rows.map((row) => getCriterionCopy(row, language).label).join(" • ")} / {board.columns.map((column) => getCriterionCopy(column, language).label).join(" • ")}
-                </p>
+              <div className="rounded-lg bg-white/5 p-4 ring-1 ring-white/10">
+                <p className="text-xs font-black uppercase text-white/45">{copy.namesLeft}</p>
+                <p className="mt-1 text-3xl font-black text-lime-300">{namesLeft}</p>
               </div>
             </div>
-          </aside>
+
+            {isCompleted ? (
+              <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4 text-emerald-100">
+                <Trophy className="mb-2 h-5 w-5" />
+                {copy.completed}
+              </div>
+            ) : gameStatus === "out-of-names" ? (
+              <div className="rounded-lg border border-red-400/30 bg-red-500/10 p-4 text-red-100">
+                <X className="mb-2 h-5 w-5" />
+                {copy.outOfNames}
+              </div>
+            ) : null}
+
+            <p
+              className={`rounded-lg px-4 py-3 leading-6 ring-1 ${
+                message.includes("não combina") || message.includes("does not match") || message.includes("no combina") || gameStatus === "out-of-names"
+                  ? "bg-red-500/10 text-red-100 ring-red-400/30"
+                  : "bg-[#3f37a8]/50 text-white ring-white/10"
+              }`}
+            >
+              {gameStatus === "out-of-names" && !isCompleted ? copy.outOfNamesMessage : message}
+            </p>
+
+            {latestSkippedPlayer ? (
+              <p className="rounded-lg bg-white/5 px-4 py-3 text-white/70 ring-1 ring-white/10">
+                {copy.skippedLabel}: <strong className="text-white">{latestSkippedPlayer.nickname}</strong>
+              </p>
+            ) : null}
+
+            <div className="rounded-lg bg-white/5 p-4 text-white/70 ring-1 ring-white/10">
+              <p className="font-black uppercase text-white">Technical area</p>
+              <p className="mt-2 leading-6">{copy.currentPlayerInstructions}</p>
+              <p className="mt-2 leading-6">{copy.wrongPenalty}.</p>
+            </div>
+          </div>
         </section>
-      </section>
+      </div>
     </main>
   );
 }
@@ -664,10 +663,12 @@ function CriterionHeader({ criterion, axis, language }: { criterion: BingoCriter
   const criterionCopy = getCriterionCopy(criterion, language);
 
   return (
-    <div className="rounded-2xl border border-orange-400/20 bg-gradient-to-br from-slate-900 to-slate-950 p-3 text-center shadow-inner shadow-orange-950/20 sm:p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-300">{axis}</p>
-      <h3 className="mt-2 text-base font-black text-white sm:text-xl">{criterionCopy.label}</h3>
-      <p className="mt-2 hidden text-xs leading-5 text-slate-400 sm:block">{criterionCopy.helper}</p>
+    <div className="grid min-h-[84px] place-items-center border-b border-r border-[#4b3a5c] bg-[#3f314d] p-2 text-center sm:min-h-[98px]">
+      <div className="space-y-1">
+        <p className="text-[9px] font-black uppercase tracking-wide text-lime-300/80">{axis}</p>
+        <h3 className="break-words text-sm font-black uppercase leading-tight text-white sm:text-base">{criterionCopy.label}</h3>
+        <p className="hidden text-[10px] font-bold uppercase leading-tight text-white/45 sm:block">{criterionCopy.helper}</p>
+      </div>
     </div>
   );
 }
