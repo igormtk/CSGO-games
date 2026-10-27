@@ -3,6 +3,8 @@
 import { DefaultCard } from "@/components/cards/DefaultCard";
 import { motion } from "framer-motion";
 import { Grid3x3, UserSearch } from "lucide-react";
+import { PartnerSpot } from "@/components/partners/PartnerSpot";
+import { getPartnerFor } from "@/data/partners";
 
 const games = [
   {
@@ -22,6 +24,9 @@ const games = [
 ];
 
 export default function Home() {
+  const dateKey = new Date().toISOString().slice(0, 10);
+  const partner = getPartnerFor("home", dateKey, Number(dateKey.replace(/-/g, "")));
+
   return (
     <main className="h-full">
       <section className="mx-auto flex min-h-full max-w-5xl flex-col justify-center gap-4 px-4 py-4 sm:gap-10 sm:py-6 short:gap-3 short:py-3">
@@ -46,6 +51,11 @@ export default function Home() {
               <DefaultCard {...game} />
             </motion.div>
           ))}
+        </div>
+
+        {/* Só aparece em telas altas o bastante para não criar barra de rolagem. */}
+        <div className="hidden [@media(min-height:720px)]:block">
+          <PartnerSpot partner={partner} label="Publicidade" variant="banner" />
         </div>
       </section>
     </main>

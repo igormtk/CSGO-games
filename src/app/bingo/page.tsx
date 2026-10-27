@@ -25,6 +25,9 @@ import {
   playerMatchesCriterion,
 } from "@/data/csBingoDatabase";
 import type { BingoCriterion, CsPlayer } from "@/data/csBingoDatabase";
+import { getPartnerFor } from "@/data/partners";
+import type { Partner } from "@/data/partners";
+import { PartnerSpot } from "@/components/partners/PartnerSpot";
 
 const GRID_SIZE = 4;
 // Prefixo novo a cada mudança no sorteio da cartela: partidas salvas antigas apontariam para outras casas.
@@ -34,6 +37,8 @@ const STATS_KEY = "cs-bingo-stats";
 const POINTS_PER_HIT = 100;
 const PERFECT_BONUS = 300;
 const REVEALED_ANSWERS = 3;
+// Tempo mínimo de anúncio (com a aba visível) antes de revelar o resultado e as respostas.
+const PARTNER_BREAK_SECONDS = 5;
 // Dificuldade: casas simples só com critérios restritos (no máximo 8 jogadores), mais 6 casas que
 // combinam dois critérios (de 2 a 6 jogadores). Com isso, mesmo quem conhece a base inteira
 // raramente completa a cartela, mas toda cartela sorteada tem pelo menos uma solução.
@@ -99,6 +104,10 @@ type TranslationCopy = {
   wildcardMissMessage: (player: string) => string;
   alreadyPlayed: string;
   nextPuzzle: string;
+  partnerLabel: string;
+  revealIn: (seconds: number) => string;
+  revealAnswers: string;
+  answersLocked: string;
   initialMessage: string;
   resetMessage: string;
   completedMessage: string;
@@ -148,6 +157,10 @@ const translations: Record<Language, TranslationCopy> = {
     wildcardMissMessage: (player) => `Coringa gasto: ${player} não se encaixa em nenhuma casa livre.`,
     alreadyPlayed: "Você já jogou a cartela de hoje. Volte amanhã para uma nova tentativa.",
     nextPuzzle: "Próxima cartela em",
+    partnerLabel: "Publicidade",
+    revealIn: (seconds) => `Respostas em ${seconds}s`,
+    revealAnswers: "Ver resultado e respostas",
+    answersLocked: "Após o anúncio",
     initialMessage: "Um nome aparece por vez. Clique numa casa cujo critério esse jogador cumpra.",
     resetMessage: "Cartela reiniciada. O primeiro nome já está na tela.",
     completedMessage: "Bingo completo! Todas as casas foram preenchidas.",
@@ -205,6 +218,10 @@ const translations: Record<Language, TranslationCopy> = {
     wildcardMissMessage: (player) => `Wildcard spent: ${player} fits no open cell.`,
     alreadyPlayed: "You already played today's board. Come back tomorrow for a new attempt.",
     nextPuzzle: "Next board in",
+    partnerLabel: "Advertisement",
+    revealIn: (seconds) => `Answers in ${seconds}s`,
+    revealAnswers: "See result and answers",
+    answersLocked: "After the ad",
     initialMessage: "One name appears at a time. Click a cell whose criterion that player meets.",
     resetMessage: "Board reset. The first name is already on screen.",
     completedMessage: "Bingo complete! Every cell is filled.",
@@ -262,6 +279,10 @@ const translations: Record<Language, TranslationCopy> = {
     wildcardMissMessage: (player) => `Comodín gastado: ${player} no encaja en ninguna casilla libre.`,
     alreadyPlayed: "Ya jugaste la cartela de hoy. Vuelve mañana para un nuevo intento.",
     nextPuzzle: "Próxima cartela en",
+    partnerLabel: "Publicidad",
+    revealIn: (seconds) => `Respuestas en ${seconds}s`,
+    revealAnswers: "Ver resultado y respuestas",
+    answersLocked: "Tras el anuncio",
     initialMessage: "Aparece un nombre por vez. Haz clic en una casilla cuyo criterio cumpla ese jugador.",
     resetMessage: "Cartela reiniciada. El primer nombre ya está en pantalla.",
     completedMessage: "¡Bingo completo! Todas las casillas están llenas.",
@@ -549,6 +570,11 @@ const saveGame = (
   );
 };
 
+const getRevealedKey = (dateKey: string) => `${GAME_KEY_PREFIX}-${dateKey}-revealed`;
+
+const readAnswersRevealed = (dateKey: string) =>
+  typeof window !== "undefined" && window.localStorage.getItem(getRevealedKey(dateKey)) === "1";
+
 const isStoredGameOver = (game: StoredGame) =>
   Object.keys(game.picks ?? {}).length === GRID_SIZE * GRID_SIZE ||
   (game.mistakes ?? 0) >= MAX_LIVES ||
@@ -638,6 +664,9 @@ export default function BingoPage() {
   const [stats, setStats] = useState<PlayerStats>(() => readStats());
   // Quem volta no mesmo dia depois de terminar vê direto o resultado: a cartela não pode ser refeita.
   const [finishedBeforeLoad] = useState(() => isStoredGameOver(storedGame));
+  // O resultado e as respostas possíveis só aparecem depois do anúncio de fim de jogo.
+  const [answersRevealed, setAnswersRevealed] = useState(() => readAnswersRevealed(dateKey));
+  const partner = useMemo(() => getPartnerFor("post-game", dateKey, getPuzzleNumber(dateKey)), [dateKey]);
   const [openPanel, setOpenPanel] = useState<"rules" | "stats" | "result" | undefined>(() =>
     finishedBeforeLoad ? "result" : undefined
   );
@@ -752,6 +781,8 @@ export default function BingoPage() {
   // Só existe para testar em desenvolvimento: em produção a partida do dia não pode ser refeita.
   const handleReset = () => {
     window.localStorage.removeItem(`${GAME_KEY_PREFIX}-${dateKey}`);
+    window.localStorage.removeItem(getRevealedKey(dateKey));
+    setAnswersRevealed(false);
     setPicks({});
     setPlayerIndex(0);
     setSkippedPlayerIds([]);
@@ -797,6 +828,11 @@ export default function BingoPage() {
         "wildcard"
       );
     }
+  };
+
+  const handleRevealAnswers = () => {
+    setAnswersRevealed(true);
+    window.localStorage.setItem(getRevealedKey(dateKey), "1");
   };
 
   const handleShare = async () => {
@@ -1033,7 +1069,7 @@ export default function BingoPage() {
                       )}
                       {isGameOver ? (
                         <p className="break-words text-[length:clamp(8px,2.4cqmin,13px)] font-semibold leading-tight text-cs-orange/80">
-                          {getPossibleAnswers(cell, usedPlayerIds).join(", ")}
+                          {answersRevealed ? getPossibleAnswers(cell, usedPlayerIds).join(", ") : copy.answersLocked}
                         </p>
                       ) : cell.length === 1 ? (
                         <p className="cs-board-helper text-[11px] font-semibold leading-tight text-cs-text/40">{criterionCopy.helper}</p>
@@ -1050,6 +1086,8 @@ export default function BingoPage() {
 
       {openPanel === "result" ? (
         <Modal title={gameOverTitle} closeLabel={copy.close} onClose={() => setOpenPanel(undefined)}>
+          {answersRevealed ? (
+            <>
           <div className="flex items-center gap-2 text-cs-text/70">
             {isCompleted ? <Trophy className="h-5 w-5 text-cs-orange" /> : <X className="h-5 w-5 text-cs-red" />}
             <span className="font-semibold">{gameOverMessage}</span>
@@ -1112,6 +1150,16 @@ export default function BingoPage() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextPuzzle}</p>
             <NextPuzzleCountdown />
           </div>
+            </>
+          ) : (
+            <PartnerBreak
+              partner={partner}
+              label={copy.partnerLabel}
+              revealIn={copy.revealIn}
+              revealLabel={copy.revealAnswers}
+              onDone={handleRevealAnswers}
+            />
+          )}
         </Modal>
       ) : null}
 
@@ -1139,6 +1187,50 @@ export default function BingoPage() {
         </Modal>
       ) : null}
     </main>
+  );
+}
+
+// Anúncio de fim de jogo: o botão só libera depois de PARTNER_BREAK_SECONDS com a aba visível.
+function PartnerBreak({
+  partner,
+  label,
+  revealIn,
+  revealLabel,
+  onDone,
+}: {
+  partner: Partner;
+  label: string;
+  revealIn: (seconds: number) => string;
+  revealLabel: string;
+  onDone: () => void;
+}) {
+  const [secondsLeft, setSecondsLeft] = useState(PARTNER_BREAK_SECONDS);
+
+  // Soma só o tempo com a aba visível, medido em milissegundos para garantir os 5 s inteiros.
+  useEffect(() => {
+    let visibleMs = 0;
+    let lastTick = performance.now();
+    const interval = window.setInterval(() => {
+      const now = performance.now();
+      if (document.visibilityState === "visible") visibleMs += now - lastTick;
+      lastTick = now;
+      setSecondsLeft(Math.max(Math.ceil((PARTNER_BREAK_SECONDS * 1000 - visibleMs) / 1000), 0));
+    }, 200);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="space-y-3">
+      <PartnerSpot partner={partner} label={label} variant="card" />
+      <button
+        type="button"
+        onClick={onDone}
+        disabled={secondsLeft > 0}
+        className="cs-cut-sm w-full bg-cs-orange px-3 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a] disabled:cursor-wait disabled:bg-cs-raised disabled:text-cs-text/50"
+      >
+        {secondsLeft > 0 ? revealIn(secondsLeft) : revealLabel}
+      </button>
+    </div>
   );
 }
 
