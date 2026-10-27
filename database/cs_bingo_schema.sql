@@ -1,3 +1,5 @@
+BEGIN;
+
 -- CS Bingo relational schema and seed data.
 -- Use this file as a starting point for PostgreSQL/Supabase/Neon.
 -- Seed gerado a partir de src/data/csBingoDatabase.ts (dados atualizados em out/2026).
@@ -440,3 +442,38 @@ ON CONFLICT (id) DO UPDATE SET
   helper = EXCLUDED.helper,
   criterion_type = EXCLUDED.criterion_type,
   criterion_value = EXCLUDED.criterion_value;
+
+-- Segurança para o Supabase: qualquer visitante pode ler, ninguém escreve pela chave pública.
+ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "teams_public_read" ON teams;
+CREATE POLICY "teams_public_read" ON teams FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "players_public_read" ON players;
+CREATE POLICY "players_public_read" ON players FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE player_roles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "player_roles_public_read" ON player_roles;
+CREATE POLICY "player_roles_public_read" ON player_roles FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE player_teams ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "player_teams_public_read" ON player_teams;
+CREATE POLICY "player_teams_public_read" ON player_teams FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE player_hltv_top20_years ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "player_hltv_top20_years_public_read" ON player_hltv_top20_years;
+CREATE POLICY "player_hltv_top20_years_public_read" ON player_hltv_top20_years FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE coaches ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "coaches_public_read" ON coaches;
+CREATE POLICY "coaches_public_read" ON coaches FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE coach_teams ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "coach_teams_public_read" ON coach_teams;
+CREATE POLICY "coach_teams_public_read" ON coach_teams FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE bingo_criteria ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "bingo_criteria_public_read" ON bingo_criteria;
+CREATE POLICY "bingo_criteria_public_read" ON bingo_criteria FOR SELECT TO anon, authenticated USING (true);
+
+COMMIT;

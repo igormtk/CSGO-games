@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -22,12 +22,13 @@ import {
 import {
   bingoCriteria,
   csPlayers,
-  playerMatchesCell,
+  playerMatchesCriterion,
 } from "@/data/csBingoDatabase";
 import type { BingoCriterion, CsPlayer } from "@/data/csBingoDatabase";
 
-const GRID_SIZE = 3;
-const GAME_KEY_PREFIX = "cs-bingo-daily";
+const GRID_SIZE = 4;
+// Prefixo novo: partidas salvas da cartela 3x3 antiga não são compatíveis com a 4x4.
+const GAME_KEY_PREFIX = "cs-bingo-daily-4x4";
 const LANGUAGE_KEY = "cs-bingo-language";
 const STATS_KEY = "cs-bingo-stats";
 const POINTS_PER_HIT = 100;
@@ -40,10 +41,8 @@ type CellPick = {
   wildcard: boolean;
 };
 
-type GameBoard = {
-  rows: BingoCriterion[];
-  columns: BingoCriterion[];
-};
+// Cada casa é independente e tem o próprio critério.
+type GameBoard = BingoCriterion[];
 
 type GameStatus = "playing" | "completed" | "out-of-names" | "out-of-lives";
 type Language = "pt" | "en" | "es";
@@ -83,22 +82,19 @@ type TranslationCopy = {
   namesLeft: string;
   skippedLabel: string;
   skip: string;
-  boardCorner: string;
-  rowAxis: string;
-  columnAxis: string;
   selectLanguage: string;
   wildcard: string;
   wildcardSpent: string;
   cancelWildcard: string;
   wildcardArmedMessage: string;
-  wildcardMessage: (player: string, row: string, column: string) => string;
+  wildcardMessage: (player: string, criterion: string) => string;
   initialMessage: string;
   resetMessage: string;
   completedMessage: string;
   outOfNamesMessage: string;
   outOfLivesMessage: string;
   wrongMessage: (player: string, livesLeft: number) => string;
-  correctMessage: (player: string, row: string, column: string) => string;
+  correctMessage: (player: string, criterion: string) => string;
   alreadyPickedMessage: string;
   gameOverCompleted: string;
   gameOverOutOfNames: string;
@@ -110,7 +106,6 @@ type TranslationCopy = {
   share: string;
   shareCopied: string;
   shareFailed: string;
-  possibleAnswers: string;
   statsTitle: string;
   played: string;
   finished: string;
@@ -135,23 +130,20 @@ const translations: Record<Language, TranslationCopy> = {
     namesLeft: "Nomes restantes",
     skippedLabel: "Nome perdido",
     skip: "Pular",
-    boardCorner: "Linha x Coluna",
-    rowAxis: "linha",
-    columnAxis: "coluna",
     selectLanguage: "Idioma",
     wildcard: "Coringa",
     wildcardSpent: "Coringa usado",
     cancelWildcard: "Cancelar",
     wildcardArmedMessage: "Coringa ativado: clique em qualquer casa livre para colocar o nome da vez.",
-    wildcardMessage: (player, row, column) => `Coringa! ${player} ocupa ${row} + ${column} (sem pontos).`,
-    initialMessage: "Um nome aparece por vez. Clique na casa que combina com esse jogador.",
+    wildcardMessage: (player, criterion) => `Coringa! ${player} ocupa a casa ${criterion} (sem pontos).`,
+    initialMessage: "Um nome aparece por vez. Clique numa casa cujo critério esse jogador cumpra.",
     resetMessage: "Cartela reiniciada. O primeiro nome já está na tela.",
     completedMessage: "Bingo completo! Todas as casas foram preenchidas.",
     outOfNamesMessage: "Você ficou sem nomes. Veja na cartela quem poderia ocupar as casas vazias.",
     outOfLivesMessage: "Suas vidas acabaram. Veja na cartela quem poderia ocupar as casas vazias.",
     wrongMessage: (player, livesLeft) =>
       `${player} não combina com essa casa. -1 vida${livesLeft === 1 ? ": resta só uma!" : "."}`,
-    correctMessage: (player, row, column) => `Boa! ${player} preenche ${row} + ${column}.`,
+    correctMessage: (player, criterion) => `Boa! ${player} preenche a casa ${criterion}.`,
     alreadyPickedMessage: "Essa casa já está marcada. Escolha uma casa livre.",
     gameOverCompleted: "Bingo!",
     gameOverOutOfNames: "Fim de jogo",
@@ -163,7 +155,6 @@ const translations: Record<Language, TranslationCopy> = {
     share: "Compartilhar resultado",
     shareCopied: "Resultado copiado!",
     shareFailed: "Não foi possível copiar o resultado.",
-    possibleAnswers: "Possíveis",
     statsTitle: "Estatísticas",
     played: "Jogos",
     finished: "Bingos",
@@ -171,7 +162,7 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Melhor sequência",
     rulesTitle: "Como jogar",
     rules: [
-      `Os ${csPlayers.length} jogadores da base aparecem um por vez, em ordem aleatória. Coloque o nome da vez numa casa em que ele cumpra o critério da linha e o da coluna.`,
+      `Os ${csPlayers.length} jogadores da base aparecem um por vez, em ordem aleatória. Cada uma das ${GRID_SIZE * GRID_SIZE} casas tem um critério próprio: coloque o nome da vez numa casa cujo critério ele cumpra.`,
       "Se o nome não serve em nenhuma casa livre, pule. Pular não custa vida, mas o nome não volta.",
       `Errou a casa? Você perde uma vida e o nome continua na tela para tentar outra casa. São ${MAX_LIVES} vidas por partida.`,
       `Cada acerto vale ${POINTS_PER_HIT} pontos. Completar a cartela sem errar dá +${PERFECT_BONUS} de bônus.`,
@@ -194,23 +185,20 @@ const translations: Record<Language, TranslationCopy> = {
     namesLeft: "Names left",
     skippedLabel: "Lost name",
     skip: "Skip",
-    boardCorner: "Row x Column",
-    rowAxis: "row",
-    columnAxis: "column",
     selectLanguage: "Language",
     wildcard: "Wildcard",
     wildcardSpent: "Wildcard used",
     cancelWildcard: "Cancel",
     wildcardArmedMessage: "Wildcard on: click any open cell to place the current name.",
-    wildcardMessage: (player, row, column) => `Wildcard! ${player} takes ${row} + ${column} (no points).`,
-    initialMessage: "One name appears at a time. Click the cell that matches that player.",
+    wildcardMessage: (player, criterion) => `Wildcard! ${player} takes the ${criterion} cell (no points).`,
+    initialMessage: "One name appears at a time. Click a cell whose criterion that player meets.",
     resetMessage: "Board reset. The first name is already on screen.",
     completedMessage: "Bingo complete! Every cell is filled.",
     outOfNamesMessage: "You ran out of names. Check the board to see who could fill the empty cells.",
     outOfLivesMessage: "You are out of lives. Check the board to see who could fill the empty cells.",
     wrongMessage: (player, livesLeft) =>
       `${player} does not match that cell. -1 life${livesLeft === 1 ? ": only one left!" : "."}`,
-    correctMessage: (player, row, column) => `Nice! ${player} matches ${row} + ${column}.`,
+    correctMessage: (player, criterion) => `Nice! ${player} fills the ${criterion} cell.`,
     alreadyPickedMessage: "That cell is already marked. Choose an open cell.",
     gameOverCompleted: "Bingo!",
     gameOverOutOfNames: "Game over",
@@ -222,7 +210,6 @@ const translations: Record<Language, TranslationCopy> = {
     share: "Share result",
     shareCopied: "Result copied!",
     shareFailed: "Could not copy the result.",
-    possibleAnswers: "Possible",
     statsTitle: "Statistics",
     played: "Played",
     finished: "Bingos",
@@ -230,7 +217,7 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Best streak",
     rulesTitle: "How to play",
     rules: [
-      `All ${csPlayers.length} players in the database appear one at a time, in random order. Place the current name in a cell where they match both the row and the column.`,
+      `All ${csPlayers.length} players in the database appear one at a time, in random order. Each of the ${GRID_SIZE * GRID_SIZE} cells has its own criterion: place the current name in a cell whose criterion they meet.`,
       "If the name fits no open cell, skip it. Skipping costs no life, but the name does not come back.",
       `Wrong cell? You lose a life and the name stays on screen so you can try another cell. You have ${MAX_LIVES} lives per game.`,
       `Each hit is worth ${POINTS_PER_HIT} points. Completing the board without misses earns a +${PERFECT_BONUS} bonus.`,
@@ -253,23 +240,20 @@ const translations: Record<Language, TranslationCopy> = {
     namesLeft: "Nombres restantes",
     skippedLabel: "Nombre perdido",
     skip: "Saltar",
-    boardCorner: "Fila x Columna",
-    rowAxis: "fila",
-    columnAxis: "columna",
     selectLanguage: "Idioma",
     wildcard: "Comodín",
     wildcardSpent: "Comodín usado",
     cancelWildcard: "Cancelar",
     wildcardArmedMessage: "Comodín activado: haz clic en cualquier casilla libre para colocar el nombre actual.",
-    wildcardMessage: (player, row, column) => `¡Comodín! ${player} ocupa ${row} + ${column} (sin puntos).`,
-    initialMessage: "Aparece un nombre por vez. Haz clic en la casilla que combina con ese jugador.",
+    wildcardMessage: (player, criterion) => `¡Comodín! ${player} ocupa la casilla ${criterion} (sin puntos).`,
+    initialMessage: "Aparece un nombre por vez. Haz clic en una casilla cuyo criterio cumpla ese jugador.",
     resetMessage: "Cartela reiniciada. El primer nombre ya está en pantalla.",
     completedMessage: "¡Bingo completo! Todas las casillas están llenas.",
     outOfNamesMessage: "Te quedaste sin nombres. Mira en la cartela quién podría ocupar las casillas vacías.",
     outOfLivesMessage: "Te quedaste sin vidas. Mira en la cartela quién podría ocupar las casillas vacías.",
     wrongMessage: (player, livesLeft) =>
       `${player} no combina con esa casilla. -1 vida${livesLeft === 1 ? ": ¡solo queda una!" : "."}`,
-    correctMessage: (player, row, column) => `¡Bien! ${player} cumple ${row} + ${column}.`,
+    correctMessage: (player, criterion) => `¡Bien! ${player} llena la casilla ${criterion}.`,
     alreadyPickedMessage: "Esa casilla ya está marcada. Elige una casilla libre.",
     gameOverCompleted: "¡Bingo!",
     gameOverOutOfNames: "Fin del juego",
@@ -281,7 +265,6 @@ const translations: Record<Language, TranslationCopy> = {
     share: "Compartir resultado",
     shareCopied: "¡Resultado copiado!",
     shareFailed: "No se pudo copiar el resultado.",
-    possibleAnswers: "Posibles",
     statsTitle: "Estadísticas",
     played: "Partidas",
     finished: "Bingos",
@@ -289,7 +272,7 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Mejor racha",
     rulesTitle: "Cómo jugar",
     rules: [
-      `Los ${csPlayers.length} jugadores de la base aparecen uno por vez, en orden aleatorio. Coloca el nombre actual en una casilla donde cumpla el criterio de la fila y el de la columna.`,
+      `Los ${csPlayers.length} jugadores de la base aparecen uno por vez, en orden aleatorio. Cada una de las ${GRID_SIZE * GRID_SIZE} casillas tiene su propio criterio: coloca el nombre actual en una casilla cuyo criterio cumpla.`,
       "Si el nombre no sirve en ninguna casilla libre, sáltalo. Saltar no cuesta vida, pero el nombre no vuelve.",
       `¿Casilla equivocada? Pierdes una vida y el nombre sigue en pantalla para probar otra casilla. Tienes ${MAX_LIVES} vidas por partida.`,
       `Cada acierto vale ${POINTS_PER_HIT} puntos. Completar la cartela sin fallar da un bono de +${PERFECT_BONUS}.`,
@@ -348,8 +331,15 @@ const getUtcDateKey = () => new Date().toISOString().slice(0, 10);
 const getPreviousDateKey = (dateKey: string) =>
   new Date(Date.parse(dateKey) - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
+// Hash djb2 limitado ao período do gerador: somar os códigos dos caracteres repetia a mesma
+// cartela em dezenas de dias diferentes.
 const hashDate = (dateKey: string) =>
-  dateKey.split("").reduce((hash, char) => hash + char.charCodeAt(0), 0);
+  dateKey.split("").reduce((hash, char) => (hash * 33 + char.charCodeAt(0)) % 233280, 5381) || 1;
+
+const FIRST_PUZZLE_DATE = "2026-01-01";
+
+const getPuzzleNumber = (dateKey: string) =>
+  Math.floor((Date.parse(dateKey) - Date.parse(FIRST_PUZZLE_DATE)) / (24 * 60 * 60 * 1000)) + 1;
 
 const seededShuffle = <T,>(items: T[], seed: number) => {
   const result = [...items];
@@ -366,11 +356,9 @@ const seededShuffle = <T,>(items: T[], seed: number) => {
 
 // Cada jogador ocupa uma casa só, então não basta toda casa ter uma resposta: precisa existir
 // um jogador diferente para cada casa (emparelhamento bipartido com caminhos aumentantes).
-const boardHasAnswers = (rows: BingoCriterion[], columns: BingoCriterion[]) => {
-  const cellCandidates = rows.flatMap((row) =>
-    columns.map((column) =>
-      csPlayers.filter((player) => playerMatchesCell(player, row, column)).map((player) => player.id)
-    )
+const boardHasAnswers = (cells: BingoCriterion[]) => {
+  const cellCandidates = cells.map((criterion) =>
+    csPlayers.filter((player) => playerMatchesCriterion(player, criterion)).map((player) => player.id)
   );
   const cellByPlayer: Record<string, number> = {};
 
@@ -392,38 +380,22 @@ const boardHasAnswers = (rows: BingoCriterion[], columns: BingoCriterion[]) => {
 
 const createDailyBoard = (dateKey: string): GameBoard => {
   const seed = hashDate(dateKey);
-  const rowCandidates = seededShuffle(bingoCriteria, seed);
-  const columnCandidates = seededShuffle(bingoCriteria, seed * 7);
 
-  for (let rowStart = 0; rowStart <= rowCandidates.length - GRID_SIZE; rowStart += 1) {
-    const rows = rowCandidates.slice(rowStart, rowStart + GRID_SIZE);
-
-    for (let columnStart = 0; columnStart <= columnCandidates.length - GRID_SIZE; columnStart += 1) {
-      const columns = columnCandidates
-        .filter((criterion) => !rows.some((row) => row.id === criterion.id))
-        .slice(columnStart, columnStart + GRID_SIZE);
-
-      if (columns.length === GRID_SIZE && boardHasAnswers(rows, columns)) {
-        return { rows, columns };
-      }
-    }
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const cells = seededShuffle(bingoCriteria, seed + attempt * 7919).slice(0, GRID_SIZE * GRID_SIZE);
+    if (boardHasAnswers(cells)) return cells;
   }
 
-  return {
-    rows: bingoCriteria.filter((criterion) => ["team-faze", "team-liquid", "team-astralis"].includes(criterion.id)),
-    columns: bingoCriteria.filter((criterion) => ["major-winner", "top20", "active"].includes(criterion.id)),
-  };
+  return bingoCriteria.slice(0, GRID_SIZE * GRID_SIZE);
 };
-
-const getCellKey = (rowIndex: number, columnIndex: number) => `${rowIndex}-${columnIndex}`;
 
 // O baralho tem todos os jogadores da base, inclusive os que não servem em nenhuma casa:
 // reconhecer esses nomes e pulá-los faz parte do desafio.
 const createPlayerQueue = (dateKey: string) => seededShuffle(csPlayers, hashDate(dateKey) * 17);
 
-const getPossibleAnswers = (row: BingoCriterion, column: BingoCriterion) =>
+const getPossibleAnswers = (criterion: BingoCriterion, usedPlayerIds: Set<string>) =>
   csPlayers
-    .filter((player) => playerMatchesCell(player, row, column))
+    .filter((player) => !usedPlayerIds.has(player.id) && playerMatchesCriterion(player, criterion))
     .slice(0, REVEALED_ANSWERS)
     .map((player) => player.nickname);
 
@@ -567,6 +539,7 @@ export default function BingoPage() {
         : "out-of-names";
   const currentPlayer = gameStatus === "playing" ? playerQueue[playerIndex] : undefined;
   const namesLeft = Math.max(playerQueue.length - playerIndex, 0);
+  const usedPlayerIds = new Set(Object.values(picks).map((pick) => pick.player.id));
   const isGameOver = gameStatus !== "playing";
   const gameOverTitle = {
     playing: "",
@@ -621,19 +594,17 @@ export default function BingoPage() {
     if (endsGame) setOpenPanel("result");
   };
 
-  const handleCellClick = (rowIndex: number, columnIndex: number) => {
+  const handleCellClick = (cellIndex: number) => {
     if (!currentPlayer) return;
 
-    const cellKey = getCellKey(rowIndex, columnIndex);
+    const cellKey = String(cellIndex);
     if (picks[cellKey]) {
       showMessage(copy.alreadyPickedMessage, "neutral");
       return;
     }
 
-    const row = board.rows[rowIndex];
-    const column = board.columns[columnIndex];
-    const rowLabel = getCriterionCopy(row, language).label;
-    const columnLabel = getCriterionCopy(column, language).label;
+    const criterion = board[cellIndex];
+    const criterionLabel = getCriterionCopy(criterion, language).label;
     const fillsBoard = filledCells + 1 === totalCells;
 
     if (wildcardArmed) {
@@ -642,14 +613,14 @@ export default function BingoPage() {
       setLastHitKey(cellKey);
       advanceGame(nextPicks, playerIndex + 1, skippedPlayerIds, mistakes, cellKey);
       showMessage(
-        fillsBoard ? copy.completedMessage : copy.wildcardMessage(currentPlayer.nickname, rowLabel, columnLabel),
+        fillsBoard ? copy.completedMessage : copy.wildcardMessage(currentPlayer.nickname, criterionLabel),
         "wildcard"
       );
       return;
     }
 
     // Errar custa uma vida, mas o nome continua na tela para tentar outra casa.
-    if (!playerMatchesCell(currentPlayer, row, column)) {
+    if (!playerMatchesCriterion(currentPlayer, criterion)) {
       setFlashKey((currentFlashKey) => currentFlashKey + 1);
       advanceGame(picks, playerIndex, skippedPlayerIds, mistakes + 1);
       showMessage(copy.wrongMessage(currentPlayer.nickname, livesLeft - 1), "error");
@@ -660,7 +631,7 @@ export default function BingoPage() {
     setLastHitKey(cellKey);
     advanceGame(nextPicks, playerIndex + 1);
     showMessage(
-      fillsBoard ? copy.completedMessage : copy.correctMessage(currentPlayer.nickname, rowLabel, columnLabel),
+      fillsBoard ? copy.completedMessage : copy.correctMessage(currentPlayer.nickname, criterionLabel),
       "success"
     );
   };
@@ -697,19 +668,18 @@ export default function BingoPage() {
   };
 
   const handleShare = async () => {
-    const grid = board.rows
-      .map((_, rowIndex) =>
-        board.columns
-          .map((__, columnIndex) => {
-            const pick = picks[getCellKey(rowIndex, columnIndex)];
-            if (!pick) return "⬛";
-            return pick.wildcard ? "🟨" : "🟩";
-          })
-          .join("")
-      )
-      .join("\n");
+    const grid = Array.from({ length: GRID_SIZE }, (_, rowIndex) =>
+      board
+        .slice(rowIndex * GRID_SIZE, (rowIndex + 1) * GRID_SIZE)
+        .map((__, columnIndex) => {
+          const pick = picks[String(rowIndex * GRID_SIZE + columnIndex)];
+          if (!pick) return "⬛";
+          return pick.wildcard ? "🟨" : "🟩";
+        })
+        .join("")
+    ).join("\n");
     const shareText = [
-      `CS Bingo #${hashDate(dateKey)} · ${dateKey}`,
+      `CS Bingo #${getPuzzleNumber(dateKey)} · ${dateKey}`,
       `🎯 ${score} ${copy.points} · ${"❤️".repeat(livesLeft)}${"🖤".repeat(MAX_LIVES - livesLeft)} · 🔥 ${stats.currentStreak}`,
       grid,
     ].join("\n");
@@ -737,8 +707,8 @@ export default function BingoPage() {
     <main className="flex h-full flex-col">
       <div className="shrink-0 border-b border-cs-line bg-cs-panel/80">
         <div className="mx-auto flex h-10 max-w-[560px] items-center justify-between gap-2 px-3 short:h-9 short:max-w-5xl">
-          <p className="min-w-0 truncate text-sm font-semibold uppercase tracking-wider text-cs-text/55 sm:tracking-[0.12em]">
-            <span className="font-bold text-cs-orange">#{hashDate(dateKey)}</span>
+          <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-cs-text/55 sm:text-sm sm:tracking-[0.12em]">
+            <span className="font-bold text-cs-orange">#{getPuzzleNumber(dateKey)}</span>
             <span className="mx-1.5 text-cs-line sm:mx-2">|</span>
             <span className="sr-only">{copy.puzzleDate} </span>
             {dateKey}
@@ -874,69 +844,62 @@ export default function BingoPage() {
               flashKey > 0 ? "animate-bingo-error" : ""
             }`}
           >
-            <div className="relative grid place-items-center bg-cs-panel">
-              <Crosshair className="h-[30%] w-[30%] text-cs-orange/40" />
-              <span className="sr-only">{copy.boardCorner}</span>
-            </div>
-            {board.columns.map((criterion) => (
-              <CriterionHeader key={criterion.id} criterion={criterion} axis={copy.columnAxis} language={language} />
-            ))}
+            {board.map((criterion, cellIndex) => {
+              const cellKey = String(cellIndex);
+              const pick = picks[cellKey];
+              const criterionCopy = getCriterionCopy(criterion, language);
+              const cellColor = pick
+                ? pick.wildcard
+                  ? "bg-[#352f22] shadow-[inset_0_-3px_0_#e0b04a]"
+                  : "bg-[#203047] shadow-[inset_0_-3px_0_#7fc35b]"
+                : wildcardArmed
+                  ? "bg-cs-raised shadow-[inset_0_0_0_2px_rgba(224,176,74,0.7)] hover:bg-[#352f22]"
+                  : "bg-cs-raised hover:bg-[#2e363e] hover:shadow-[inset_0_0_0_2px_rgba(242,163,58,0.6)]";
 
-            {board.rows.map((row, rowIndex) => (
-              <Fragment key={row.id}>
-                <CriterionHeader criterion={row} axis={copy.rowAxis} language={language} />
-                {board.columns.map((column, columnIndex) => {
-                  const cellKey = getCellKey(rowIndex, columnIndex);
-                  const pick = picks[cellKey];
-                  const rowCopy = getCriterionCopy(row, language);
-                  const columnCopy = getCriterionCopy(column, language);
-                  const cellColor = pick
-                    ? pick.wildcard
-                      ? "bg-[#352f22] shadow-[inset_0_-3px_0_#e0b04a]"
-                      : "bg-[#203047] shadow-[inset_0_-3px_0_#7fc35b]"
-                    : wildcardArmed
-                      ? "bg-cs-raised shadow-[inset_0_0_0_2px_rgba(224,176,74,0.7)] hover:bg-[#352f22]"
-                      : "bg-cs-raised hover:bg-[#2e363e] hover:shadow-[inset_0_0_0_2px_rgba(242,163,58,0.6)]";
-
-                  return (
-                    <button
-                      key={cellKey}
-                      type="button"
-                      onClick={() => handleCellClick(rowIndex, columnIndex)}
-                      disabled={isGameOver || Boolean(pick)}
-                      aria-label={`${rowCopy.label} + ${columnCopy.label}`}
-                      className={`group grid min-w-0 place-items-center overflow-hidden p-1 text-center transition disabled:cursor-not-allowed ${cellColor} ${
-                        lastHitKey === cellKey ? "animate-bingo-hit" : ""
-                      }`}
-                    >
-                      {pick ? (
-                        <div className="min-w-0 space-y-[4%]">
-                          {pick.wildcard ? (
-                            <Sparkles className="mx-auto h-[clamp(12px,4cqmin,20px)] w-[clamp(12px,4cqmin,20px)] text-cs-gold" />
-                          ) : (
-                            <Check className="mx-auto h-[clamp(12px,4cqmin,20px)] w-[clamp(12px,4cqmin,20px)] text-cs-green" />
-                          )}
-                          <p className="break-all text-[length:clamp(11px,3.6cqmin,20px)] font-bold uppercase leading-none tracking-wide">
-                            {pick.player.nickname}
-                          </p>
-                        </div>
-                      ) : isGameOver ? (
-                        <div className="min-w-0 space-y-0.5">
-                          <p className="text-[length:clamp(9px,2.4cqmin,12px)] font-bold uppercase tracking-wider text-cs-orange/70">
-                            {copy.possibleAnswers}
-                          </p>
-                          <p className="break-words text-[length:clamp(10px,3cqmin,15px)] font-semibold leading-tight text-cs-text/75">
-                            {getPossibleAnswers(row, column).join(", ")}
-                          </p>
-                        </div>
+              return (
+                <button
+                  key={criterion.id}
+                  type="button"
+                  onClick={() => handleCellClick(cellIndex)}
+                  disabled={isGameOver || Boolean(pick)}
+                  aria-label={criterionCopy.label}
+                  title={criterionCopy.helper}
+                  className={`group relative grid min-w-0 place-items-center overflow-hidden p-1 text-center transition disabled:cursor-not-allowed ${cellColor} ${
+                    lastHitKey === cellKey ? "animate-bingo-hit" : ""
+                  }`}
+                >
+                  {pick ? (
+                    <div className="min-w-0 space-y-[4%]">
+                      <p className="truncate text-[length:clamp(8px,2.2cqmin,12px)] font-bold uppercase tracking-wider text-cs-text/50">
+                        {criterionCopy.label}
+                      </p>
+                      {pick.wildcard ? (
+                        <Sparkles className="mx-auto h-[clamp(12px,3.6cqmin,20px)] w-[clamp(12px,3.6cqmin,20px)] text-cs-gold" />
                       ) : (
-                        <Crosshair className="h-[28%] w-[28%] text-cs-text/10 transition group-hover:scale-110 group-hover:text-cs-orange/70" />
+                        <Check className="mx-auto h-[clamp(12px,3.6cqmin,20px)] w-[clamp(12px,3.6cqmin,20px)] text-cs-green" />
                       )}
-                    </button>
-                  );
-                })}
-              </Fragment>
-            ))}
+                      <p className="break-all text-[length:clamp(10px,3.2cqmin,19px)] font-bold uppercase leading-none tracking-wide">
+                        {pick.player.nickname}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="min-w-0 space-y-[3%]">
+                      <CriterionIcon criterion={criterion} />
+                      <p className="break-words text-[length:clamp(10px,3cqmin,17px)] font-bold uppercase leading-tight tracking-wide">
+                        {criterionCopy.label}
+                      </p>
+                      {isGameOver ? (
+                        <p className="break-words text-[length:clamp(8px,2.4cqmin,13px)] font-semibold leading-tight text-cs-orange/80">
+                          {getPossibleAnswers(criterion, usedPlayerIds).join(", ")}
+                        </p>
+                      ) : (
+                        <p className="cs-board-helper text-[11px] font-semibold leading-tight text-cs-text/40">{criterionCopy.helper}</p>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -1111,21 +1074,4 @@ function CriterionIcon({ criterion }: { criterion: BingoCriterion }) {
     default:
       return <Activity className={`${iconClass} text-cs-green`} />;
   }
-}
-
-function CriterionHeader({ criterion, axis, language }: { criterion: BingoCriterion; axis: string; language: Language }) {
-  const criterionCopy = getCriterionCopy(criterion, language);
-
-  return (
-    <div className="relative grid min-w-0 place-items-center overflow-hidden bg-cs-panel p-1 text-center" title={criterionCopy.helper}>
-      <div className="min-w-0 space-y-[3%]">
-        <CriterionIcon criterion={criterion} />
-        <h3 className="break-words text-[length:clamp(10px,3.1cqmin,17px)] font-bold uppercase leading-tight tracking-wide">
-          {criterionCopy.label}
-        </h3>
-        <p className="cs-board-helper text-[11px] font-semibold leading-tight text-cs-text/40">{criterionCopy.helper}</p>
-        <p className="sr-only">{axis}</p>
-      </div>
-    </div>
-  );
 }
