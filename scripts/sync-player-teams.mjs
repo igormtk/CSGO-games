@@ -27,6 +27,7 @@ const TEAM_ALIASES = {
   "Spirit": "spirit",
   "Falcons": "falcons",
   "Liquid": "liquid",
+  "BC.Game": "bcgame",
 };
 
 const dryRun = process.argv.includes("--dry-run");
@@ -155,7 +156,12 @@ const main = async () => {
     // Para aposentados e inativos o infobox mantém o último time; isso não é time atual.
     const teamName = active ? remote.team || null : null;
     const teamId = teamName ? teamIdByName.get(teamName.toLowerCase()) ?? null : null;
-    const teamChanged = (teamName ?? "").toLowerCase() !== (player.current_team_name ?? "").toLowerCase();
+    // Compara pelo id quando o time está na base: o Liquipedia escreve o mesmo time de jeitos
+    // diferentes em páginas diferentes (ex.: "BC.Game" e "BC.Game Esports").
+    const teamChanged =
+      teamId && player.current_team_id
+        ? teamId !== player.current_team_id
+        : (teamName ?? "").toLowerCase() !== (player.current_team_name ?? "").toLowerCase();
 
     if (teamChanged || active !== player.active || (remote.page && remote.page !== player.liquipedia_page)) {
       updates.push({ player, teamName, teamId, active, teamChanged, page: remote.page });

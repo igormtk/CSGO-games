@@ -95,7 +95,10 @@ INSERT INTO teams (id, name, country, region, founded, status) VALUES
   ('mousesports', 'MOUZ', 'Germany', 'Europe', 2002, 'active'),
   ('falcons', 'Team Falcons', 'Saudi Arabia', 'Middle East', 2017, 'active'),
   ('mongolz', 'The MongolZ', 'Mongolia', 'Asia', 2020, 'active'),
-  ('nip', 'Ninjas in Pyjamas', 'Sweden', 'Europe', 2000, 'active')
+  ('nip', 'Ninjas in Pyjamas', 'Sweden', 'Europe', 2000, 'active'),
+  ('bcgame', 'BC.Game Esports', 'United Arab Emirates', 'Asia', 2024, 'active'),
+  ('100thieves', '100 Thieves', 'United States', 'Europe', 2017, 'active'),
+  ('withoutaroof', 'Without a Roof', 'United States', 'North America', 2016, 'active')
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   country = EXCLUDED.country,
@@ -104,23 +107,23 @@ ON CONFLICT (id) DO UPDATE SET
   status = EXCLUDED.status;
 
 INSERT INTO players (id, nickname, full_name, nationality, region, majors_won, major_mvp, active, current_team_id, current_team_name) VALUES
-  ('s1mple', 's1mple', 'Oleksandr Kostyliev', 'Ukraine', 'Europe/CIS', 1, TRUE, TRUE, 'navi', 'Natus Vincere'),
+  ('s1mple', 's1mple', 'Oleksandr Kostyliev', 'Ukraine', 'Europe/CIS', 1, TRUE, TRUE, 'bcgame', 'BC.Game Esports'),
   ('zywoo', 'ZywOo', 'Mathieu Herbaut', 'France', 'Europe', 3, TRUE, TRUE, 'vitality', 'Team Vitality'),
-  ('device', 'device', 'Nicolai Reedtz', 'Denmark', 'Europe', 4, TRUE, TRUE, 'astralis', 'Astralis'),
+  ('device', 'device', 'Nicolai Reedtz', 'Denmark', 'Europe', 4, TRUE, TRUE, '100thieves', '100 Thieves'),
   ('dupreeh', 'dupreeh', 'Peter Rasmussen', 'Denmark', 'Europe', 5, FALSE, TRUE, NULL, NULL),
   ('niko', 'NiKo', 'Nikola Kovac', 'Bosnia and Herzegovina', 'Europe', 1, FALSE, TRUE, 'falcons', 'Team Falcons'),
   ('coldzera', 'coldzera', 'Marcelo David', 'Brazil', 'South America', 2, TRUE, TRUE, NULL, NULL),
   ('fallen', 'FalleN', 'Gabriel Toledo', 'Brazil', 'South America', 2, FALSE, TRUE, 'furia', 'FURIA'),
   ('kscerato', 'KSCERATO', 'Kaike Cerato', 'Brazil', 'South America', 0, FALSE, TRUE, 'furia', 'FURIA'),
-  ('twistzz', 'Twistzz', 'Russel Van Dulken', 'Canada', 'North America', 1, FALSE, TRUE, 'liquid', 'Team Liquid'),
+  ('twistzz', 'Twistzz', 'Russel Van Dulken', 'Canada', 'North America', 1, FALSE, TRUE, 'faze', 'FaZe Clan'),
   ('ropz', 'ropz', 'Robin Kool', 'Estonia', 'Europe', 3, FALSE, TRUE, 'vitality', 'Team Vitality'),
   ('karrigan', 'karrigan', 'Finn Andersen', 'Denmark', 'Europe', 2, FALSE, TRUE, 'falcons', 'Team Falcons'),
-  ('rain', 'rain', 'Havard Nygaard', 'Norway', 'Europe', 1, TRUE, TRUE, 'faze', 'FaZe Clan'),
+  ('rain', 'rain', 'Havard Nygaard', 'Norway', 'Europe', 1, TRUE, TRUE, '100thieves', '100 Thieves'),
   ('kennys', 'kennyS', 'Kenny Schrub', 'France', 'Europe', 1, TRUE, FALSE, NULL, NULL),
   ('olofmeister', 'olofmeister', 'Olof Kajbjer', 'Sweden', 'Europe', 2, FALSE, FALSE, NULL, NULL),
   ('flusha', 'flusha', 'Robin Ronnquist', 'Sweden', 'Europe', 3, FALSE, FALSE, NULL, NULL),
   ('shroud', 'shroud', 'Michael Grzesiek', 'Canada', 'North America', 0, FALSE, FALSE, NULL, NULL),
-  ('stewie2k', 'Stewie2K', 'Jacky Yip', 'United States', 'North America', 1, FALSE, TRUE, NULL, NULL),
+  ('stewie2k', 'Stewie2K', 'Jacky Yip', 'United States', 'North America', 1, FALSE, TRUE, 'withoutaroof', 'Without a Roof'),
   ('elige', 'EliGE', 'Jonathan Jablonowski', 'United States', 'North America', 0, FALSE, TRUE, 'liquid', 'Team Liquid'),
   ('donk', 'donk', 'Danil Kryshkovets', 'Russia', 'Europe/CIS', 1, TRUE, TRUE, 'spirit', 'Team Spirit'),
   ('sh1ro', 'sh1ro', 'Dmitry Sokolov', 'Russia', 'Europe/CIS', 1, FALSE, TRUE, 'spirit', 'Team Spirit'),
@@ -138,13 +141,13 @@ INSERT INTO players (id, nickname, full_name, nationality, region, majors_won, m
   ('spinx', 'Spinx', 'Lotan Giladi', 'Israel', 'Europe', 0, FALSE, TRUE, 'mousesports', 'MOUZ'),
   ('torzsi', 'torzsi', 'Ádám Torzsás', 'Hungary', 'Europe', 0, FALSE, TRUE, 'mousesports', 'MOUZ'),
   ('xertion', 'xertioN', 'Dorian Berman', 'Israel', 'Europe', 0, FALSE, TRUE, 'mousesports', 'MOUZ'),
-  ('frozen', 'frozen', 'David Čerňanský', 'Slovakia', 'Europe', 0, FALSE, TRUE, NULL, NULL),
+  ('frozen', 'frozen', 'David Čerňanský', 'Slovakia', 'Europe', 0, FALSE, TRUE, 'faze', 'FaZe Clan'),
   ('b1t', 'b1t', 'Valerii Vakhovskyi', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
   ('im', 'iM', 'Mihai Ivan', 'Romania', 'Europe', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
   ('w0nderful', 'w0nderful', 'Ihor Zhdanov', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
   ('aleksib', 'Aleksib', 'Aleksi Virolainen', 'Finland', 'Europe', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
   ('jl', 'jL', 'Justinas Lekavičius', 'Lithuania', 'Europe', 1, TRUE, TRUE, NULL, NULL),
-  ('senzu', 'Senzu', 'Azbayar Munkhbold', 'Mongolia', 'Asia', 0, FALSE, TRUE, NULL, NULL),
+  ('senzu', 'Senzu', 'Azbayar Munkhbold', 'Mongolia', 'Asia', 0, FALSE, TRUE, 'bcgame', 'BC.Game Esports'),
   ('blitz', 'bLitz', 'Garidmagnai Byambasuren', 'Mongolia', 'Asia', 0, FALSE, TRUE, 'mongolz', 'The MongolZ')
 ON CONFLICT (id) DO UPDATE SET
   nickname = EXCLUDED.nickname,
@@ -221,9 +224,11 @@ ON CONFLICT DO NOTHING;
 INSERT INTO player_teams (player_id, team_id) VALUES
   ('s1mple', 'navi'),
   ('s1mple', 'liquid'),
+  ('s1mple', 'bcgame'),
   ('zywoo', 'vitality'),
   ('device', 'astralis'),
   ('device', 'nip'),
+  ('device', '100thieves'),
   ('dupreeh', 'astralis'),
   ('dupreeh', 'vitality'),
   ('dupreeh', 'falcons'),
@@ -247,6 +252,7 @@ INSERT INTO player_teams (player_id, team_id) VALUES
   ('karrigan', 'astralis'),
   ('karrigan', 'falcons'),
   ('rain', 'faze'),
+  ('rain', '100thieves'),
   ('kennys', 'g2'),
   ('olofmeister', 'fnatic'),
   ('olofmeister', 'faze'),
@@ -255,6 +261,7 @@ INSERT INTO player_teams (player_id, team_id) VALUES
   ('shroud', 'cloud9'),
   ('stewie2k', 'cloud9'),
   ('stewie2k', 'liquid'),
+  ('stewie2k', 'withoutaroof'),
   ('elige', 'liquid'),
   ('donk', 'spirit'),
   ('sh1ro', 'cloud9'),
@@ -286,6 +293,7 @@ INSERT INTO player_teams (player_id, team_id) VALUES
   ('aleksib', 'navi'),
   ('jl', 'navi'),
   ('senzu', 'mongolz'),
+  ('senzu', 'bcgame'),
   ('blitz', 'mongolz')
 ON CONFLICT DO NOTHING;
 
