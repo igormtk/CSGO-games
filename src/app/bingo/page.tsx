@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { Rajdhani } from "next/font/google";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -11,8 +9,8 @@ import {
   Crosshair,
   Flame,
   Globe2,
+  Heart,
   HelpCircle,
-  Menu,
   RotateCcw,
   Share2,
   Shield,
@@ -28,8 +26,6 @@ import {
 } from "@/data/csBingoDatabase";
 import type { BingoCriterion, CsPlayer } from "@/data/csBingoDatabase";
 
-const csFont = Rajdhani({ subsets: ["latin"], weight: ["500", "600", "700"] });
-
 const GRID_SIZE = 3;
 const GAME_KEY_PREFIX = "cs-bingo-daily";
 const LANGUAGE_KEY = "cs-bingo-language";
@@ -37,6 +33,7 @@ const STATS_KEY = "cs-bingo-stats";
 const POINTS_PER_HIT = 100;
 const PERFECT_BONUS = 300;
 const REVEALED_ANSWERS = 3;
+const MAX_LIVES = 2;
 
 type CellPick = {
   player: CsPlayer;
@@ -48,7 +45,7 @@ type GameBoard = {
   columns: BingoCriterion[];
 };
 
-type GameStatus = "playing" | "completed" | "out-of-names";
+type GameStatus = "playing" | "completed" | "out-of-names" | "out-of-lives";
 type Language = "pt" | "en" | "es";
 type MessageTone = "neutral" | "success" | "error" | "wildcard";
 
@@ -80,7 +77,7 @@ type TranslationCopy = {
   score: string;
   points: string;
   reset: string;
-  home: string;
+  lives: string;
   currentPlayerEyebrow: string;
   noCurrentPlayerTitle: string;
   namesLeft: string;
@@ -99,11 +96,15 @@ type TranslationCopy = {
   resetMessage: string;
   completedMessage: string;
   outOfNamesMessage: string;
-  wrongMessage: (player: string, skippedPlayer?: string) => string;
+  outOfLivesMessage: string;
+  wrongMessage: (player: string, livesLeft: number) => string;
   correctMessage: (player: string, row: string, column: string) => string;
   alreadyPickedMessage: string;
   gameOverCompleted: string;
   gameOverOutOfNames: string;
+  gameOverOutOfLives: string;
+  result: string;
+  viewBoard: string;
   hitsLabel: string;
   perfectBonus: string;
   share: string;
@@ -128,7 +129,7 @@ const translations: Record<Language, TranslationCopy> = {
     score: "Pontos",
     points: "pts",
     reset: "Reiniciar tentativa",
-    home: "Início",
+    lives: "Vidas",
     currentPlayerEyebrow: "Nome da vez",
     noCurrentPlayerTitle: "Nenhum nome restante",
     namesLeft: "Nomes restantes",
@@ -147,14 +148,16 @@ const translations: Record<Language, TranslationCopy> = {
     resetMessage: "Cartela reiniciada. O primeiro nome já está na tela.",
     completedMessage: "Bingo completo! Todas as casas foram preenchidas.",
     outOfNamesMessage: "Você ficou sem nomes. Veja na cartela quem poderia ocupar as casas vazias.",
-    wrongMessage: (player, skippedPlayer) =>
-      skippedPlayer
-        ? `${player} não combina com essa casa. Você perdeu também ${skippedPlayer}.`
-        : `${player} não combina com essa casa.`,
+    outOfLivesMessage: "Suas vidas acabaram. Veja na cartela quem poderia ocupar as casas vazias.",
+    wrongMessage: (player, livesLeft) =>
+      `${player} não combina com essa casa. -1 vida${livesLeft === 1 ? ": resta só uma!" : "."}`,
     correctMessage: (player, row, column) => `Boa! ${player} preenche ${row} + ${column}.`,
     alreadyPickedMessage: "Essa casa já está marcada. Escolha uma casa livre.",
     gameOverCompleted: "Bingo!",
     gameOverOutOfNames: "Fim de jogo",
+    gameOverOutOfLives: "Sem vidas",
+    result: "Resultado",
+    viewBoard: "Ver cartela",
     hitsLabel: "Acertos",
     perfectBonus: "Bônus de cartela perfeita",
     share: "Compartilhar resultado",
@@ -168,11 +171,12 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Melhor sequência",
     rulesTitle: "Como jogar",
     rules: [
-      "Um jogador aparece por vez. Coloque-o numa casa em que ele cumpra o critério da linha e o da coluna.",
-      `Cada acerto vale ${POINTS_PER_HIT} pontos. Completar a cartela sem errar nem pular nenhum nome dá +${PERFECT_BONUS} de bônus.`,
-      "Se errar, a cartela pisca em vermelho e você perde o nome atual e o próximo da fila.",
+      `Os ${csPlayers.length} jogadores da base aparecem um por vez, em ordem aleatória. Coloque o nome da vez numa casa em que ele cumpra o critério da linha e o da coluna.`,
+      "Se o nome não serve em nenhuma casa livre, pule. Pular não custa vida, mas o nome não volta.",
+      `Errou a casa? Você perde uma vida e o nome continua na tela para tentar outra casa. São ${MAX_LIVES} vidas por partida.`,
+      `Cada acerto vale ${POINTS_PER_HIT} pontos. Completar a cartela sem errar dá +${PERFECT_BONUS} de bônus.`,
       "Uma vez por partida, use o Coringa para colocar o nome da vez em qualquer casa livre, sem ganhar pontos.",
-      "A partida termina quando a cartela fica completa ou quando acabam os nomes. No fim, veja quem poderia ocupar as casas vazias e compartilhe seu resultado.",
+      "A partida termina quando a cartela fica completa, quando acabam os nomes ou quando acabam as vidas. No fim, veja quem poderia ocupar as casas vazias e compartilhe seu resultado.",
       "Uma cartela nova sai todo dia (UTC). Jogue diariamente para manter sua sequência.",
     ],
     close: "Fechar",
@@ -184,7 +188,7 @@ const translations: Record<Language, TranslationCopy> = {
     score: "Score",
     points: "pts",
     reset: "Reset attempt",
-    home: "Home",
+    lives: "Lives",
     currentPlayerEyebrow: "Current name",
     noCurrentPlayerTitle: "No names remaining",
     namesLeft: "Names left",
@@ -203,14 +207,16 @@ const translations: Record<Language, TranslationCopy> = {
     resetMessage: "Board reset. The first name is already on screen.",
     completedMessage: "Bingo complete! Every cell is filled.",
     outOfNamesMessage: "You ran out of names. Check the board to see who could fill the empty cells.",
-    wrongMessage: (player, skippedPlayer) =>
-      skippedPlayer
-        ? `${player} does not match that cell. You also lost ${skippedPlayer}.`
-        : `${player} does not match that cell.`,
+    outOfLivesMessage: "You are out of lives. Check the board to see who could fill the empty cells.",
+    wrongMessage: (player, livesLeft) =>
+      `${player} does not match that cell. -1 life${livesLeft === 1 ? ": only one left!" : "."}`,
     correctMessage: (player, row, column) => `Nice! ${player} matches ${row} + ${column}.`,
     alreadyPickedMessage: "That cell is already marked. Choose an open cell.",
     gameOverCompleted: "Bingo!",
     gameOverOutOfNames: "Game over",
+    gameOverOutOfLives: "Out of lives",
+    result: "Result",
+    viewBoard: "View board",
     hitsLabel: "Hits",
     perfectBonus: "Perfect board bonus",
     share: "Share result",
@@ -224,11 +230,12 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Best streak",
     rulesTitle: "How to play",
     rules: [
-      "One player appears at a time. Place them in a cell where they match both the row and the column.",
-      `Each hit is worth ${POINTS_PER_HIT} points. Completing the board without misses or skips earns a +${PERFECT_BONUS} bonus.`,
-      "If you miss, the board flashes red and you lose the current name and the next one in the queue.",
+      `All ${csPlayers.length} players in the database appear one at a time, in random order. Place the current name in a cell where they match both the row and the column.`,
+      "If the name fits no open cell, skip it. Skipping costs no life, but the name does not come back.",
+      `Wrong cell? You lose a life and the name stays on screen so you can try another cell. You have ${MAX_LIVES} lives per game.`,
+      `Each hit is worth ${POINTS_PER_HIT} points. Completing the board without misses earns a +${PERFECT_BONUS} bonus.`,
       "Once per game, use the Wildcard to place the current name in any open cell, for no points.",
-      "The game ends when the board is full or you run out of names. At the end, see who could fill the empty cells and share your result.",
+      "The game ends when the board is full, when you run out of names or when you run out of lives. At the end, see who could fill the empty cells and share your result.",
       "A new board arrives every day (UTC). Play daily to keep your streak.",
     ],
     close: "Close",
@@ -240,7 +247,7 @@ const translations: Record<Language, TranslationCopy> = {
     score: "Puntos",
     points: "pts",
     reset: "Reiniciar intento",
-    home: "Inicio",
+    lives: "Vidas",
     currentPlayerEyebrow: "Nombre actual",
     noCurrentPlayerTitle: "No quedan nombres",
     namesLeft: "Nombres restantes",
@@ -259,14 +266,16 @@ const translations: Record<Language, TranslationCopy> = {
     resetMessage: "Cartela reiniciada. El primer nombre ya está en pantalla.",
     completedMessage: "¡Bingo completo! Todas las casillas están llenas.",
     outOfNamesMessage: "Te quedaste sin nombres. Mira en la cartela quién podría ocupar las casillas vacías.",
-    wrongMessage: (player, skippedPlayer) =>
-      skippedPlayer
-        ? `${player} no combina con esa casilla. También perdiste ${skippedPlayer}.`
-        : `${player} no combina con esa casilla.`,
+    outOfLivesMessage: "Te quedaste sin vidas. Mira en la cartela quién podría ocupar las casillas vacías.",
+    wrongMessage: (player, livesLeft) =>
+      `${player} no combina con esa casilla. -1 vida${livesLeft === 1 ? ": ¡solo queda una!" : "."}`,
     correctMessage: (player, row, column) => `¡Bien! ${player} cumple ${row} + ${column}.`,
     alreadyPickedMessage: "Esa casilla ya está marcada. Elige una casilla libre.",
     gameOverCompleted: "¡Bingo!",
     gameOverOutOfNames: "Fin del juego",
+    gameOverOutOfLives: "Sin vidas",
+    result: "Resultado",
+    viewBoard: "Ver cartela",
     hitsLabel: "Aciertos",
     perfectBonus: "Bono de cartela perfecta",
     share: "Compartir resultado",
@@ -280,11 +289,12 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Mejor racha",
     rulesTitle: "Cómo jugar",
     rules: [
-      "Aparece un jugador por vez. Colócalo en una casilla donde cumpla el criterio de la fila y el de la columna.",
-      `Cada acierto vale ${POINTS_PER_HIT} puntos. Completar la cartela sin fallar ni saltar nombres da un bono de +${PERFECT_BONUS}.`,
-      "Si fallas, la cartela parpadea en rojo y pierdes el nombre actual y el siguiente de la fila.",
+      `Los ${csPlayers.length} jugadores de la base aparecen uno por vez, en orden aleatorio. Coloca el nombre actual en una casilla donde cumpla el criterio de la fila y el de la columna.`,
+      "Si el nombre no sirve en ninguna casilla libre, sáltalo. Saltar no cuesta vida, pero el nombre no vuelve.",
+      `¿Casilla equivocada? Pierdes una vida y el nombre sigue en pantalla para probar otra casilla. Tienes ${MAX_LIVES} vidas por partida.`,
+      `Cada acierto vale ${POINTS_PER_HIT} puntos. Completar la cartela sin fallar da un bono de +${PERFECT_BONUS}.`,
       "Una vez por partida, usa el Comodín para colocar el nombre actual en cualquier casilla libre, sin sumar puntos.",
-      "La partida termina cuando la cartela está completa o cuando se acaban los nombres. Al final, mira quién podría ocupar las casillas vacías y comparte tu resultado.",
+      "La partida termina cuando la cartela está completa, cuando se acaban los nombres o cuando se acaban las vidas. Al final, mira quién podría ocupar las casillas vacías y comparte tu resultado.",
       "Hay una cartela nueva cada día (UTC). Juega a diario para mantener tu racha.",
     ],
     close: "Cerrar",
@@ -407,14 +417,9 @@ const createDailyBoard = (dateKey: string): GameBoard => {
 
 const getCellKey = (rowIndex: number, columnIndex: number) => `${rowIndex}-${columnIndex}`;
 
-const playerCanFitBoard = (player: CsPlayer, board: GameBoard) =>
-  board.rows.some((row) => board.columns.some((column) => playerMatchesCell(player, row, column)));
-
-const createPlayerQueue = (board: GameBoard, dateKey: string) =>
-  seededShuffle(
-    csPlayers.filter((player) => playerCanFitBoard(player, board)),
-    hashDate(dateKey) * 17
-  );
+// O baralho tem todos os jogadores da base, inclusive os que não servem em nenhuma casa:
+// reconhecer esses nomes e pulá-los faz parte do desafio.
+const createPlayerQueue = (dateKey: string) => seededShuffle(csPlayers, hashDate(dateKey) * 17);
 
 const getPossibleAnswers = (row: BingoCriterion, column: BingoCriterion) =>
   csPlayers
@@ -517,10 +522,11 @@ const getCriterionCopy = (criterion: BingoCriterion, language: Language) =>
     helper: criterion.helper,
   };
 
+
 export default function BingoPage() {
   const dateKey = useMemo(() => getUtcDateKey(), []);
   const board = useMemo(() => createDailyBoard(dateKey), [dateKey]);
-  const playerQueue = useMemo(() => createPlayerQueue(board, dateKey), [board, dateKey]);
+  const playerQueue = useMemo(() => createPlayerQueue(dateKey), [dateKey]);
   const [language, setLanguage] = useState<Language>(() => getStoredLanguage());
   const copy = translations[language];
   const [storedGame] = useState<StoredGame>(() => parseStoredGame(dateKey));
@@ -537,7 +543,7 @@ export default function BingoPage() {
   const [flashKey, setFlashKey] = useState(0);
   const [lastHitKey, setLastHitKey] = useState<string>();
   const [stats, setStats] = useState<PlayerStats>(() => readStats());
-  const [openPanel, setOpenPanel] = useState<"rules" | "stats">();
+  const [openPanel, setOpenPanel] = useState<"rules" | "stats" | "result">();
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   // O jogo salvo, o idioma e as estatísticas vêm do localStorage; esperar a montagem evita
   // divergência entre o HTML do servidor e o do navegador (erro de hidratação).
@@ -545,18 +551,35 @@ export default function BingoPage() {
 
   useEffect(() => setMounted(true), []);
 
+  const totalCells = GRID_SIZE * GRID_SIZE;
   const filledCells = Object.keys(picks).length;
   const hits = Object.values(picks).filter((pick) => !pick.wildcard).length;
-  const isCompleted = filledCells === GRID_SIZE * GRID_SIZE;
-  const isPerfect = isCompleted && mistakes === 0 && skippedPlayerIds.length === 0;
+  const livesLeft = Math.max(MAX_LIVES - mistakes, 0);
+  const isCompleted = filledCells === totalCells;
+  const isPerfect = isCompleted && mistakes === 0;
   const score = hits * POINTS_PER_HIT + (isPerfect ? PERFECT_BONUS : 0);
-  const currentPlayer = isCompleted ? undefined : playerQueue[playerIndex];
+  const gameStatus: GameStatus = isCompleted
+    ? "completed"
+    : livesLeft === 0
+      ? "out-of-lives"
+      : playerIndex < playerQueue.length
+        ? "playing"
+        : "out-of-names";
+  const currentPlayer = gameStatus === "playing" ? playerQueue[playerIndex] : undefined;
   const namesLeft = Math.max(playerQueue.length - playerIndex, 0);
-  const gameStatus: GameStatus = isCompleted ? "completed" : currentPlayer ? "playing" : "out-of-names";
   const isGameOver = gameStatus !== "playing";
-  const latestSkippedPlayer = skippedPlayerIds.length
-    ? csPlayers.find((player) => player.id === skippedPlayerIds[skippedPlayerIds.length - 1])
-    : undefined;
+  const gameOverTitle = {
+    playing: "",
+    completed: copy.gameOverCompleted,
+    "out-of-names": copy.gameOverOutOfNames,
+    "out-of-lives": copy.gameOverOutOfLives,
+  }[gameStatus];
+  const gameOverMessage = {
+    playing: message,
+    completed: copy.completedMessage,
+    "out-of-names": copy.outOfNamesMessage,
+    "out-of-lives": copy.outOfLivesMessage,
+  }[gameStatus];
 
   useEffect(() => {
     if (!isGameOver || stats.lastPlayedDate === dateKey) return;
@@ -590,10 +613,16 @@ export default function BingoPage() {
     setWildcardCell(nextWildcardCell);
     setShareStatus(undefined);
     saveGame(dateKey, nextPicks, nextPlayerIndex, nextSkippedPlayerIds, nextMistakes, nextWildcardCell);
+
+    const endsGame =
+      Object.keys(nextPicks).length === totalCells ||
+      nextMistakes >= MAX_LIVES ||
+      nextPlayerIndex >= playerQueue.length;
+    if (endsGame) setOpenPanel("result");
   };
 
   const handleCellClick = (rowIndex: number, columnIndex: number) => {
-    if (!currentPlayer || gameStatus !== "playing") return;
+    if (!currentPlayer) return;
 
     const cellKey = getCellKey(rowIndex, columnIndex);
     if (picks[cellKey]) {
@@ -605,7 +634,7 @@ export default function BingoPage() {
     const column = board.columns[columnIndex];
     const rowLabel = getCriterionCopy(row, language).label;
     const columnLabel = getCriterionCopy(column, language).label;
-    const fillsBoard = filledCells + 1 === GRID_SIZE * GRID_SIZE;
+    const fillsBoard = filledCells + 1 === totalCells;
 
     if (wildcardArmed) {
       const nextPicks = { ...picks, [cellKey]: { player: currentPlayer, wildcard: true } };
@@ -619,16 +648,11 @@ export default function BingoPage() {
       return;
     }
 
+    // Errar custa uma vida, mas o nome continua na tela para tentar outra casa.
     if (!playerMatchesCell(currentPlayer, row, column)) {
-      const skippedPlayer = playerQueue[playerIndex + 1];
-      const nextPlayerIndex = playerIndex + (skippedPlayer ? 2 : 1);
-      const nextSkippedPlayerIds = skippedPlayer
-        ? [...skippedPlayerIds, skippedPlayer.id]
-        : skippedPlayerIds;
-
       setFlashKey((currentFlashKey) => currentFlashKey + 1);
-      advanceGame(picks, nextPlayerIndex, nextSkippedPlayerIds, mistakes + 1);
-      showMessage(copy.wrongMessage(currentPlayer.nickname, skippedPlayer?.nickname), "error");
+      advanceGame(picks, playerIndex, skippedPlayerIds, mistakes + 1);
+      showMessage(copy.wrongMessage(currentPlayer.nickname, livesLeft - 1), "error");
       return;
     }
 
@@ -651,12 +675,13 @@ export default function BingoPage() {
     setWildcardArmed(false);
     setLastHitKey(undefined);
     setShareStatus(undefined);
+    setOpenPanel(undefined);
     showMessage(copy.resetMessage, "neutral");
     setFlashKey(0);
   };
 
   const handleSkip = () => {
-    if (!currentPlayer || gameStatus !== "playing") return;
+    if (!currentPlayer) return;
 
     setWildcardArmed(false);
     advanceGame(picks, playerIndex + 1, [...skippedPlayerIds, currentPlayer.id]);
@@ -664,7 +689,7 @@ export default function BingoPage() {
   };
 
   const handleWildcardToggle = () => {
-    if (wildcardCell || gameStatus !== "playing") return;
+    if (wildcardCell || !currentPlayer) return;
 
     const nextArmed = !wildcardArmed;
     setWildcardArmed(nextArmed);
@@ -685,7 +710,7 @@ export default function BingoPage() {
       .join("\n");
     const shareText = [
       `CS Bingo #${hashDate(dateKey)} · ${dateKey}`,
-      `🎯 ${score} ${copy.points} · 🔥 ${stats.currentStreak}`,
+      `🎯 ${score} ${copy.points} · ${"❤️".repeat(livesLeft)}${"🖤".repeat(MAX_LIVES - livesLeft)} · 🔥 ${stats.currentStreak}`,
       grid,
     ].join("\n");
 
@@ -699,274 +724,292 @@ export default function BingoPage() {
 
   // Mensagens no estilo kill feed: faixa escura com borda colorida à esquerda.
   const messageToneClass: Record<MessageTone, string> = {
-    neutral: "border-[#f2a33a] text-[#e8e4d8]",
-    success: "border-[#7fc35b] text-[#d7f0c8]",
-    error: "border-[#e5484d] text-[#f6c9ca]",
-    wildcard: "border-[#e0b04a] text-[#f5e3b5]",
+    neutral: "border-cs-orange text-cs-text",
+    success: "border-cs-green text-[#d7f0c8]",
+    error: "border-cs-red text-[#f6c9ca]",
+    wildcard: "border-cs-gold text-[#f5e3b5]",
   };
+  const statusTone: MessageTone = gameStatus === "playing" ? messageTone : isCompleted ? "success" : "error";
 
-  if (!mounted) return <main className="min-h-screen bg-[#0e1114]" />;
+  if (!mounted) return <main className="h-full" />;
 
   return (
-    <main className={`${csFont.className} min-h-screen overflow-x-hidden bg-[#0e1114] text-[#e8e4d8]`}>
-      <div className="cs-grid-bg min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
-        <nav className="border-b-2 border-[#f2a33a]/60 bg-[#14181c]">
-          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-            <div className="flex items-center gap-4 text-[#e8e4d8]">
-              <Link href="/" aria-label={copy.home} className="transition hover:text-[#f2a33a]">
-                <Menu className="h-6 w-6" />
-              </Link>
-              <button
-                type="button"
-                onClick={() => setOpenPanel("rules")}
-                aria-label={copy.rulesTitle}
-                className="transition hover:text-[#f2a33a]"
+    <main className="flex h-full flex-col">
+      <div className="shrink-0 border-b border-cs-line bg-cs-panel/80">
+        <div className="mx-auto flex h-10 max-w-[560px] items-center justify-between gap-2 px-3 short:h-9 short:max-w-5xl">
+          <p className="min-w-0 truncate text-sm font-semibold uppercase tracking-wider text-cs-text/55 sm:tracking-[0.12em]">
+            <span className="font-bold text-cs-orange">#{hashDate(dateKey)}</span>
+            <span className="mx-1.5 text-cs-line sm:mx-2">|</span>
+            <span className="sr-only">{copy.puzzleDate} </span>
+            {dateKey}
+          </p>
+          <div className="flex shrink-0 items-center gap-1">
+            <ToolbarButton label={copy.rulesTitle} onClick={() => setOpenPanel("rules")}>
+              <HelpCircle className="h-5 w-5" />
+            </ToolbarButton>
+            <ToolbarButton label={copy.statsTitle} onClick={() => setOpenPanel("stats")}>
+              <Flame className="h-5 w-5 text-cs-orange" />
+              <span className="text-base font-bold">{stats.currentStreak}</span>
+              <BarChart3 className="h-5 w-5" />
+            </ToolbarButton>
+            <ToolbarButton label={copy.reset} onClick={handleReset}>
+              <RotateCcw className="h-5 w-5" />
+            </ToolbarButton>
+            <label className="cs-cut-sm ml-1 inline-flex items-center gap-1 bg-cs-raised px-2 py-1 text-cs-text/80">
+              <Globe2 className="h-4 w-4" />
+              <select
+                value={language}
+                onChange={(event) => handleLanguageChange(event.target.value as Language)}
+                className="bg-transparent text-xs font-bold uppercase outline-none"
+                aria-label={copy.selectLanguage}
               >
-                <HelpCircle className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex items-center gap-1.5 text-xl font-bold uppercase tracking-[0.08em] sm:text-3xl sm:tracking-[0.12em]">
-              <Crosshair className="hidden h-5 w-5 text-[#f2a33a] sm:block" />
-              CS<span className="text-[#f2a33a]">Bingo</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="cs-cut-sm inline-flex items-center gap-1.5 bg-[#1f252b] px-2 py-1 text-xs text-[#e8e4d8]/80">
-                <Globe2 className="h-4 w-4" />
-                <span className="sr-only">{copy.selectLanguage}</span>
-                <select
-                  value={language}
-                  onChange={(event) => handleLanguageChange(event.target.value as Language)}
-                  className="bg-transparent text-xs font-bold uppercase outline-none"
-                  aria-label={copy.selectLanguage}
-                >
-                  {Object.entries(translations).map(([key, value]) => (
-                    <option key={key} value={key} className="bg-[#14181c] text-[#e8e4d8]">
-                      {value.languageName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={() => setOpenPanel("stats")}
-                aria-label={copy.statsTitle}
-                className="inline-flex items-center gap-1 transition hover:text-[#f2a33a]"
-              >
-                <Flame className="h-5 w-5 text-[#f2a33a]" />
-                <span className="text-base font-bold">{stats.currentStreak}</span>
-                <BarChart3 className="ml-1 h-5 w-5" />
-              </button>
-            </div>
+                {Object.entries(translations).map(([key, value]) => (
+                  <option key={key} value={key} className="bg-cs-panel text-cs-text" title={value.languageName}>
+                    {key.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        </nav>
-
-        <div className="border-b border-[#2c343c] bg-[#14181c]/80 px-4 py-1.5 text-center text-sm font-semibold uppercase tracking-[0.15em] text-[#e8e4d8]/60">
-          {copy.puzzleDate} <span className="font-bold text-[#f2a33a]">{dateKey}</span>
-          <span className="mx-2 text-[#2c343c]">|</span>#{hashDate(dateKey)}
         </div>
+      </div>
 
-        <section className="mx-auto flex w-full max-w-[520px] flex-col px-4 py-6 sm:py-8">
-          <div className="cs-cut bg-[#2c343c] p-[2px] shadow-2xl shadow-black/50">
-            <div className="cs-cut bg-[#1a1f24]">
-              <div className="flex items-center justify-between gap-3 border-b-2 border-[#f2a33a] bg-gradient-to-r from-[#232a30] to-[#1a1f24] px-4 py-3 sm:px-5">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="cs-cut-sm flex h-14 w-14 shrink-0 flex-col items-center justify-center bg-[#0e1114] text-[#f2a33a]">
-                    <span className="text-2xl font-bold leading-none">{namesLeft}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#e8e4d8]/50">{copy.namesLeft.split(" ")[0]}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f2a33a]">{copy.currentPlayerEyebrow}</p>
-                    {currentPlayer ? (
-                      <>
-                        <h1 className="truncate text-3xl font-bold uppercase leading-none tracking-wide sm:text-4xl">{currentPlayer.nickname}</h1>
-                        <p className="mt-0.5 truncate text-xs font-semibold uppercase tracking-wider text-[#e8e4d8]/45">{currentPlayer.fullName}</p>
-                      </>
-                    ) : (
-                      <h1 className="text-2xl font-bold uppercase leading-none tracking-wide">
-                        {isCompleted ? copy.gameOverCompleted : copy.noCurrentPlayerTitle}
-                      </h1>
-                    )}
-                  </div>
-                </div>
+      <section className="mx-auto flex min-h-0 w-full max-w-[560px] flex-1 flex-col gap-2 px-3 py-2 sm:gap-3 sm:py-4 short:max-w-5xl short:flex-row short:gap-4 short:py-2">
+        {/* Em pé: painel, mensagem e cartela empilhados. Deitado: painel e mensagem ao lado da cartela. */}
+        <div className="contents short:flex short:w-[min(24rem,48%)] short:shrink-0 short:flex-col short:justify-center short:gap-2">
+        <div className="cs-cut shrink-0 bg-cs-line p-[2px] shadow-2xl shadow-black/50">
+          <div className="cs-cut bg-cs-surface">
+            <div className="flex items-center gap-3 border-b-2 border-cs-orange bg-gradient-to-r from-cs-raised to-cs-surface px-3 py-2 sm:px-4">
+              <div className="cs-cut-sm flex h-12 w-12 shrink-0 flex-col items-center justify-center bg-cs-bg text-cs-orange sm:h-14 sm:w-14">
+                <span className="text-xl font-bold leading-none sm:text-2xl">{namesLeft}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-cs-text/50">/ {playerQueue.length}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cs-orange sm:text-xs">
+                  {currentPlayer ? copy.currentPlayerEyebrow : copy.result}
+                </p>
+                {currentPlayer ? (
+                  <>
+                    <h1 className="truncate text-3xl font-bold uppercase leading-none tracking-wide sm:text-4xl">
+                      {currentPlayer.nickname}
+                    </h1>
+                    <p className="truncate text-xs font-semibold uppercase tracking-wider text-cs-text/45">
+                      {currentPlayer.fullName}
+                    </p>
+                  </>
+                ) : (
+                  <h1 className="truncate text-3xl font-bold uppercase leading-none tracking-wide sm:text-4xl">{gameOverTitle}</h1>
+                )}
+              </div>
 
+              {currentPlayer ? (
                 <div className="flex shrink-0 flex-col items-stretch gap-1.5">
                   <button
                     type="button"
                     onClick={handleSkip}
-                    disabled={gameStatus !== "playing"}
-                    className="cs-cut-sm inline-flex items-center justify-center gap-1 bg-[#f2a33a] px-3 py-1 text-base font-bold uppercase tracking-wider text-[#0e1114] transition hover:bg-[#ffb85a] disabled:cursor-not-allowed disabled:bg-[#2c343c] disabled:text-[#e8e4d8]/30"
+                    className="cs-cut-sm inline-flex items-center justify-center gap-1 bg-cs-orange px-3 py-1 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
                   >
                     {copy.skip} <SkipForward className="h-4 w-4 fill-current" />
                   </button>
                   <button
                     type="button"
                     onClick={handleWildcardToggle}
-                    disabled={Boolean(wildcardCell) || gameStatus !== "playing"}
+                    disabled={Boolean(wildcardCell)}
                     className={`cs-cut-sm inline-flex items-center justify-center gap-1 px-3 py-1 text-xs font-bold uppercase tracking-wider transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                      wildcardArmed
-                        ? "bg-[#e0b04a] text-[#0e1114]"
-                        : "bg-[#0e1114] text-[#e0b04a] hover:bg-[#e0b04a]/15"
+                      wildcardArmed ? "bg-cs-gold text-cs-bg" : "bg-cs-bg text-cs-gold hover:bg-cs-gold/15"
                     }`}
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     {wildcardCell ? copy.wildcardSpent : wildcardArmed ? copy.cancelWildcard : copy.wildcard}
                   </button>
                 </div>
-              </div>
-
-              <div
-                key={flashKey}
-                className={`grid grid-cols-4 gap-[2px] bg-[#0e1114] p-[2px] ${flashKey > 0 ? "animate-bingo-error" : ""}`}
-              >
-                <div className="grid min-h-[84px] place-items-center bg-[#14181c] p-2 text-center sm:min-h-[98px]">
-                  <Crosshair className="h-7 w-7 text-[#f2a33a]/40" />
-                  <span className="sr-only">{copy.boardCorner}</span>
-                </div>
-                {board.columns.map((criterion) => (
-                  <CriterionHeader key={criterion.id} criterion={criterion} axis={copy.columnAxis} language={language} />
-                ))}
-
-                {board.rows.map((row, rowIndex) => (
-                  <Fragment key={row.id}>
-                    <CriterionHeader criterion={row} axis={copy.rowAxis} language={language} />
-                    {board.columns.map((column, columnIndex) => {
-                      const cellKey = getCellKey(rowIndex, columnIndex);
-                      const pick = picks[cellKey];
-                      const rowCopy = getCriterionCopy(row, language);
-                      const columnCopy = getCriterionCopy(column, language);
-                      const cellColor = pick
-                        ? pick.wildcard
-                          ? "bg-[#e0b04a]/20 shadow-[inset_0_-3px_0_#e0b04a]"
-                          : "bg-[#5b8bd6]/20 shadow-[inset_0_-3px_0_#7fc35b]"
-                        : wildcardArmed
-                          ? "bg-[#232a30] shadow-[inset_0_0_0_2px_rgba(224,176,74,0.7)] hover:bg-[#e0b04a]/15"
-                          : "bg-[#232a30] hover:bg-[#2e363e] hover:shadow-[inset_0_0_0_2px_rgba(242,163,58,0.6)]";
-
-                      return (
-                        <button
-                          key={cellKey}
-                          type="button"
-                          onClick={() => handleCellClick(rowIndex, columnIndex)}
-                          disabled={gameStatus !== "playing" || Boolean(pick)}
-                          aria-label={`${rowCopy.label} + ${columnCopy.label}`}
-                          className={`group grid min-h-[84px] place-items-center p-2 text-center transition disabled:cursor-not-allowed sm:min-h-[98px] ${cellColor} ${
-                            lastHitKey === cellKey ? "animate-bingo-hit" : ""
-                          }`}
-                        >
-                          {pick ? (
-                            <div className="space-y-1">
-                              {pick.wildcard ? (
-                                <Sparkles className="mx-auto h-5 w-5 text-[#e0b04a]" />
-                              ) : (
-                                <Check className="mx-auto h-5 w-5 text-[#7fc35b]" />
-                              )}
-                              <p className="break-all text-sm font-bold uppercase leading-none tracking-wide sm:text-lg">{pick.player.nickname}</p>
-                            </div>
-                          ) : isGameOver ? (
-                            <div className="space-y-1">
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-[#f2a33a]/70">{copy.possibleAnswers}</p>
-                              <p className="break-words text-xs font-semibold leading-tight text-[#e8e4d8]/75 sm:text-sm">
-                                {getPossibleAnswers(row, column).join(", ")}
-                              </p>
-                            </div>
-                          ) : (
-                            <Crosshair className="h-6 w-6 text-[#e8e4d8]/10 transition group-hover:scale-110 group-hover:text-[#f2a33a]/70" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-[#e8e4d8]/60 transition hover:text-[#f2a33a]"
-            >
-              <RotateCcw className="h-4 w-4" /> {copy.reset}
-            </button>
-          </div>
-
-          <div className="mt-5 space-y-3 text-base">
-            <div className="grid grid-cols-3 gap-2">
-              <StatTile label={copy.progress} value={filledCells} suffix={`/ ${GRID_SIZE * GRID_SIZE}`} />
-              <StatTile label={copy.score} value={score} accent="money" />
-              <StatTile label={copy.namesLeft} value={namesLeft} />
-            </div>
-
-            {isGameOver ? (
-              <div className={`cs-cut border-l-4 bg-[#1a1f24] p-4 ${isCompleted ? "border-[#7fc35b]" : "border-[#e5484d]"}`}>
-                <div className="flex items-center gap-2 text-2xl font-bold uppercase tracking-wider">
-                  {isCompleted ? <Trophy className="h-6 w-6 text-[#f2a33a]" /> : <X className="h-6 w-6 text-[#e5484d]" />}
-                  {isCompleted ? copy.gameOverCompleted : copy.gameOverOutOfNames}
-                </div>
-                <dl className="mt-3 space-y-1 text-[#e8e4d8]/75">
-                  <div className="flex justify-between gap-2">
-                    <dt>{copy.hitsLabel}</dt>
-                    <dd className="font-bold text-[#e8e4d8]">
-                      {hits} × {POINTS_PER_HIT} = {hits * POINTS_PER_HIT} {copy.points}
-                    </dd>
-                  </div>
-                  {isPerfect ? (
-                    <div className="flex justify-between gap-2">
-                      <dt>{copy.perfectBonus}</dt>
-                      <dd className="font-bold text-[#7fc35b]">+{PERFECT_BONUS} {copy.points}</dd>
-                    </div>
-                  ) : null}
-                  <div className="flex justify-between gap-2 border-t border-[#2c343c] pt-1">
-                    <dt className="font-bold uppercase tracking-wider">{copy.score}</dt>
-                    <dd className="font-bold text-[#7fc35b]">{score} {copy.points}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>{copy.currentStreak}</dt>
-                    <dd className="inline-flex items-center gap-1 font-bold text-[#e8e4d8]">
-                      <Flame className="h-4 w-4 text-[#f2a33a]" /> {stats.currentStreak}
-                    </dd>
-                  </div>
-                </dl>
+              ) : (
                 <button
                   type="button"
-                  onClick={handleShare}
-                  className="cs-cut-sm mt-4 inline-flex w-full items-center justify-center gap-2 bg-[#f2a33a] px-4 py-2.5 text-lg font-bold uppercase tracking-wider text-[#0e1114] transition hover:bg-[#ffb85a]"
+                  onClick={() => setOpenPanel("result")}
+                  aria-label={copy.result}
+                  className="cs-cut-sm inline-flex shrink-0 items-center gap-1.5 bg-cs-orange px-3 py-2 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
                 >
-                  <Share2 className="h-4 w-4" /> {copy.share}
+                  <Trophy className="h-4 w-4" /> <span className="hidden sm:inline">{copy.result}</span>
                 </button>
-                {shareStatus ? (
-                  <p className="mt-2 text-center text-sm font-semibold text-[#e8e4d8]/70">
-                    {shareStatus === "copied" ? copy.shareCopied : copy.shareFailed}
-                  </p>
-                ) : null}
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 divide-x divide-cs-line py-1.5 text-center">
+              <div className="flex items-center justify-center gap-1.5" aria-label={`${copy.lives}: ${livesLeft}/${MAX_LIVES}`}>
+                {Array.from({ length: MAX_LIVES }, (_, index) => (
+                  <Heart
+                    key={index}
+                    className={`h-5 w-5 transition ${
+                      index < livesLeft ? "fill-cs-red text-cs-red" : "text-cs-text/20"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-lg font-bold leading-6">
+                {filledCells}
+                <span className="text-sm text-cs-text/40"> / {totalCells}</span>
+                <span className="sr-only"> {copy.progress}</span>
+              </p>
+              <p className="text-lg font-bold leading-6 text-cs-green">
+                {score}
+                <span className="text-sm text-cs-text/40"> {copy.points}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p
+          className={`line-clamp-2 min-h-[2.75rem] shrink-0 border-l-4 bg-cs-panel/90 px-3 py-1.5 text-sm font-semibold leading-5 sm:text-base sm:leading-6 ${messageToneClass[statusTone]}`}
+          aria-live="polite"
+        >
+          {gameOverMessage}
+        </p>
+        </div>
+
+        <div className="cs-board-fit flex min-h-0 flex-1 items-start justify-center short:items-center">
+          <div
+            key={flashKey}
+            className={`cs-board cs-cut grid grid-cols-4 grid-rows-4 gap-[2px] bg-cs-line p-[2px] shadow-2xl shadow-black/50 ${
+              flashKey > 0 ? "animate-bingo-error" : ""
+            }`}
+          >
+            <div className="relative grid place-items-center bg-cs-panel">
+              <Crosshair className="h-[30%] w-[30%] text-cs-orange/40" />
+              <span className="sr-only">{copy.boardCorner}</span>
+            </div>
+            {board.columns.map((criterion) => (
+              <CriterionHeader key={criterion.id} criterion={criterion} axis={copy.columnAxis} language={language} />
+            ))}
+
+            {board.rows.map((row, rowIndex) => (
+              <Fragment key={row.id}>
+                <CriterionHeader criterion={row} axis={copy.rowAxis} language={language} />
+                {board.columns.map((column, columnIndex) => {
+                  const cellKey = getCellKey(rowIndex, columnIndex);
+                  const pick = picks[cellKey];
+                  const rowCopy = getCriterionCopy(row, language);
+                  const columnCopy = getCriterionCopy(column, language);
+                  const cellColor = pick
+                    ? pick.wildcard
+                      ? "bg-[#352f22] shadow-[inset_0_-3px_0_#e0b04a]"
+                      : "bg-[#203047] shadow-[inset_0_-3px_0_#7fc35b]"
+                    : wildcardArmed
+                      ? "bg-cs-raised shadow-[inset_0_0_0_2px_rgba(224,176,74,0.7)] hover:bg-[#352f22]"
+                      : "bg-cs-raised hover:bg-[#2e363e] hover:shadow-[inset_0_0_0_2px_rgba(242,163,58,0.6)]";
+
+                  return (
+                    <button
+                      key={cellKey}
+                      type="button"
+                      onClick={() => handleCellClick(rowIndex, columnIndex)}
+                      disabled={isGameOver || Boolean(pick)}
+                      aria-label={`${rowCopy.label} + ${columnCopy.label}`}
+                      className={`group grid min-w-0 place-items-center overflow-hidden p-1 text-center transition disabled:cursor-not-allowed ${cellColor} ${
+                        lastHitKey === cellKey ? "animate-bingo-hit" : ""
+                      }`}
+                    >
+                      {pick ? (
+                        <div className="min-w-0 space-y-[4%]">
+                          {pick.wildcard ? (
+                            <Sparkles className="mx-auto h-[clamp(12px,4cqmin,20px)] w-[clamp(12px,4cqmin,20px)] text-cs-gold" />
+                          ) : (
+                            <Check className="mx-auto h-[clamp(12px,4cqmin,20px)] w-[clamp(12px,4cqmin,20px)] text-cs-green" />
+                          )}
+                          <p className="break-all text-[length:clamp(11px,3.6cqmin,20px)] font-bold uppercase leading-none tracking-wide">
+                            {pick.player.nickname}
+                          </p>
+                        </div>
+                      ) : isGameOver ? (
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="text-[length:clamp(9px,2.4cqmin,12px)] font-bold uppercase tracking-wider text-cs-orange/70">
+                            {copy.possibleAnswers}
+                          </p>
+                          <p className="break-words text-[length:clamp(10px,3cqmin,15px)] font-semibold leading-tight text-cs-text/75">
+                            {getPossibleAnswers(row, column).join(", ")}
+                          </p>
+                        </div>
+                      ) : (
+                        <Crosshair className="h-[28%] w-[28%] text-cs-text/10 transition group-hover:scale-110 group-hover:text-cs-orange/70" />
+                      )}
+                    </button>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </div>
+        </div>
+
+      </section>
+
+      {openPanel === "result" ? (
+        <Modal title={gameOverTitle} closeLabel={copy.close} onClose={() => setOpenPanel(undefined)}>
+          <div className="flex items-center gap-2 text-cs-text/70">
+            {isCompleted ? <Trophy className="h-5 w-5 text-cs-orange" /> : <X className="h-5 w-5 text-cs-red" />}
+            <span className="font-semibold">{gameOverMessage}</span>
+          </div>
+          <dl className="mt-4 space-y-1 text-cs-text/75">
+            <div className="flex justify-between gap-2">
+              <dt>{copy.hitsLabel}</dt>
+              <dd className="font-bold text-cs-text">
+                {hits} × {POINTS_PER_HIT} = {hits * POINTS_PER_HIT} {copy.points}
+              </dd>
+            </div>
+            {isPerfect ? (
+              <div className="flex justify-between gap-2">
+                <dt>{copy.perfectBonus}</dt>
+                <dd className="font-bold text-cs-green">+{PERFECT_BONUS} {copy.points}</dd>
               </div>
             ) : null}
-
-            <p
-              className={`border-l-4 bg-[#14181c]/90 px-4 py-2.5 font-semibold leading-6 ${
-                messageToneClass[isCompleted ? "success" : gameStatus === "out-of-names" ? "error" : messageTone]
-              }`}
+            <div className="flex justify-between gap-2">
+              <dt>{copy.lives}</dt>
+              <dd className="inline-flex items-center gap-1">
+                {Array.from({ length: MAX_LIVES }, (_, index) => (
+                  <Heart key={index} className={`h-4 w-4 ${index < livesLeft ? "fill-cs-red text-cs-red" : "text-cs-text/20"}`} />
+                ))}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt>{copy.currentStreak}</dt>
+              <dd className="inline-flex items-center gap-1 font-bold text-cs-text">
+                <Flame className="h-4 w-4 text-cs-orange" /> {stats.currentStreak}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2 border-t border-cs-line pt-1">
+              <dt className="font-bold uppercase tracking-wider">{copy.score}</dt>
+              <dd className="text-xl font-bold text-cs-green">{score} {copy.points}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setOpenPanel(undefined)}
+              className="cs-cut-sm bg-cs-raised px-3 py-2.5 text-base font-bold uppercase tracking-wider transition hover:text-cs-orange"
             >
-              {isCompleted ? copy.completedMessage : gameStatus === "out-of-names" ? copy.outOfNamesMessage : message}
-            </p>
-
-            {latestSkippedPlayer ? (
-              <p className="flex items-center gap-2 border-l-4 border-[#2c343c] bg-[#14181c]/90 px-4 py-2.5 text-[#e8e4d8]/60">
-                <SkipForward className="h-4 w-4" />
-                {copy.skippedLabel}: <strong className="text-[#e8e4d8]">{latestSkippedPlayer.nickname}</strong>
-              </p>
-            ) : null}
+              {copy.viewBoard}
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-3 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
+            >
+              <Share2 className="h-4 w-4" /> {copy.share}
+            </button>
           </div>
-        </section>
-      </div>
+          {shareStatus ? (
+            <p className="mt-2 text-center text-sm font-semibold text-cs-text/70">
+              {shareStatus === "copied" ? copy.shareCopied : copy.shareFailed}
+            </p>
+          ) : null}
+        </Modal>
+      ) : null}
 
       {openPanel === "rules" ? (
         <Modal title={copy.rulesTitle} closeLabel={copy.close} onClose={() => setOpenPanel(undefined)}>
-          <ol className="space-y-2 leading-6 text-[#e8e4d8]/80">
+          <ol className="space-y-2 leading-6 text-cs-text/80">
             {copy.rules.map((rule, index) => (
               <li key={rule} className="flex gap-3">
-                <span className="font-bold text-[#f2a33a]">{String(index + 1).padStart(2, "0")}</span>
+                <span className="font-bold text-cs-orange">{String(index + 1).padStart(2, "0")}</span>
                 <span>{rule}</span>
               </li>
             ))}
@@ -988,14 +1031,25 @@ export default function BingoPage() {
   );
 }
 
-function StatTile({ label, value, suffix, accent }: { label: string; value: number; suffix?: string; accent?: "money" }) {
+function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
-    <div className="cs-cut-sm bg-[#1a1f24] p-3">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-[#e8e4d8]/45">{label}</p>
-      <p className={`mt-0.5 text-3xl font-bold leading-none ${accent === "money" ? "text-[#7fc35b]" : "text-[#f2a33a]"}`}>
-        {value}
-        {suffix ? <span className="text-base text-[#e8e4d8]/40"> {suffix}</span> : null}
-      </p>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-8 items-center gap-1 px-1.5 text-cs-text/75 transition hover:text-cs-orange"
+    >
+      {children}
+    </button>
+  );
+}
+
+function StatTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="cs-cut-sm bg-cs-panel p-3">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-cs-text/45">{label}</p>
+      <p className="mt-0.5 text-3xl font-bold leading-none text-cs-orange">{value}</p>
     </div>
   );
 }
@@ -1013,19 +1067,19 @@ function Modal({
 }) {
   return (
     <div
-      className={`${csFont.className} fixed inset-0 z-50 grid place-items-center bg-black/75 px-4`}
+      className="fixed inset-0 z-50 grid place-items-center bg-black/75 px-4"
       role="dialog"
       aria-modal="true"
       aria-label={title}
       onClick={onClose}
     >
       <div
-        className="cs-cut w-full max-w-md border-t-2 border-[#f2a33a] bg-[#1a1f24] p-5 text-base text-[#e8e4d8] shadow-2xl"
+        className="cs-cut max-h-[90dvh] w-full max-w-md overflow-y-auto border-t-2 border-cs-orange bg-cs-surface p-5 text-base text-cs-text shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold uppercase tracking-wider">{title}</h2>
-          <button type="button" onClick={onClose} aria-label={closeLabel} className="text-[#e8e4d8]/60 transition hover:text-[#f2a33a]">
+          <button type="button" onClick={onClose} aria-label={closeLabel} className="text-cs-text/60 transition hover:text-cs-orange">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -1037,21 +1091,25 @@ function Modal({
 
 function CriterionIcon({ criterion }: { criterion: BingoCriterion }) {
   if (criterion.type === "nationality") {
-    return <span className="block text-2xl leading-none">{countryFlags[String(criterion.value)] ?? "🏳️"}</span>;
+    return (
+      <span className="block text-[length:clamp(14px,4.5cqmin,26px)] leading-none">
+        {countryFlags[String(criterion.value)] ?? "🏳️"}
+      </span>
+    );
   }
 
-  const iconClass = "mx-auto h-5 w-5";
+  const iconClass = "mx-auto h-[clamp(14px,4cqmin,22px)] w-[clamp(14px,4cqmin,22px)]";
   switch (criterion.type) {
     case "team":
-      return <Shield className={`${iconClass} text-[#5b8bd6]`} />;
+      return <Shield className={`${iconClass} text-cs-blue`} />;
     case "region":
-      return <Globe2 className={`${iconClass} text-[#5b8bd6]`} />;
+      return <Globe2 className={`${iconClass} text-cs-blue`} />;
     case "role":
-      return <Crosshair className={`${iconClass} text-[#e5484d]`} />;
+      return <Crosshair className={`${iconClass} text-cs-red`} />;
     case "achievement":
-      return <Trophy className={`${iconClass} text-[#e0b04a]`} />;
+      return <Trophy className={`${iconClass} text-cs-gold`} />;
     default:
-      return <Activity className={`${iconClass} text-[#7fc35b]`} />;
+      return <Activity className={`${iconClass} text-cs-green`} />;
   }
 }
 
@@ -1059,11 +1117,13 @@ function CriterionHeader({ criterion, axis, language }: { criterion: BingoCriter
   const criterionCopy = getCriterionCopy(criterion, language);
 
   return (
-    <div className="grid min-h-[84px] place-items-center bg-[#14181c] p-2 text-center sm:min-h-[98px]" title={criterionCopy.helper}>
-      <div className="space-y-1">
+    <div className="relative grid min-w-0 place-items-center overflow-hidden bg-cs-panel p-1 text-center" title={criterionCopy.helper}>
+      <div className="min-w-0 space-y-[3%]">
         <CriterionIcon criterion={criterion} />
-        <h3 className="break-words text-sm font-bold uppercase leading-tight tracking-wide sm:text-base">{criterionCopy.label}</h3>
-        <p className="hidden text-[11px] font-semibold leading-tight text-[#e8e4d8]/40 sm:block">{criterionCopy.helper}</p>
+        <h3 className="break-words text-[length:clamp(10px,3.1cqmin,17px)] font-bold uppercase leading-tight tracking-wide">
+          {criterionCopy.label}
+        </h3>
+        <p className="cs-board-helper text-[11px] font-semibold leading-tight text-cs-text/40">{criterionCopy.helper}</p>
         <p className="sr-only">{axis}</p>
       </div>
     </div>

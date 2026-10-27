@@ -2,35 +2,40 @@
 
 import { DefaultCard } from "@/components/cards/DefaultCard";
 import { motion } from "framer-motion";
+import { Grid3x3, UserSearch } from "lucide-react";
 
 const games = [
   {
-    title: "CS Bingo Daily",
-    description: "Complete a cartela diária cruzando times, nacionalidades, roles e conquistas de pro players.",
+    title: "CS Bingo",
+    description: "Encaixe os pro players na cartela do dia cruzando times, nacionalidades, funções e conquistas.",
     linkTo: "/bingo",
+    icon: Grid3x3,
+    tag: "Diário",
   },
   {
-    title: "Guess the name",
-    description: "Can you guess the players real names?",
+    title: "Adivinhe o jogador",
+    description: "Você sabe o nome real dos pro players? Acerte o máximo que conseguir.",
     linkTo: "/guess-name",
+    icon: UserSearch,
+    tag: "Infinito",
   },
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#090b10] px-4 py-12 text-slate-100 sm:px-8">
-      <section className="mx-auto flex max-w-6xl flex-col gap-10">
-        <div className="max-w-3xl space-y-4">
-          <p className="text-sm font-bold uppercase tracking-[0.35em] text-orange-300">CS:GO Games</p>
-          <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
-            Mini games para fãs de Counter-Strike
+    <main className="h-full">
+      <section className="mx-auto flex min-h-full max-w-5xl flex-col justify-center gap-4 px-4 py-4 sm:gap-10 sm:py-6 short:gap-3 short:py-3">
+        <div className="max-w-3xl space-y-2 sm:space-y-4 short:space-y-1">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange sm:text-sm sm:tracking-[0.35em]">Counter-Strike · Jogos diários</p>
+          <h1 className="text-[2rem] font-bold uppercase leading-none tracking-wide sm:text-6xl short:text-4xl">
+            Mini games para fãs de <span className="text-cs-orange">CS</span>
           </h1>
-          <p className="text-lg leading-8 text-slate-300">
-            O repositório agora tem um bingo diário inspirado em jogos de futebol, com um banco local de jogadores e times para validar as respostas.
+          <p className="text-base font-semibold leading-6 text-cs-text/65 sm:text-lg sm:leading-7 short:hidden">
+            Teste o quanto você conhece a cena profissional. Um desafio novo todo dia.
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-6 md:grid-cols-2 short:grid-cols-2 short:gap-3">
           {games.map((game, index) => (
             <motion.div
               key={game.title}

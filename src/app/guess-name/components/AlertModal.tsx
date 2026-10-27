@@ -27,13 +27,13 @@ const AlertModal = () => {
 
   return (
       <AlertDialog open={modal} onOpenChange={handleClose}> 
-      <AlertDialogContent>
+      <AlertDialogContent className="cs-cut max-w-md border-0 border-t-2 border-cs-orange bg-cs-surface">
         <AlertDialogHeader>
-          <AlertDialogTitle>Game Over</AlertDialogTitle>
+          <AlertDialogTitle className="text-2xl font-bold uppercase tracking-wider">Fim de jogo</AlertDialogTitle>
           <AlertDialogDescription>{message}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleClose}>Try again</AlertDialogCancel>
+          <AlertDialogCancel onClick={handleClose} className="cs-cut-sm border-0 bg-cs-orange text-base font-bold uppercase tracking-wider text-cs-bg hover:bg-[#ffb85a] hover:text-cs-bg">Jogar de novo</AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

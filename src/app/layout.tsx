@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
-import { Inter as FontSans } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
+import type { Metadata, Viewport } from "next";
+import { Rajdhani as FontSans } from "next/font/google";
 import Header from "@/components/headers/Header";
 import "./globals.css";
 
@@ -9,12 +8,17 @@ import StoreProvider from "./StoreProvider";
 
 const fontSans = FontSans({
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
   variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
-  title: "CS Bingo Daily",
-  description: "Counter-Strike mini games with a daily bingo powered by a local players and teams database.",
+  title: "CS Games",
+  description: "Jogos diários de Counter-Strike: bingo de pro players, adivinhe o jogador e mais.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0e1114",
 };
 
 export default function RootLayout({
@@ -23,23 +27,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR">
+      {/* A página ocupa exatamente a altura da tela; cada jogo se ajusta ao espaço abaixo do menu. */}
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased",
+          "flex h-[100dvh] flex-col overflow-hidden bg-cs-bg font-sans text-cs-text antialiased",
           fontSans.variable
         )}
       >
         <StoreProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Header />
+          <Header />
+          <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
             {children}
-          </ThemeProvider>
+          </div>
         </StoreProvider>
       </body>
     </html>

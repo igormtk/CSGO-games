@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-
 interface OptionButtonProps {
   onClick: () => void;
   label: string;
@@ -7,12 +5,13 @@ interface OptionButtonProps {
 
 const OptionButton = ({ label, onClick }: OptionButtonProps) => {
   return (
-    <Button
+    <button
+      type="button"
       onClick={onClick}
-      className={`min-w-[300px] m-2`}
+      className="cs-cut-sm w-full border-l-4 border-cs-line bg-cs-raised px-4 py-3 text-left text-lg font-bold uppercase tracking-wide transition hover:border-cs-orange hover:bg-cs-line hover:text-cs-orange"
     >
       {label}
-    </Button>
+    </button>
   );
 };
 

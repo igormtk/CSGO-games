@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
 import { useGame } from "./hooks/useGame";
 import Informations from "./components/Informations";
 import QuestionSection from "./components/QuestionSection";
@@ -19,15 +19,19 @@ export default function Home() {
   }, [score, createRecord]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-24">
+    <main className="mx-auto flex min-h-full w-full max-w-md flex-col items-center justify-center gap-6 px-4 py-6">
       {modal && <AlertModal />}
-      {!start && <Button onClick={handleStartGame} variant={'default'}>Start Game</Button>}
       <Informations score={score} lives={1} record={record} />
-      {question && (
-        <div className="flex flex-col items-center">
-          <QuestionSection question={question} handleAnswer={handleAnswer} />
-        </div>
+      {!start && (
+        <button
+          type="button"
+          onClick={handleStartGame}
+          className="cs-cut-sm inline-flex items-center gap-2 bg-cs-orange px-6 py-2.5 text-xl font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
+        >
+          <Play className="h-5 w-5 fill-current" /> Começar
+        </button>
       )}
+      {question && <QuestionSection question={question} handleAnswer={handleAnswer} />}
     </main>
   );
 }

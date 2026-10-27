@@ -18,17 +18,21 @@ const QuestionSection: React.FC<QuestionSectionProps> = ({ question, handleAnswe
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <QuestionHeader label={matchName} />
-      {alternatives.map((name, index) => {
-        return (
-          <OptionButton
-            key={index}
-            onClick={() => handleOptionClick(name)}
-            label={name}
-          />
-        );
-      })}
+    <div className="cs-cut w-full bg-cs-line p-[2px] shadow-2xl shadow-black/50">
+      <div className="cs-cut bg-cs-surface">
+        <QuestionHeader label={matchName} />
+        <div className="space-y-2 p-3">
+          {alternatives.map((name, index) => {
+            return (
+              <OptionButton
+                key={index}
+                onClick={() => handleOptionClick(name)}
+                label={name}
+              />
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
