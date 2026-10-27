@@ -838,19 +838,27 @@ export const bingoCriteria: BingoCriterion[] = [
   { id: "team-spirit", label: "Spirit", helper: "Jogou pela Team Spirit", type: "team", value: "spirit" },
   { id: "team-mouz", label: "MOUZ", helper: "Jogou pela MOUZ", type: "team", value: "mousesports" },
   { id: "team-falcons", label: "Falcons", helper: "Jogou pela Team Falcons", type: "team", value: "falcons" },
+  { id: "team-cloud9", label: "Cloud9", helper: "Jogou pela Cloud9", type: "team", value: "cloud9" },
   { id: "nat-brazil", label: "Brasil", helper: "Jogador brasileiro", type: "nationality", value: "Brazil" },
   { id: "nat-denmark", label: "Dinamarca", helper: "Jogador dinamarquês", type: "nationality", value: "Denmark" },
   { id: "nat-france", label: "França", helper: "Jogador francês", type: "nationality", value: "France" },
   { id: "nat-russia", label: "Rússia", helper: "Jogador russo", type: "nationality", value: "Russia" },
   { id: "nat-ukraine", label: "Ucrânia", helper: "Jogador ucraniano", type: "nationality", value: "Ukraine" },
+  { id: "nat-israel", label: "Israel", helper: "Jogador israelense", type: "nationality", value: "Israel" },
   { id: "region-na", label: "NA", helper: "Representa a América do Norte", type: "region", value: "North America" },
   { id: "role-awper", label: "AWPer", helper: "Atua ou atuou como AWPer", type: "role", value: "AWPer" },
   { id: "role-igl", label: "IGL", helper: "Atua ou atuou como in-game leader", type: "role", value: "IGL" },
   { id: "role-lurker", label: "Lurker", helper: "Atua ou atuou como lurker", type: "role", value: "Lurker" },
+  { id: "role-entry", label: "Entry fragger", helper: "Atua ou atuou como entry fragger", type: "role", value: "Entry fragger" },
   { id: "major-winner", label: "Major winner", helper: "Venceu pelo menos um Major", type: "achievement", value: "major-winner" },
   { id: "major-mvp", label: "Major MVP", helper: "Foi MVP de Major", type: "achievement", value: "major-mvp" },
   { id: "top20", label: "HLTV Top 20", helper: "Apareceu no Top 20 da HLTV", type: "achievement", value: "hltv-top20" },
+  { id: "multi-major", label: "2+ Majors", helper: "Venceu dois Majors ou mais", type: "achievement", value: "multi-major" },
+  { id: "no-major", label: "Sem Major", helper: "Nunca venceu um Major", type: "achievement", value: "no-major" },
+  { id: "top20-5", label: "Top 20 5+ vezes", helper: "Entrou no Top 20 da HLTV em cinco anos ou mais", type: "achievement", value: "hltv-top20-5" },
+  { id: "teams-3", label: "3+ times", helper: "Passou por três times ou mais", type: "achievement", value: "teams-3" },
   { id: "active", label: "Ativo", helper: "Ainda está ativo no cenário", type: "status", value: true },
+  { id: "retired", label: "Aposentado", helper: "Não joga mais profissionalmente", type: "status", value: false },
 ];
 
 export const teamNameById = csTeams.reduce<Record<string, string>>((acc, team) => {
@@ -874,6 +882,10 @@ export const playerMatchesCriterion = (player: CsPlayer, criterion: BingoCriteri
       if (criterion.value === "major-winner") return player.majorsWon > 0;
       if (criterion.value === "major-mvp") return player.majorMvp;
       if (criterion.value === "hltv-top20") return player.hltvTop20Years.length > 0;
+      if (criterion.value === "multi-major") return player.majorsWon >= 2;
+      if (criterion.value === "no-major") return player.majorsWon === 0;
+      if (criterion.value === "hltv-top20-5") return player.hltvTop20Years.length >= 5;
+      if (criterion.value === "teams-3") return player.teams.length >= 3;
       return false;
     case "status":
       return player.active === criterion.value;

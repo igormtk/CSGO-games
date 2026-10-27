@@ -27,13 +27,21 @@ import {
 import type { BingoCriterion, CsPlayer } from "@/data/csBingoDatabase";
 
 const GRID_SIZE = 4;
-// Prefixo novo: partidas salvas da cartela 3x3 antiga não são compatíveis com a 4x4.
-const GAME_KEY_PREFIX = "cs-bingo-daily-4x4";
+// Prefixo novo a cada mudança no sorteio da cartela: partidas salvas antigas apontariam para outras casas.
+const GAME_KEY_PREFIX = "cs-bingo-daily-v3";
 const LANGUAGE_KEY = "cs-bingo-language";
 const STATS_KEY = "cs-bingo-stats";
 const POINTS_PER_HIT = 100;
 const PERFECT_BONUS = 300;
 const REVEALED_ANSWERS = 3;
+// Dificuldade: casas simples só com critérios restritos (no máximo 8 jogadores), mais 6 casas que
+// combinam dois critérios (de 2 a 6 jogadores). Com isso, mesmo quem conhece a base inteira
+// raramente completa a cartela, mas toda cartela sorteada tem pelo menos uma solução.
+const MAX_SINGLE_CANDIDATES = 8;
+const MIN_COMBO_CANDIDATES = 2;
+const MAX_COMBO_CANDIDATES = 6;
+const COMBO_CELLS = 6;
+const BOARD_ATTEMPTS = 300;
 const MAX_LIVES = 2;
 
 type CellPick = {
@@ -41,8 +49,9 @@ type CellPick = {
   wildcard: boolean;
 };
 
-// Cada casa é independente e tem o próprio critério.
-type GameBoard = BingoCriterion[];
+// Cada casa é independente e tem um critério próprio ou dois critérios combinados.
+type BoardCell = BingoCriterion[];
+type GameBoard = BoardCell[];
 
 type GameStatus = "playing" | "completed" | "out-of-names" | "out-of-lives";
 type Language = "pt" | "en" | "es";
@@ -53,7 +62,8 @@ type StoredGame = {
   playerIndex?: number;
   skippedPlayerIds?: string[];
   mistakes?: number;
-  wildcardCell?: string;
+  wildcardUsed?: boolean;
+  wildcardCells?: string[];
 };
 
 type PlayerStats = {
@@ -85,9 +95,10 @@ type TranslationCopy = {
   selectLanguage: string;
   wildcard: string;
   wildcardSpent: string;
-  cancelWildcard: string;
-  wildcardArmedMessage: string;
-  wildcardMessage: (player: string, criterion: string) => string;
+  wildcardMessage: (player: string, cells: number) => string;
+  wildcardMissMessage: (player: string) => string;
+  alreadyPlayed: string;
+  nextPuzzle: string;
   initialMessage: string;
   resetMessage: string;
   completedMessage: string;
@@ -133,9 +144,10 @@ const translations: Record<Language, TranslationCopy> = {
     selectLanguage: "Idioma",
     wildcard: "Coringa",
     wildcardSpent: "Coringa usado",
-    cancelWildcard: "Cancelar",
-    wildcardArmedMessage: "Coringa ativado: clique em qualquer casa livre para colocar o nome da vez.",
-    wildcardMessage: (player, criterion) => `Coringa! ${player} ocupa a casa ${criterion} (sem pontos).`,
+    wildcardMessage: (player, cells) => `Coringa! ${player} ocupou ${cells} ${cells === 1 ? "casa" : "casas"} de uma vez.`,
+    wildcardMissMessage: (player) => `Coringa gasto: ${player} não se encaixa em nenhuma casa livre.`,
+    alreadyPlayed: "Você já jogou a cartela de hoje. Volte amanhã para uma nova tentativa.",
+    nextPuzzle: "Próxima cartela em",
     initialMessage: "Um nome aparece por vez. Clique numa casa cujo critério esse jogador cumpra.",
     resetMessage: "Cartela reiniciada. O primeiro nome já está na tela.",
     completedMessage: "Bingo completo! Todas as casas foram preenchidas.",
@@ -163,12 +175,13 @@ const translations: Record<Language, TranslationCopy> = {
     rulesTitle: "Como jogar",
     rules: [
       `Os ${csPlayers.length} jogadores da base aparecem um por vez, em ordem aleatória. Cada uma das ${GRID_SIZE * GRID_SIZE} casas tem um critério próprio: coloque o nome da vez numa casa cujo critério ele cumpra.`,
+      "Algumas casas combinam dois critérios (ex.: Brasil + AWPer): o jogador precisa cumprir os dois.",
       "Se o nome não serve em nenhuma casa livre, pule. Pular não custa vida, mas o nome não volta.",
       `Errou a casa? Você perde uma vida e o nome continua na tela para tentar outra casa. São ${MAX_LIVES} vidas por partida.`,
       `Cada acerto vale ${POINTS_PER_HIT} pontos. Completar a cartela sem errar dá +${PERFECT_BONUS} de bônus.`,
-      "Uma vez por partida, use o Coringa para colocar o nome da vez em qualquer casa livre, sem ganhar pontos.",
+      "Uma vez por partida, use o Coringa: o nome da vez ocupa de uma só vez todas as casas livres em que ele se encaixa. Se não servir em nenhuma, o coringa é gasto e o nome some.",
       "A partida termina quando a cartela fica completa, quando acabam os nomes ou quando acabam as vidas. No fim, veja quem poderia ocupar as casas vazias e compartilhe seu resultado.",
-      "Uma cartela nova sai todo dia (UTC). Jogue diariamente para manter sua sequência.",
+      "Só existe uma tentativa por dia: o resultado fica salvo no navegador. Uma cartela nova sai todo dia (UTC); jogue diariamente para manter sua sequência.",
     ],
     close: "Fechar",
   },
@@ -188,9 +201,10 @@ const translations: Record<Language, TranslationCopy> = {
     selectLanguage: "Language",
     wildcard: "Wildcard",
     wildcardSpent: "Wildcard used",
-    cancelWildcard: "Cancel",
-    wildcardArmedMessage: "Wildcard on: click any open cell to place the current name.",
-    wildcardMessage: (player, criterion) => `Wildcard! ${player} takes the ${criterion} cell (no points).`,
+    wildcardMessage: (player, cells) => `Wildcard! ${player} filled ${cells} ${cells === 1 ? "cell" : "cells"} at once.`,
+    wildcardMissMessage: (player) => `Wildcard spent: ${player} fits no open cell.`,
+    alreadyPlayed: "You already played today's board. Come back tomorrow for a new attempt.",
+    nextPuzzle: "Next board in",
     initialMessage: "One name appears at a time. Click a cell whose criterion that player meets.",
     resetMessage: "Board reset. The first name is already on screen.",
     completedMessage: "Bingo complete! Every cell is filled.",
@@ -218,12 +232,13 @@ const translations: Record<Language, TranslationCopy> = {
     rulesTitle: "How to play",
     rules: [
       `All ${csPlayers.length} players in the database appear one at a time, in random order. Each of the ${GRID_SIZE * GRID_SIZE} cells has its own criterion: place the current name in a cell whose criterion they meet.`,
+      "Some cells combine two criteria (e.g. Brazil + AWPer): the player must meet both.",
       "If the name fits no open cell, skip it. Skipping costs no life, but the name does not come back.",
       `Wrong cell? You lose a life and the name stays on screen so you can try another cell. You have ${MAX_LIVES} lives per game.`,
       `Each hit is worth ${POINTS_PER_HIT} points. Completing the board without misses earns a +${PERFECT_BONUS} bonus.`,
-      "Once per game, use the Wildcard to place the current name in any open cell, for no points.",
+      "Once per game, use the Wildcard: the current name fills every open cell they fit at once. If they fit none, the wildcard is spent and the name is gone.",
       "The game ends when the board is full, when you run out of names or when you run out of lives. At the end, see who could fill the empty cells and share your result.",
-      "A new board arrives every day (UTC). Play daily to keep your streak.",
+      "There is one attempt per day: your result is saved in the browser. A new board arrives every day (UTC); play daily to keep your streak.",
     ],
     close: "Close",
   },
@@ -243,9 +258,10 @@ const translations: Record<Language, TranslationCopy> = {
     selectLanguage: "Idioma",
     wildcard: "Comodín",
     wildcardSpent: "Comodín usado",
-    cancelWildcard: "Cancelar",
-    wildcardArmedMessage: "Comodín activado: haz clic en cualquier casilla libre para colocar el nombre actual.",
-    wildcardMessage: (player, criterion) => `¡Comodín! ${player} ocupa la casilla ${criterion} (sin puntos).`,
+    wildcardMessage: (player, cells) => `¡Comodín! ${player} ocupó ${cells} ${cells === 1 ? "casilla" : "casillas"} de una vez.`,
+    wildcardMissMessage: (player) => `Comodín gastado: ${player} no encaja en ninguna casilla libre.`,
+    alreadyPlayed: "Ya jugaste la cartela de hoy. Vuelve mañana para un nuevo intento.",
+    nextPuzzle: "Próxima cartela en",
     initialMessage: "Aparece un nombre por vez. Haz clic en una casilla cuyo criterio cumpla ese jugador.",
     resetMessage: "Cartela reiniciada. El primer nombre ya está en pantalla.",
     completedMessage: "¡Bingo completo! Todas las casillas están llenas.",
@@ -273,12 +289,13 @@ const translations: Record<Language, TranslationCopy> = {
     rulesTitle: "Cómo jugar",
     rules: [
       `Los ${csPlayers.length} jugadores de la base aparecen uno por vez, en orden aleatorio. Cada una de las ${GRID_SIZE * GRID_SIZE} casillas tiene su propio criterio: coloca el nombre actual en una casilla cuyo criterio cumpla.`,
+      "Algunas casillas combinan dos criterios (ej.: Brasil + AWPer): el jugador debe cumplir ambos.",
       "Si el nombre no sirve en ninguna casilla libre, sáltalo. Saltar no cuesta vida, pero el nombre no vuelve.",
       `¿Casilla equivocada? Pierdes una vida y el nombre sigue en pantalla para probar otra casilla. Tienes ${MAX_LIVES} vidas por partida.`,
       `Cada acierto vale ${POINTS_PER_HIT} puntos. Completar la cartela sin fallar da un bono de +${PERFECT_BONUS}.`,
-      "Una vez por partida, usa el Comodín para colocar el nombre actual en cualquier casilla libre, sin sumar puntos.",
+      "Una vez por partida, usa el Comodín: el nombre actual ocupa de una vez todas las casillas libres en las que encaja. Si no encaja en ninguna, el comodín se gasta y el nombre desaparece.",
       "La partida termina cuando la cartela está completa, cuando se acaban los nombres o cuando se acaban las vidas. Al final, mira quién podría ocupar las casillas vacías y comparte tu resultado.",
-      "Hay una cartela nueva cada día (UTC). Juega a diario para mantener tu racha.",
+      "Hay un solo intento por día: el resultado queda guardado en el navegador. Hay una cartela nueva cada día (UTC); juega a diario para mantener tu racha.",
     ],
     close: "Cerrar",
   },
@@ -292,6 +309,13 @@ const criterionTranslations: Record<Language, Record<string, CriterionCopy>> = {
     "nat-france": { label: "France", helper: "French player" },
     "nat-russia": { label: "Russia", helper: "Russian player" },
     "nat-ukraine": { label: "Ukraine", helper: "Ukrainian player" },
+    "nat-israel": { label: "Israel", helper: "Israeli player" },
+    "role-entry": { label: "Entry fragger", helper: "Plays or played as an entry fragger" },
+    "multi-major": { label: "2+ Majors", helper: "Won two or more Majors" },
+    "no-major": { label: "No Major", helper: "Never won a Major" },
+    "top20-5": { label: "Top 20 5+ times", helper: "Made HLTV's Top 20 in five or more years" },
+    "teams-3": { label: "3+ teams", helper: "Played for three or more teams" },
+    retired: { label: "Retired", helper: "No longer plays professionally" },
     "region-na": { label: "NA", helper: "Represents North America" },
     "role-awper": { label: "AWPer", helper: "Plays or played as an AWPer" },
     "role-igl": { label: "IGL", helper: "Plays or played as an in-game leader" },
@@ -307,6 +331,13 @@ const criterionTranslations: Record<Language, Record<string, CriterionCopy>> = {
     "nat-france": { label: "Francia", helper: "Jugador francés" },
     "nat-russia": { label: "Rusia", helper: "Jugador ruso" },
     "nat-ukraine": { label: "Ucrania", helper: "Jugador ucraniano" },
+    "nat-israel": { label: "Israel", helper: "Jugador israelí" },
+    "role-entry": { label: "Entry fragger", helper: "Juega o jugó como entry fragger" },
+    "multi-major": { label: "2+ Majors", helper: "Ganó dos Majors o más" },
+    "no-major": { label: "Sin Major", helper: "Nunca ganó un Major" },
+    "top20-5": { label: "Top 20 5+ veces", helper: "Entró en el Top 20 de HLTV en cinco años o más" },
+    "teams-3": { label: "3+ equipos", helper: "Pasó por tres equipos o más" },
+    retired: { label: "Retirado", helper: "Ya no juega profesionalmente" },
     "region-na": { label: "NA", helper: "Representa a Norteamérica" },
     "role-awper": { label: "AWPer", helper: "Juega o jugó como AWPer" },
     "role-igl": { label: "IGL", helper: "Juega o jugó como líder dentro del juego" },
@@ -324,6 +355,7 @@ const countryFlags: Record<string, string> = {
   France: "🇫🇷",
   Russia: "🇷🇺",
   Ukraine: "🇺🇦",
+  Israel: "🇮🇱",
 };
 
 const getUtcDateKey = () => new Date().toISOString().slice(0, 10);
@@ -354,11 +386,30 @@ const seededShuffle = <T,>(items: T[], seed: number) => {
   return result;
 };
 
+const playerFitsCell = (player: CsPlayer, cell: BoardCell) =>
+  cell.every((criterion) => playerMatchesCriterion(player, criterion));
+
+const countCandidates = (cell: BoardCell) => csPlayers.filter((player) => playerFitsCell(player, cell)).length;
+
+const singleCells: BoardCell[] = bingoCriteria
+  .filter((criterion) => countCandidates([criterion]) <= MAX_SINGLE_CANDIDATES)
+  .map((criterion) => [criterion]);
+
+// Pares que restringem de verdade: nenhum dos dois critérios implica o outro.
+const comboCells: BoardCell[] = bingoCriteria.flatMap((first, firstIndex) =>
+  bingoCriteria.slice(firstIndex + 1).flatMap((second) => {
+    if (first.type === second.type && first.type !== "achievement") return [];
+    const candidates = countCandidates([first, second]);
+    const narrowsBoth = candidates < Math.min(countCandidates([first]), countCandidates([second]));
+    return candidates >= MIN_COMBO_CANDIDATES && candidates <= MAX_COMBO_CANDIDATES && narrowsBoth ? [[first, second]] : [];
+  })
+);
+
 // Cada jogador ocupa uma casa só, então não basta toda casa ter uma resposta: precisa existir
 // um jogador diferente para cada casa (emparelhamento bipartido com caminhos aumentantes).
-const boardHasAnswers = (cells: BingoCriterion[]) => {
-  const cellCandidates = cells.map((criterion) =>
-    csPlayers.filter((player) => playerMatchesCriterion(player, criterion)).map((player) => player.id)
+const boardHasAnswers = (cells: GameBoard) => {
+  const cellCandidates = cells.map((cell) =>
+    csPlayers.filter((player) => playerFitsCell(player, cell)).map((player) => player.id)
   );
   const cellByPlayer: Record<string, number> = {};
 
@@ -378,24 +429,72 @@ const boardHasAnswers = (cells: BingoCriterion[]) => {
   return cellCandidates.every((_, cellIndex) => assignCell(cellIndex, new Set()));
 };
 
-const createDailyBoard = (dateKey: string): GameBoard => {
-  const seed = hashDate(dateKey);
+// Simula quantas casas um jogador preenche jogando o baralho do dia. O ingênuo usa a primeira
+// casa livre compatível; o experiente conhece a base e usa a casa com menos candidatos.
+const simulateFill = (cells: GameBoard, queue: CsPlayer[], strategy: "naive" | "expert") => {
+  const filled = new Set<number>();
+  const candidates = cells.map(countCandidates);
 
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const cells = seededShuffle(bingoCriteria, seed + attempt * 7919).slice(0, GRID_SIZE * GRID_SIZE);
-    if (boardHasAnswers(cells)) return cells;
+  queue.forEach((player) => {
+    const options = cells
+      .map((_, index) => index)
+      .filter((index) => !filled.has(index) && playerFitsCell(player, cells[index]));
+    if (!options.length) return;
+    filled.add(strategy === "naive" ? options[0] : options.sort((a, b) => candidates[a] - candidates[b])[0]);
+  });
+
+  return filled.size;
+};
+
+const countUsefulPlayers = (cells: GameBoard) =>
+  csPlayers.filter((player) => cells.some((cell) => playerFitsCell(player, cell))).length;
+
+// Entre várias cartelas sorteadas com solução, fica a que mais derrota o jogador experiente,
+// depois o ingênuo, e que tem mais nomes que não servem em casa nenhuma.
+const createDailyBoard = (dateKey: string, queue: CsPlayer[]): GameBoard => {
+  const seed = hashDate(dateKey);
+  let bestBoard: GameBoard | undefined;
+  let bestScore = Infinity;
+
+  for (let attempt = 0; attempt < BOARD_ATTEMPTS; attempt += 1) {
+    // Cada critério aparece no máximo uma vez na cartela, para variar as casas.
+    const usedIds = new Set<string>();
+    const takeUnused = (cells: BoardCell[], limit: number) => {
+      const taken: BoardCell[] = [];
+      for (const cell of cells) {
+        if (taken.length === limit) break;
+        if (cell.some((criterion) => usedIds.has(criterion.id))) continue;
+        cell.forEach((criterion) => usedIds.add(criterion.id));
+        taken.push(cell);
+      }
+      return taken;
+    };
+    const combos = takeUnused(seededShuffle(comboCells, seed + attempt * 7919), COMBO_CELLS);
+    const singles = takeUnused(
+      seededShuffle(singleCells, seed * 3 + attempt * 104729),
+      GRID_SIZE * GRID_SIZE - combos.length
+    );
+    const cells = seededShuffle([...combos, ...singles], seed + attempt);
+    if (cells.length < GRID_SIZE * GRID_SIZE || !boardHasAnswers(cells)) continue;
+
+    const score =
+      simulateFill(cells, queue, "expert") * 100 + simulateFill(cells, queue, "naive") * 10 + countUsefulPlayers(cells) / 10;
+    if (score < bestScore) {
+      bestBoard = cells;
+      bestScore = score;
+    }
   }
 
-  return bingoCriteria.slice(0, GRID_SIZE * GRID_SIZE);
+  return bestBoard ?? bingoCriteria.slice(0, GRID_SIZE * GRID_SIZE).map((criterion) => [criterion]);
 };
 
 // O baralho tem todos os jogadores da base, inclusive os que não servem em nenhuma casa:
 // reconhecer esses nomes e pulá-los faz parte do desafio.
 const createPlayerQueue = (dateKey: string) => seededShuffle(csPlayers, hashDate(dateKey) * 17);
 
-const getPossibleAnswers = (criterion: BingoCriterion, usedPlayerIds: Set<string>) =>
+const getPossibleAnswers = (cell: BoardCell, usedPlayerIds: Set<string>) =>
   csPlayers
-    .filter((player) => !usedPlayerIds.has(player.id) && playerMatchesCriterion(player, criterion))
+    .filter((player) => !usedPlayerIds.has(player.id) && playerFitsCell(player, cell))
     .slice(0, REVEALED_ANSWERS)
     .map((player) => player.nickname);
 
@@ -417,13 +516,13 @@ const parseStoredGame = (dateKey: string): StoredGame => {
   }
 };
 
-const hydratePicks = (storedPicks?: Record<string, string>, wildcardCell?: string) => {
+const hydratePicks = (storedPicks?: Record<string, string>, wildcardCells: string[] = []) => {
   if (!storedPicks) return {};
 
   return Object.entries(storedPicks).reduce<Record<string, CellPick>>((acc, [cellKey, playerId]) => {
     const player = csPlayers.find((candidate) => candidate.id === playerId);
     if (player) {
-      acc[cellKey] = { player, wildcard: cellKey === wildcardCell };
+      acc[cellKey] = { player, wildcard: wildcardCells.includes(cellKey) };
     }
     return acc;
   }, {});
@@ -441,12 +540,27 @@ const saveGame = (
   playerIndex: number,
   skippedPlayerIds: string[],
   mistakes: number,
-  wildcardCell?: string
+  wildcardUsed: boolean
 ) => {
+  const wildcardCells = Object.keys(picks).filter((cellKey) => picks[cellKey].wildcard);
   window.localStorage.setItem(
     `${GAME_KEY_PREFIX}-${dateKey}`,
-    JSON.stringify({ picks: serializePicks(picks), playerIndex, skippedPlayerIds, mistakes, wildcardCell })
+    JSON.stringify({ picks: serializePicks(picks), playerIndex, skippedPlayerIds, mistakes, wildcardUsed, wildcardCells })
   );
+};
+
+const isStoredGameOver = (game: StoredGame) =>
+  Object.keys(game.picks ?? {}).length === GRID_SIZE * GRID_SIZE ||
+  (game.mistakes ?? 0) >= MAX_LIVES ||
+  (game.playerIndex ?? 0) >= csPlayers.length;
+
+const getTimeToNextPuzzle = () => {
+  const now = new Date();
+  const nextMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  const totalSeconds = Math.max(Math.floor((nextMidnight - now.getTime()) / 1000), 0);
+  return [Math.floor(totalSeconds / 3600), Math.floor((totalSeconds % 3600) / 60), totalSeconds % 60]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":");
 };
 
 const emptyStats: PlayerStats = { played: 0, finished: 0, currentStreak: 0, bestStreak: 0 };
@@ -488,6 +602,14 @@ const getStoredLanguage = (): Language => {
   return "pt";
 };
 
+const getCellCopy = (cell: BoardCell, language: Language) => {
+  const copies = cell.map((criterion) => getCriterionCopy(criterion, language));
+  return {
+    label: copies.map((criterionCopy) => criterionCopy.label).join(" + "),
+    helper: copies.map((criterionCopy) => criterionCopy.helper).join(" · "),
+  };
+};
+
 const getCriterionCopy = (criterion: BingoCriterion, language: Language) =>
   criterionTranslations[language][criterion.id] ?? {
     label: criterion.label,
@@ -497,25 +619,28 @@ const getCriterionCopy = (criterion: BingoCriterion, language: Language) =>
 
 export default function BingoPage() {
   const dateKey = useMemo(() => getUtcDateKey(), []);
-  const board = useMemo(() => createDailyBoard(dateKey), [dateKey]);
   const playerQueue = useMemo(() => createPlayerQueue(dateKey), [dateKey]);
+  const board = useMemo(() => createDailyBoard(dateKey, playerQueue), [dateKey, playerQueue]);
   const [language, setLanguage] = useState<Language>(() => getStoredLanguage());
   const copy = translations[language];
   const [storedGame] = useState<StoredGame>(() => parseStoredGame(dateKey));
   const [picks, setPicks] = useState<Record<string, CellPick>>(() =>
-    hydratePicks(storedGame.picks, storedGame.wildcardCell)
+    hydratePicks(storedGame.picks, storedGame.wildcardCells)
   );
   const [playerIndex, setPlayerIndex] = useState(storedGame.playerIndex ?? 0);
   const [skippedPlayerIds, setSkippedPlayerIds] = useState<string[]>(storedGame.skippedPlayerIds ?? []);
   const [mistakes, setMistakes] = useState(storedGame.mistakes ?? 0);
-  const [wildcardCell, setWildcardCell] = useState<string | undefined>(storedGame.wildcardCell);
-  const [wildcardArmed, setWildcardArmed] = useState(false);
+  const [wildcardUsed, setWildcardUsed] = useState(storedGame.wildcardUsed ?? false);
   const [message, setMessage] = useState(copy.initialMessage);
   const [messageTone, setMessageTone] = useState<MessageTone>("neutral");
   const [flashKey, setFlashKey] = useState(0);
-  const [lastHitKey, setLastHitKey] = useState<string>();
+  const [lastHitKeys, setLastHitKeys] = useState<string[]>([]);
   const [stats, setStats] = useState<PlayerStats>(() => readStats());
-  const [openPanel, setOpenPanel] = useState<"rules" | "stats" | "result">();
+  // Quem volta no mesmo dia depois de terminar vê direto o resultado: a cartela não pode ser refeita.
+  const [finishedBeforeLoad] = useState(() => isStoredGameOver(storedGame));
+  const [openPanel, setOpenPanel] = useState<"rules" | "stats" | "result" | undefined>(() =>
+    finishedBeforeLoad ? "result" : undefined
+  );
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   // O jogo salvo, o idioma e as estatísticas vêm do localStorage; esperar a montagem evita
   // divergência entre o HTML do servidor e o do navegador (erro de hidratação).
@@ -525,7 +650,7 @@ export default function BingoPage() {
 
   const totalCells = GRID_SIZE * GRID_SIZE;
   const filledCells = Object.keys(picks).length;
-  const hits = Object.values(picks).filter((pick) => !pick.wildcard).length;
+  const hits = filledCells;
   const livesLeft = Math.max(MAX_LIVES - mistakes, 0);
   const isCompleted = filledCells === totalCells;
   const isPerfect = isCompleted && mistakes === 0;
@@ -577,15 +702,15 @@ export default function BingoPage() {
     nextPlayerIndex: number,
     nextSkippedPlayerIds = skippedPlayerIds,
     nextMistakes = mistakes,
-    nextWildcardCell = wildcardCell
+    nextWildcardUsed = wildcardUsed
   ) => {
     setPicks(nextPicks);
     setPlayerIndex(nextPlayerIndex);
     setSkippedPlayerIds(nextSkippedPlayerIds);
     setMistakes(nextMistakes);
-    setWildcardCell(nextWildcardCell);
+    setWildcardUsed(nextWildcardUsed);
     setShareStatus(undefined);
-    saveGame(dateKey, nextPicks, nextPlayerIndex, nextSkippedPlayerIds, nextMistakes, nextWildcardCell);
+    saveGame(dateKey, nextPicks, nextPlayerIndex, nextSkippedPlayerIds, nextMistakes, nextWildcardUsed);
 
     const endsGame =
       Object.keys(nextPicks).length === totalCells ||
@@ -603,24 +728,12 @@ export default function BingoPage() {
       return;
     }
 
-    const criterion = board[cellIndex];
-    const criterionLabel = getCriterionCopy(criterion, language).label;
+    const cell = board[cellIndex];
+    const criterionLabel = getCellCopy(cell, language).label;
     const fillsBoard = filledCells + 1 === totalCells;
 
-    if (wildcardArmed) {
-      const nextPicks = { ...picks, [cellKey]: { player: currentPlayer, wildcard: true } };
-      setWildcardArmed(false);
-      setLastHitKey(cellKey);
-      advanceGame(nextPicks, playerIndex + 1, skippedPlayerIds, mistakes, cellKey);
-      showMessage(
-        fillsBoard ? copy.completedMessage : copy.wildcardMessage(currentPlayer.nickname, criterionLabel),
-        "wildcard"
-      );
-      return;
-    }
-
     // Errar custa uma vida, mas o nome continua na tela para tentar outra casa.
-    if (!playerMatchesCriterion(currentPlayer, criterion)) {
+    if (!playerFitsCell(currentPlayer, cell)) {
       setFlashKey((currentFlashKey) => currentFlashKey + 1);
       advanceGame(picks, playerIndex, skippedPlayerIds, mistakes + 1);
       showMessage(copy.wrongMessage(currentPlayer.nickname, livesLeft - 1), "error");
@@ -628,7 +741,7 @@ export default function BingoPage() {
     }
 
     const nextPicks = { ...picks, [cellKey]: { player: currentPlayer, wildcard: false } };
-    setLastHitKey(cellKey);
+    setLastHitKeys([cellKey]);
     advanceGame(nextPicks, playerIndex + 1);
     showMessage(
       fillsBoard ? copy.completedMessage : copy.correctMessage(currentPlayer.nickname, criterionLabel),
@@ -636,15 +749,15 @@ export default function BingoPage() {
     );
   };
 
+  // Só existe para testar em desenvolvimento: em produção a partida do dia não pode ser refeita.
   const handleReset = () => {
     window.localStorage.removeItem(`${GAME_KEY_PREFIX}-${dateKey}`);
     setPicks({});
     setPlayerIndex(0);
     setSkippedPlayerIds([]);
     setMistakes(0);
-    setWildcardCell(undefined);
-    setWildcardArmed(false);
-    setLastHitKey(undefined);
+    setWildcardUsed(false);
+    setLastHitKeys([]);
     setShareStatus(undefined);
     setOpenPanel(undefined);
     showMessage(copy.resetMessage, "neutral");
@@ -654,17 +767,36 @@ export default function BingoPage() {
   const handleSkip = () => {
     if (!currentPlayer) return;
 
-    setWildcardArmed(false);
     advanceGame(picks, playerIndex + 1, [...skippedPlayerIds, currentPlayer.id]);
     showMessage(`${copy.skippedLabel}: ${currentPlayer.nickname}.`, "neutral");
   };
 
-  const handleWildcardToggle = () => {
-    if (wildcardCell || !currentPlayer) return;
+  // O coringa coloca o nome da vez em todas as casas livres em que ele se encaixa.
+  const handleWildcard = () => {
+    if (wildcardUsed || !currentPlayer) return;
 
-    const nextArmed = !wildcardArmed;
-    setWildcardArmed(nextArmed);
-    showMessage(nextArmed ? copy.wildcardArmedMessage : copy.initialMessage, nextArmed ? "wildcard" : "neutral");
+    const matchingKeys = board
+      .map((cell, cellIndex) => ({ cell, cellKey: String(cellIndex) }))
+      .filter(({ cell, cellKey }) => !picks[cellKey] && playerFitsCell(currentPlayer, cell))
+      .map(({ cellKey }) => cellKey);
+    const nextPicks = { ...picks };
+    matchingKeys.forEach((cellKey) => {
+      nextPicks[cellKey] = { player: currentPlayer, wildcard: true };
+    });
+    const nextSkippedPlayerIds = matchingKeys.length ? skippedPlayerIds : [...skippedPlayerIds, currentPlayer.id];
+
+    setLastHitKeys(matchingKeys);
+    advanceGame(nextPicks, playerIndex + 1, nextSkippedPlayerIds, mistakes, true);
+    if (!matchingKeys.length) {
+      showMessage(copy.wildcardMissMessage(currentPlayer.nickname), "error");
+    } else {
+      showMessage(
+        Object.keys(nextPicks).length === totalCells
+          ? copy.completedMessage
+          : copy.wildcardMessage(currentPlayer.nickname, matchingKeys.length),
+        "wildcard"
+      );
+    }
   };
 
   const handleShare = async () => {
@@ -722,9 +854,11 @@ export default function BingoPage() {
               <span className="text-base font-bold">{stats.currentStreak}</span>
               <BarChart3 className="h-5 w-5" />
             </ToolbarButton>
-            <ToolbarButton label={copy.reset} onClick={handleReset}>
-              <RotateCcw className="h-5 w-5" />
-            </ToolbarButton>
+            {process.env.NODE_ENV === "development" ? (
+              <ToolbarButton label={copy.reset} onClick={handleReset}>
+                <RotateCcw className="h-5 w-5" />
+              </ToolbarButton>
+            ) : null}
             <label className="cs-cut-sm ml-1 inline-flex items-center gap-1 bg-cs-raised px-2 py-1 text-cs-text/80">
               <Globe2 className="h-4 w-4" />
               <select
@@ -783,14 +917,14 @@ export default function BingoPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={handleWildcardToggle}
-                    disabled={Boolean(wildcardCell)}
+                    onClick={handleWildcard}
+                    disabled={wildcardUsed}
                     className={`cs-cut-sm inline-flex items-center justify-center gap-1 px-3 py-1 text-xs font-bold uppercase tracking-wider transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                      wildcardArmed ? "bg-cs-gold text-cs-bg" : "bg-cs-bg text-cs-gold hover:bg-cs-gold/15"
+                      "bg-cs-bg text-cs-gold hover:bg-cs-gold/15"
                     }`}
                   >
                     <Sparkles className="h-3.5 w-3.5" />
-                    {wildcardCell ? copy.wildcardSpent : wildcardArmed ? copy.cancelWildcard : copy.wildcard}
+                    {wildcardUsed ? copy.wildcardSpent : copy.wildcard}
                   </button>
                 </div>
               ) : (
@@ -844,32 +978,30 @@ export default function BingoPage() {
               flashKey > 0 ? "animate-bingo-error" : ""
             }`}
           >
-            {board.map((criterion, cellIndex) => {
+            {board.map((cell, cellIndex) => {
               const cellKey = String(cellIndex);
               const pick = picks[cellKey];
-              const criterionCopy = getCriterionCopy(criterion, language);
+              const criterionCopy = getCellCopy(cell, language);
               const cellColor = pick
                 ? pick.wildcard
                   ? "bg-[#352f22] shadow-[inset_0_-3px_0_#e0b04a]"
                   : "bg-[#203047] shadow-[inset_0_-3px_0_#7fc35b]"
-                : wildcardArmed
-                  ? "bg-cs-raised shadow-[inset_0_0_0_2px_rgba(224,176,74,0.7)] hover:bg-[#352f22]"
-                  : "bg-cs-raised hover:bg-[#2e363e] hover:shadow-[inset_0_0_0_2px_rgba(242,163,58,0.6)]";
+                : "bg-cs-raised hover:bg-[#2e363e] hover:shadow-[inset_0_0_0_2px_rgba(242,163,58,0.6)]";
 
               return (
                 <button
-                  key={criterion.id}
+                  key={cell.map((criterion) => criterion.id).join("+")}
                   type="button"
                   onClick={() => handleCellClick(cellIndex)}
                   disabled={isGameOver || Boolean(pick)}
                   aria-label={criterionCopy.label}
                   title={criterionCopy.helper}
                   className={`group relative grid min-w-0 place-items-center overflow-hidden p-1 text-center transition disabled:cursor-not-allowed ${cellColor} ${
-                    lastHitKey === cellKey ? "animate-bingo-hit" : ""
+                    lastHitKeys.includes(cellKey) ? "animate-bingo-hit" : ""
                   }`}
                 >
                   {pick ? (
-                    <div className="min-w-0 space-y-[4%]">
+                    <div className="w-full min-w-0 space-y-[4%]">
                       <p className="truncate text-[length:clamp(8px,2.2cqmin,12px)] font-bold uppercase tracking-wider text-cs-text/50">
                         {criterionCopy.label}
                       </p>
@@ -884,17 +1016,28 @@ export default function BingoPage() {
                     </div>
                   ) : (
                     <div className="min-w-0 space-y-[3%]">
-                      <CriterionIcon criterion={criterion} />
-                      <p className="break-words text-[length:clamp(10px,3cqmin,17px)] font-bold uppercase leading-tight tracking-wide">
-                        {criterionCopy.label}
-                      </p>
-                      {isGameOver ? (
-                        <p className="break-words text-[length:clamp(8px,2.4cqmin,13px)] font-semibold leading-tight text-cs-orange/80">
-                          {getPossibleAnswers(criterion, usedPlayerIds).join(", ")}
+                      <div className="flex items-center justify-center gap-1">
+                        {cell.map((criterion) => (
+                          <CriterionIcon key={criterion.id} criterion={criterion} />
+                        ))}
+                      </div>
+                      {cell.length > 1 ? (
+                        <p className="break-words text-[length:clamp(9px,2.6cqmin,15px)] font-bold uppercase leading-tight tracking-wide">
+                          {getCriterionCopy(cell[0], language).label}
+                          <span className="block text-cs-orange">+ {getCriterionCopy(cell[1], language).label}</span>
                         </p>
                       ) : (
-                        <p className="cs-board-helper text-[11px] font-semibold leading-tight text-cs-text/40">{criterionCopy.helper}</p>
+                        <p className="break-words text-[length:clamp(10px,3cqmin,17px)] font-bold uppercase leading-tight tracking-wide">
+                          {criterionCopy.label}
+                        </p>
                       )}
+                      {isGameOver ? (
+                        <p className="break-words text-[length:clamp(8px,2.4cqmin,13px)] font-semibold leading-tight text-cs-orange/80">
+                          {getPossibleAnswers(cell, usedPlayerIds).join(", ")}
+                        </p>
+                      ) : cell.length === 1 ? (
+                        <p className="cs-board-helper text-[11px] font-semibold leading-tight text-cs-text/40">{criterionCopy.helper}</p>
+                      ) : null}
                     </div>
                   )}
                 </button>
@@ -964,6 +1107,11 @@ export default function BingoPage() {
               {shareStatus === "copied" ? copy.shareCopied : copy.shareFailed}
             </p>
           ) : null}
+          <div className="mt-4 border-t border-cs-line pt-3 text-center">
+            {finishedBeforeLoad ? <p className="mb-1 text-sm font-semibold text-cs-text/60">{copy.alreadyPlayed}</p> : null}
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextPuzzle}</p>
+            <NextPuzzleCountdown />
+          </div>
         </Modal>
       ) : null}
 
@@ -992,6 +1140,17 @@ export default function BingoPage() {
       ) : null}
     </main>
   );
+}
+
+function NextPuzzleCountdown() {
+  const [timeLeft, setTimeLeft] = useState(getTimeToNextPuzzle);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setTimeLeft(getTimeToNextPuzzle()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return <p className="text-3xl font-bold tabular-nums text-cs-orange">{timeLeft}</p>;
 }
 
 function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {

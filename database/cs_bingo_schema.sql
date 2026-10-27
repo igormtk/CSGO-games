@@ -64,6 +64,22 @@ CREATE TABLE IF NOT EXISTS bingo_criteria (
   criterion_value TEXT NOT NULL
 );
 
+-- Campos mantidos pela sincronização semanal com o Liquipedia (scripts/sync-player-teams.mjs).
+ALTER TABLE players ADD COLUMN IF NOT EXISTS current_team_id TEXT REFERENCES teams(id) ON DELETE SET NULL;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS current_team_name TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS liquipedia_page TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+CREATE TABLE IF NOT EXISTS player_transfers (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  player_id TEXT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  from_team_name TEXT,
+  to_team_name TEXT,
+  detected_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS player_transfers_player_id_idx ON player_transfers (player_id, detected_at DESC);
+
 INSERT INTO teams (id, name, country, region, founded, status) VALUES
   ('navi', 'Natus Vincere', 'Ukraine', 'Europe/CIS', 2009, 'active'),
   ('astralis', 'Astralis', 'Denmark', 'Europe', 2016, 'active'),
@@ -87,57 +103,56 @@ ON CONFLICT (id) DO UPDATE SET
   founded = EXCLUDED.founded,
   status = EXCLUDED.status;
 
-INSERT INTO players (id, nickname, full_name, nationality, region, majors_won, major_mvp, active) VALUES
-  ('s1mple', 's1mple', 'Oleksandr Kostyliev', 'Ukraine', 'Europe/CIS', 1, TRUE, TRUE),
-  ('zywoo', 'ZywOo', 'Mathieu Herbaut', 'France', 'Europe', 3, TRUE, TRUE),
-  ('device', 'device', 'Nicolai Reedtz', 'Denmark', 'Europe', 4, TRUE, TRUE),
-  ('dupreeh', 'dupreeh', 'Peter Rasmussen', 'Denmark', 'Europe', 5, FALSE, TRUE),
-  ('niko', 'NiKo', 'Nikola Kovac', 'Bosnia and Herzegovina', 'Europe', 1, FALSE, TRUE),
-  ('coldzera', 'coldzera', 'Marcelo David', 'Brazil', 'South America', 2, TRUE, TRUE),
-  ('fallen', 'FalleN', 'Gabriel Toledo', 'Brazil', 'South America', 2, FALSE, TRUE),
-  ('kscerato', 'KSCERATO', 'Kaike Cerato', 'Brazil', 'South America', 0, FALSE, TRUE),
-  ('twistzz', 'Twistzz', 'Russel Van Dulken', 'Canada', 'North America', 1, FALSE, TRUE),
-  ('ropz', 'ropz', 'Robin Kool', 'Estonia', 'Europe', 3, FALSE, TRUE),
-  ('karrigan', 'karrigan', 'Finn Andersen', 'Denmark', 'Europe', 2, FALSE, TRUE),
-  ('rain', 'rain', 'Havard Nygaard', 'Norway', 'Europe', 1, TRUE, TRUE),
-  ('kennys', 'kennyS', 'Kenny Schrub', 'France', 'Europe', 1, TRUE, FALSE),
-  ('olofmeister', 'olofmeister', 'Olof Kajbjer', 'Sweden', 'Europe', 2, FALSE, FALSE),
-  ('flusha', 'flusha', 'Robin Ronnquist', 'Sweden', 'Europe', 3, FALSE, FALSE),
-  ('shroud', 'shroud', 'Michael Grzesiek', 'Canada', 'North America', 0, FALSE, FALSE),
-  ('stewie2k', 'Stewie2K', 'Jacky Yip', 'United States', 'North America', 1, FALSE, TRUE),
-  ('elige', 'EliGE', 'Jonathan Jablonowski', 'United States', 'North America', 0, FALSE, TRUE),
-  ('donk', 'donk', 'Danil Kryshkovets', 'Russia', 'Europe/CIS', 1, TRUE, TRUE),
-  ('sh1ro', 'sh1ro', 'Dmitry Sokolov', 'Russia', 'Europe/CIS', 1, FALSE, TRUE),
-  ('magixx', 'magixx', 'Boris Vorobyev', 'Russia', 'Europe/CIS', 1, FALSE, TRUE),
-  ('zont1x', 'zont1x', 'Myroslav Plakhotja', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE),
-  ('m0nesy', 'm0NESY', 'Ilya Osipov', 'Russia', 'Europe/CIS', 1, TRUE, TRUE),
-  ('kyousuke', 'kyousuke', 'Maksim Lukin', 'Russia', 'Europe/CIS', 1, FALSE, TRUE),
-  ('teses', 'TeSeS', 'René Madsen', 'Denmark', 'Europe', 1, FALSE, TRUE),
-  ('molodoy', 'molodoy', 'Danil Golubenko', 'Kazakhstan', 'Europe/CIS', 0, FALSE, TRUE),
-  ('yekindar', 'YEKINDAR', 'Mareks Gaļinskis', 'Latvia', 'Europe', 0, FALSE, TRUE),
-  ('yuurih', 'yuurih', 'Yuri Boian', 'Brazil', 'South America', 0, FALSE, TRUE),
-  ('apex', 'apEX', 'Dan Madesclaire', 'France', 'Europe', 4, FALSE, TRUE),
-  ('flamez', 'flameZ', 'Shahar Shushan', 'Israel', 'Europe', 2, FALSE, TRUE),
-  ('mezii', 'mezii', 'William Merriman', 'United Kingdom', 'Europe', 2, FALSE, TRUE),
-  ('spinx', 'Spinx', 'Lotan Giladi', 'Israel', 'Europe', 0, FALSE, TRUE),
-  ('torzsi', 'torzsi', 'Ádám Torzsás', 'Hungary', 'Europe', 0, FALSE, TRUE),
-  ('xertion', 'xertioN', 'Dorian Berman', 'Israel', 'Europe', 0, FALSE, TRUE),
-  ('frozen', 'frozen', 'David Čerňanský', 'Slovakia', 'Europe', 0, FALSE, TRUE),
-  ('b1t', 'b1t', 'Valerii Vakhovskyi', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE),
-  ('im', 'iM', 'Mihai Ivan', 'Romania', 'Europe', 1, FALSE, TRUE),
-  ('w0nderful', 'w0nderful', 'Ihor Zhdanov', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE),
-  ('aleksib', 'Aleksib', 'Aleksi Virolainen', 'Finland', 'Europe', 1, FALSE, TRUE),
-  ('jl', 'jL', 'Justinas Lekavičius', 'Lithuania', 'Europe', 1, TRUE, TRUE),
-  ('senzu', 'Senzu', 'Azbayar Munkhbold', 'Mongolia', 'Asia', 0, FALSE, TRUE),
-  ('blitz', 'bLitz', 'Garidmagnai Byambasuren', 'Mongolia', 'Asia', 0, FALSE, TRUE)
+INSERT INTO players (id, nickname, full_name, nationality, region, majors_won, major_mvp, active, current_team_id, current_team_name) VALUES
+  ('s1mple', 's1mple', 'Oleksandr Kostyliev', 'Ukraine', 'Europe/CIS', 1, TRUE, TRUE, 'navi', 'Natus Vincere'),
+  ('zywoo', 'ZywOo', 'Mathieu Herbaut', 'France', 'Europe', 3, TRUE, TRUE, 'vitality', 'Team Vitality'),
+  ('device', 'device', 'Nicolai Reedtz', 'Denmark', 'Europe', 4, TRUE, TRUE, 'astralis', 'Astralis'),
+  ('dupreeh', 'dupreeh', 'Peter Rasmussen', 'Denmark', 'Europe', 5, FALSE, TRUE, NULL, NULL),
+  ('niko', 'NiKo', 'Nikola Kovac', 'Bosnia and Herzegovina', 'Europe', 1, FALSE, TRUE, 'falcons', 'Team Falcons'),
+  ('coldzera', 'coldzera', 'Marcelo David', 'Brazil', 'South America', 2, TRUE, TRUE, NULL, NULL),
+  ('fallen', 'FalleN', 'Gabriel Toledo', 'Brazil', 'South America', 2, FALSE, TRUE, 'furia', 'FURIA'),
+  ('kscerato', 'KSCERATO', 'Kaike Cerato', 'Brazil', 'South America', 0, FALSE, TRUE, 'furia', 'FURIA'),
+  ('twistzz', 'Twistzz', 'Russel Van Dulken', 'Canada', 'North America', 1, FALSE, TRUE, 'liquid', 'Team Liquid'),
+  ('ropz', 'ropz', 'Robin Kool', 'Estonia', 'Europe', 3, FALSE, TRUE, 'vitality', 'Team Vitality'),
+  ('karrigan', 'karrigan', 'Finn Andersen', 'Denmark', 'Europe', 2, FALSE, TRUE, 'falcons', 'Team Falcons'),
+  ('rain', 'rain', 'Havard Nygaard', 'Norway', 'Europe', 1, TRUE, TRUE, 'faze', 'FaZe Clan'),
+  ('kennys', 'kennyS', 'Kenny Schrub', 'France', 'Europe', 1, TRUE, FALSE, NULL, NULL),
+  ('olofmeister', 'olofmeister', 'Olof Kajbjer', 'Sweden', 'Europe', 2, FALSE, FALSE, NULL, NULL),
+  ('flusha', 'flusha', 'Robin Ronnquist', 'Sweden', 'Europe', 3, FALSE, FALSE, NULL, NULL),
+  ('shroud', 'shroud', 'Michael Grzesiek', 'Canada', 'North America', 0, FALSE, FALSE, NULL, NULL),
+  ('stewie2k', 'Stewie2K', 'Jacky Yip', 'United States', 'North America', 1, FALSE, TRUE, NULL, NULL),
+  ('elige', 'EliGE', 'Jonathan Jablonowski', 'United States', 'North America', 0, FALSE, TRUE, 'liquid', 'Team Liquid'),
+  ('donk', 'donk', 'Danil Kryshkovets', 'Russia', 'Europe/CIS', 1, TRUE, TRUE, 'spirit', 'Team Spirit'),
+  ('sh1ro', 'sh1ro', 'Dmitry Sokolov', 'Russia', 'Europe/CIS', 1, FALSE, TRUE, 'spirit', 'Team Spirit'),
+  ('magixx', 'magixx', 'Boris Vorobyev', 'Russia', 'Europe/CIS', 1, FALSE, TRUE, 'spirit', 'Team Spirit'),
+  ('zont1x', 'zont1x', 'Myroslav Plakhotja', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE, 'spirit', 'Team Spirit'),
+  ('m0nesy', 'm0NESY', 'Ilya Osipov', 'Russia', 'Europe/CIS', 1, TRUE, TRUE, 'falcons', 'Team Falcons'),
+  ('kyousuke', 'kyousuke', 'Maksim Lukin', 'Russia', 'Europe/CIS', 1, FALSE, TRUE, 'falcons', 'Team Falcons'),
+  ('teses', 'TeSeS', 'René Madsen', 'Denmark', 'Europe', 1, FALSE, TRUE, 'falcons', 'Team Falcons'),
+  ('molodoy', 'molodoy', 'Danil Golubenko', 'Kazakhstan', 'Europe/CIS', 0, FALSE, TRUE, 'furia', 'FURIA'),
+  ('yekindar', 'YEKINDAR', 'Mareks Gaļinskis', 'Latvia', 'Europe', 0, FALSE, TRUE, 'furia', 'FURIA'),
+  ('yuurih', 'yuurih', 'Yuri Boian', 'Brazil', 'South America', 0, FALSE, TRUE, 'furia', 'FURIA'),
+  ('apex', 'apEX', 'Dan Madesclaire', 'France', 'Europe', 4, FALSE, TRUE, 'vitality', 'Team Vitality'),
+  ('flamez', 'flameZ', 'Shahar Shushan', 'Israel', 'Europe', 2, FALSE, TRUE, 'vitality', 'Team Vitality'),
+  ('mezii', 'mezii', 'William Merriman', 'United Kingdom', 'Europe', 2, FALSE, TRUE, 'vitality', 'Team Vitality'),
+  ('spinx', 'Spinx', 'Lotan Giladi', 'Israel', 'Europe', 0, FALSE, TRUE, 'mousesports', 'MOUZ'),
+  ('torzsi', 'torzsi', 'Ádám Torzsás', 'Hungary', 'Europe', 0, FALSE, TRUE, 'mousesports', 'MOUZ'),
+  ('xertion', 'xertioN', 'Dorian Berman', 'Israel', 'Europe', 0, FALSE, TRUE, 'mousesports', 'MOUZ'),
+  ('frozen', 'frozen', 'David Čerňanský', 'Slovakia', 'Europe', 0, FALSE, TRUE, NULL, NULL),
+  ('b1t', 'b1t', 'Valerii Vakhovskyi', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
+  ('im', 'iM', 'Mihai Ivan', 'Romania', 'Europe', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
+  ('w0nderful', 'w0nderful', 'Ihor Zhdanov', 'Ukraine', 'Europe/CIS', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
+  ('aleksib', 'Aleksib', 'Aleksi Virolainen', 'Finland', 'Europe', 1, FALSE, TRUE, 'navi', 'Natus Vincere'),
+  ('jl', 'jL', 'Justinas Lekavičius', 'Lithuania', 'Europe', 1, TRUE, TRUE, NULL, NULL),
+  ('senzu', 'Senzu', 'Azbayar Munkhbold', 'Mongolia', 'Asia', 0, FALSE, TRUE, NULL, NULL),
+  ('blitz', 'bLitz', 'Garidmagnai Byambasuren', 'Mongolia', 'Asia', 0, FALSE, TRUE, 'mongolz', 'The MongolZ')
 ON CONFLICT (id) DO UPDATE SET
   nickname = EXCLUDED.nickname,
   full_name = EXCLUDED.full_name,
   nationality = EXCLUDED.nationality,
   region = EXCLUDED.region,
   majors_won = EXCLUDED.majors_won,
-  major_mvp = EXCLUDED.major_mvp,
-  active = EXCLUDED.active;
+  major_mvp = EXCLUDED.major_mvp;
 
 INSERT INTO player_roles (player_id, role) VALUES
   ('s1mple', 'AWPer'),
@@ -424,19 +439,27 @@ INSERT INTO bingo_criteria (id, label, helper, criterion_type, criterion_value) 
   ('team-spirit', 'Spirit', 'Jogou pela Team Spirit', 'team', 'spirit'),
   ('team-mouz', 'MOUZ', 'Jogou pela MOUZ', 'team', 'mousesports'),
   ('team-falcons', 'Falcons', 'Jogou pela Team Falcons', 'team', 'falcons'),
+  ('team-cloud9', 'Cloud9', 'Jogou pela Cloud9', 'team', 'cloud9'),
   ('nat-brazil', 'Brasil', 'Jogador brasileiro', 'nationality', 'Brazil'),
   ('nat-denmark', 'Dinamarca', 'Jogador dinamarquês', 'nationality', 'Denmark'),
   ('nat-france', 'França', 'Jogador francês', 'nationality', 'France'),
   ('nat-russia', 'Rússia', 'Jogador russo', 'nationality', 'Russia'),
   ('nat-ukraine', 'Ucrânia', 'Jogador ucraniano', 'nationality', 'Ukraine'),
+  ('nat-israel', 'Israel', 'Jogador israelense', 'nationality', 'Israel'),
   ('region-na', 'NA', 'Representa a América do Norte', 'region', 'North America'),
   ('role-awper', 'AWPer', 'Atua ou atuou como AWPer', 'role', 'AWPer'),
   ('role-igl', 'IGL', 'Atua ou atuou como in-game leader', 'role', 'IGL'),
   ('role-lurker', 'Lurker', 'Atua ou atuou como lurker', 'role', 'Lurker'),
+  ('role-entry', 'Entry fragger', 'Atua ou atuou como entry fragger', 'role', 'Entry fragger'),
   ('major-winner', 'Major winner', 'Venceu pelo menos um Major', 'achievement', 'major-winner'),
   ('major-mvp', 'Major MVP', 'Foi MVP de Major', 'achievement', 'major-mvp'),
   ('top20', 'HLTV Top 20', 'Apareceu no Top 20 da HLTV', 'achievement', 'hltv-top20'),
-  ('active', 'Ativo', 'Ainda está ativo no cenário', 'status', 'true')
+  ('multi-major', '2+ Majors', 'Venceu dois Majors ou mais', 'achievement', 'multi-major'),
+  ('no-major', 'Sem Major', 'Nunca venceu um Major', 'achievement', 'no-major'),
+  ('top20-5', 'Top 20 5+ vezes', 'Entrou no Top 20 da HLTV em cinco anos ou mais', 'achievement', 'hltv-top20-5'),
+  ('teams-3', '3+ times', 'Passou por três times ou mais', 'achievement', 'teams-3'),
+  ('active', 'Ativo', 'Ainda está ativo no cenário', 'status', 'true'),
+  ('retired', 'Aposentado', 'Não joga mais profissionalmente', 'status', 'false')
 ON CONFLICT (id) DO UPDATE SET
   label = EXCLUDED.label,
   helper = EXCLUDED.helper,
@@ -475,5 +498,9 @@ CREATE POLICY "coach_teams_public_read" ON coach_teams FOR SELECT TO anon, authe
 ALTER TABLE bingo_criteria ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "bingo_criteria_public_read" ON bingo_criteria;
 CREATE POLICY "bingo_criteria_public_read" ON bingo_criteria FOR SELECT TO anon, authenticated USING (true);
+
+ALTER TABLE player_transfers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "player_transfers_public_read" ON player_transfers;
+CREATE POLICY "player_transfers_public_read" ON player_transfers FOR SELECT TO anon, authenticated USING (true);
 
 COMMIT;
