@@ -1,28 +1,28 @@
 import { csPlayers, csTeams } from "@/data/csBingoDatabase";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
 
-// Resumo do site em Markdown para IAs (padrão llms.txt): o que é, quais jogos existem e onde ficam.
+// Resumo do site em Markdown para IAs (padrão llms.txt), no idioma base (inglês).
 export const dynamic = "force-static";
 
 export function GET() {
   const body = `# ${siteName}
 
-> ${siteDescription} Gratuito, sem cadastro, em português, inglês e espanhol.
+> ${siteDescription} Free, no sign-up, available in English, Portuguese and Spanish.
 
-${siteName} (${siteUrl}) reúne mini games de Counter-Strike (CS2 e CS:GO) para fãs da cena profissional. Os desafios diários mudam à meia-noite no horário de Brasília (UTC−3) e são iguais para todos os jogadores. A base tem ${csPlayers.length} pro players e ${csTeams.length} times, com dados do Liquipedia (CC BY-SA): times, histórico de carreira, nacionalidade, funções, títulos de Major, MVPs de Major e aparições no Top 20 da HLTV.
+${siteName} (${siteUrl}) is a set of Counter-Strike (CS2 and CS:GO) mini games for fans of the pro scene. Daily challenges reset at midnight Brasília time (UTC−3) and are the same for every player. The database covers ${csPlayers.length} pro players and ${csTeams.length} teams, sourced from Liquipedia (CC BY-SA): teams, career history, nationality, roles, Major titles, Major MVPs and HLTV Top 20 appearances.
 
-## Jogos
+## Games
 
-- [CS Bingo](${siteUrl}/bingo): desafio diário. Uma cartela 4x4 com critérios como times, nacionalidades, funções e conquistas; 42 jogadores aparecem um por vez e o jogador encaixa cada um numa casa que ele cumpre. Duas vidas, pulo livre, um coringa por partida, uma tentativa por dia.
-- [Jogador misterioso](${siteUrl}/jogador-misterioso): desafio diário de adivinhação. Descubra o pro player do dia em até 6 palpites; cada palpite compara time atual, país, região, função, Majors e anos no Top 20 da HLTV com o jogador misterioso.
-- [Adivinhe o jogador](${siteUrl}/guess-name): quiz sem limite. Aparece o nick de um pro player e o jogador escolhe o nome real entre 4 opções, com 3 vidas.
+- [CS Bingo](${siteUrl}/bingo): daily challenge. A 4x4 board with criteria such as teams, nationalities, roles and achievements; 42 players appear one at a time and the player places each one in a cell they fit. Two lives, free skips, one wildcard per game, one attempt per day.
+- [Mystery player](${siteUrl}/jogador-misterioso): daily guessing game. Find the pro player of the day in up to 6 guesses; each guess compares current team, country, region, role, Majors and HLTV Top 20 years with the mystery player.
+- [Guess the player](${siteUrl}/guess-name): endless quiz. A pro player's nickname appears and the player picks the real name from 4 options, with 3 lives.
 
-## Informações
+## Information
 
-- [Termos de uso](${siteUrl}/termos)
-- [Política de privacidade](${siteUrl}/privacidade): o progresso fica só no navegador; não há cadastro.
-- Fonte dos dados: [Liquipedia Counter-Strike](https://liquipedia.net/counterstrike/) (CC BY-SA 3.0).
-- Sem afiliação com a Valve. Counter-Strike é marca registrada da Valve Corporation.
+- [Terms of use](${siteUrl}/termos)
+- [Privacy policy](${siteUrl}/privacidade): progress is stored only in the browser; there are no accounts. Visits are counted with cookieless, anonymous Vercel Web Analytics.
+- Data source: [Liquipedia Counter-Strike](https://liquipedia.net/counterstrike/) (CC BY-SA 3.0).
+- Not affiliated with Valve. Counter-Strike is a registered trademark of Valve Corporation.
 `;
 
   return new Response(body, { headers: { "Content-Type": "text/markdown; charset=utf-8" } });

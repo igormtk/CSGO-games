@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "CS Games · Jogos diários de Counter-Strike";
+export const alt = "CS Games · Daily Counter-Strike games";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -24,12 +24,12 @@ export default function OpengraphImage() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", maxWidth: 620 }}>
-          <div style={{ fontSize: 28, letterSpacing: 8, color: "#f2a33a", fontWeight: 700 }}>COUNTER-STRIKE · DIÁRIO</div>
+          <div style={{ fontSize: 28, letterSpacing: 8, color: "#f2a33a", fontWeight: 700 }}>COUNTER-STRIKE · DAILY</div>
           <div style={{ display: "flex", fontSize: 104, fontWeight: 800, marginTop: 16, lineHeight: 1 }}>
             CS<span style={{ color: "#f2a33a", marginLeft: 20 }}>GAMES</span>
           </div>
           <div style={{ fontSize: 36, marginTop: 28, color: "rgba(232,228,216,0.7)" }}>
-            Bingo de pro players e adivinhe o jogador. Um desafio novo todo dia.
+            Pro player bingo, mystery player and more. A new challenge every day.
           </div>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", width: 360, gap: 8 }}>

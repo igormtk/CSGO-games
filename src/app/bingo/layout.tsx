@@ -3,14 +3,14 @@ import { GameGuide } from "@/components/seo/GameGuide";
 import { JsonLd, gameJsonLd } from "@/components/seo/JsonLd";
 
 const description =
-  "Encaixe 16 pro players de Counter-Strike na cartela do dia: times, nacionalidades, funções e Majors. Uma tentativa por dia, a mesma cartela para todo mundo.";
+  "Fit 16 Counter-Strike pro players into today's board: teams, nationalities, roles and Majors. One attempt per day, the same board for everyone.";
 
 export const metadata: Metadata = {
-  title: "CS Bingo diário",
+  title: "Daily CS Bingo",
   description,
-  keywords: ["CS Bingo", "bingo Counter-Strike", "CS2", "jogo diário", "pro players", "HLTV", "Major"],
+  keywords: ["CS Bingo", "Counter-Strike bingo", "CS2", "daily game", "pro players", "HLTV", "Major"],
   alternates: { canonical: "/bingo" },
-  openGraph: { url: "/bingo", title: "CS Bingo diário", description },
+  openGraph: { url: "/bingo", title: "Daily CS Bingo", description },
 };
 
 export default function BingoLayout({ children }: { children: React.ReactNode }) {

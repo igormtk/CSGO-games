@@ -1,6 +1,6 @@
 import type { Language } from "@/lib/language";
 
-// Texto de "como jogar" de cada jogo. Aparece abaixo do jogo (já no HTML, em português, para
+// Texto de "como jogar" de cada jogo. Aparece abaixo do jogo (já no HTML, em inglês, para
 // buscadores e IAs que não executam JavaScript) e alimenta o FAQ dos dados estruturados.
 
 export type GameId = "bingo" | "mystery" | "guessName";
