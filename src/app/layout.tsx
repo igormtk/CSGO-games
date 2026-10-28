@@ -25,10 +25,9 @@ export const metadata: Metadata = {
   openGraph: { type: "website", siteName, locale: "pt_BR", alternateLocale: ["en_US", "es_ES"], url: "/" },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
-  // Código do Google Search Console (Configurações → Propriedade → Verificação por tag HTML).
-  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
-    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
-    : undefined,
+  // Verificação de propriedade dos buscadores. O Google está verificado por registro TXT no DNS
+  // (Hostinger); o Bing Webmaster Tools usa esta meta tag. Os códigos são públicos por natureza.
+  verification: { other: { "msvalidate.01": "B1CC63B45848CAE0795F86FA799A8070" } },
 };
 
 const games = [
