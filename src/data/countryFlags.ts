@@ -37,3 +37,17 @@ export const countryFlags: Record<string, string> = {
 };
 
 export const getCountryFlag = (country: string) => countryFlags[country] ?? "🏳️";
+
+const LOCALE_BY_LANGUAGE = { pt: "pt-BR", en: "en", es: "es" } as const;
+
+// A bandeira é o código ISO em letras regionais (🇧🇷 = B R): o navegador traduz o nome do país.
+export const getCountryName = (country: string, language: keyof typeof LOCALE_BY_LANGUAGE) => {
+  const flag = countryFlags[country];
+  if (!flag) return country;
+  const code = [...flag].map((char) => String.fromCharCode(char.codePointAt(0)! - 0x1f1e6 + 65)).join("");
+  try {
+    return new Intl.DisplayNames([LOCALE_BY_LANGUAGE[language]], { type: "region" }).of(code) ?? country;
+  } catch {
+    return country;
+  }
+};

@@ -8,7 +8,7 @@ import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
-import { useLanguage } from "@/lib/language";
+import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 
@@ -264,6 +264,7 @@ export default function MysteryPlayerPage() {
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   const [showRules, setShowRules] = useState(false);
   const copy = mysteryCopy[useLanguage()];
+  useDocumentTitle(`${copy.eyebrow} · CS Games`);
 
   // A data e o progresso salvo só existem no navegador: carregar depois da montagem evita
   // divergência com o HTML gerado no build.
@@ -332,7 +333,17 @@ export default function MysteryPlayerPage() {
     }
   };
 
-  if (!dateKey || !target) return <main className="h-full" />;
+  // Antes de ler a data do navegador, o HTML já sai com o título (buscadores e IAs leem daqui).
+  if (!dateKey || !target) {
+    return (
+      <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">{copy.eyebrow}</p>
+          <h1 className="text-3xl font-bold uppercase leading-none tracking-wide sm:text-4xl">{copy.title}</h1>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">

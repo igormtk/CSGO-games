@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { Check, Heart, Play, RotateCcw, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import { TeamBadge } from "@/components/teams/TeamBadge";
+import { getCountryName } from "@/data/countryFlags";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { shuffleArray } from "@/utils/utils";
-import { useLanguage } from "@/lib/language";
+import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 
 const MAX_LIVES = 3;
@@ -97,7 +98,9 @@ export default function GuessNamePage() {
   const [record, setRecord] = useState(0);
   const [status, setStatus] = useState<"idle" | "playing" | "over">("idle");
 
-  const copy = guessNameCopy[useLanguage()];
+  const language = useLanguage();
+  const copy = guessNameCopy[language];
+  useDocumentTitle(`${copy.eyebrow} · CS Games`);
 
   useEffect(() => setRecord(readRecord()), []);
 
@@ -176,7 +179,7 @@ export default function GuessNamePage() {
               </p>
               <h1 className="truncate text-4xl font-bold uppercase leading-none tracking-wide">{question.player.nickname}</h1>
               <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-cs-text/45">
-                {question.player.nationality}
+                {getCountryName(question.player.nationality, language)}
                 {question.player.currentTeam ? (
                   <>
                     <span>·</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useLanguage } from "@/lib/language";
+import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 
 const legalCopy: Record<Language, { updated: string; contact: string; contactPending: string; locale: string }> = {
@@ -22,6 +22,7 @@ type LegalPageProps = {
 export function LegalPage({ title, updatedAt, content }: LegalPageProps) {
   const language = useLanguage();
   const copy = legalCopy[language];
+  useDocumentTitle(`${title[language]} · CS Games`);
   const date = new Intl.DateTimeFormat(copy.locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(updatedAt));
 
   return (

@@ -30,7 +30,7 @@ import type { Partner } from "@/data/partners";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { countryFlags } from "@/data/countryFlags";
-import { useLanguage } from "@/lib/language";
+import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { GAME_TIME_ZONE, getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 
@@ -638,6 +638,7 @@ export default function BingoPage() {
   const board = useMemo(() => createDailyBoard(dateKey, playerQueue), [dateKey, playerQueue]);
   const language = useLanguage();
   const copy = translations[language];
+  useDocumentTitle(`${{ pt: "CS Bingo diário", en: "Daily CS Bingo", es: "CS Bingo diario" }[language]} · CS Games`);
   const [storedGame] = useState<StoredGame>(() => parseStoredGame(dateKey));
   const [picks, setPicks] = useState<Record<string, CellPick>>(() =>
     hydratePicks(storedGame.picks, storedGame.wildcardCells)
@@ -868,7 +869,14 @@ export default function BingoPage() {
   };
   const statusTone: MessageTone = gameStatus === "playing" ? messageTone : isCompleted ? "success" : "error";
 
-  if (!mounted) return <main className="h-full" />;
+  // A cartela depende da data do navegador; até lá, o HTML leva só o título para buscadores e IAs.
+  if (!mounted) {
+    return (
+      <main className="h-full">
+        <h1 className="sr-only">{{ pt: "CS Bingo diário", en: "Daily CS Bingo", es: "CS Bingo diario" }[language]}</h1>
+      </main>
+    );
+  }
 
   return (
     <main className="flex h-full flex-col">

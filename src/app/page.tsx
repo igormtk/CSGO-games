@@ -6,12 +6,13 @@ import { motion } from "framer-motion";
 import { Grid3x3, ScanFace, UserSearch } from "lucide-react";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPartnerFor } from "@/data/partners";
-import { useLanguage } from "@/lib/language";
+import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 
 const homeCopy: Record<
   Language,
   {
+    pageTitle: string;
     eyebrow: string;
     titleStart: string;
     subtitle: string;
@@ -25,6 +26,7 @@ const homeCopy: Record<
   }
 > = {
   pt: {
+    pageTitle: "CS Games · Jogos diários de Counter-Strike",
     eyebrow: "Counter-Strike · Jogos diários",
     titleStart: "Mini games para fãs de",
     subtitle: "Teste o quanto você conhece a cena profissional. Um desafio novo todo dia.",
@@ -53,6 +55,7 @@ const homeCopy: Record<
     notAffiliated: "Não afiliado à Valve.",
   },
   en: {
+    pageTitle: "CS Games · Daily Counter-Strike games",
     eyebrow: "Counter-Strike · Daily games",
     titleStart: "Mini games for",
     subtitle: "Test how well you know the pro scene. A new challenge every day.",
@@ -81,6 +84,7 @@ const homeCopy: Record<
     notAffiliated: "Not affiliated with Valve.",
   },
   es: {
+    pageTitle: "CS Games · Juegos diarios de Counter-Strike",
     eyebrow: "Counter-Strike · Juegos diarios",
     titleStart: "Mini juegos para fans de",
     subtitle: "Pon a prueba cuánto conoces la escena profesional. Un desafío nuevo cada día.",
@@ -118,6 +122,7 @@ const games = [
 
 export default function Home() {
   const copy = homeCopy[useLanguage()];
+  useDocumentTitle(copy.pageTitle);
   const dateKey = new Date().toISOString().slice(0, 10);
   const partner = getPartnerFor("home", dateKey, Number(dateKey.replace(/-/g, "")));
 
