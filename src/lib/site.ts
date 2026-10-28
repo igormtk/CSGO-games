@@ -6,4 +6,4 @@ export const siteUrl =
 
 export const siteName = "CS Games";
 export const siteDescription =
-  "Jogos diários de Counter-Strike: encaixe pro players na cartela do CS Bingo, descubra o jogador misterioso do dia e adivinhe o nome real dos jogadores.";
+  "Daily Counter-Strike games: fit pro players into the CS Bingo board, find the mystery player of the day and guess pro players' real names.";

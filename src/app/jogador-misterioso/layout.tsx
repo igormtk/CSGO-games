@@ -3,20 +3,20 @@ import { GameGuide } from "@/components/seo/GameGuide";
 import { JsonLd, gameJsonLd } from "@/components/seo/JsonLd";
 
 const description =
-  "Descubra o pro player de Counter-Strike do dia em 6 palpites. Cada chute revela pistas de time, país, função, Majors e Top 20 da HLTV.";
+  "Find today's Counter-Strike pro player in 6 guesses. Each guess reveals clues about team, country, role, Majors and HLTV Top 20.";
 
 export const metadata: Metadata = {
-  title: "Jogador misterioso",
+  title: "Mystery player",
   description,
-  keywords: ["jogador misterioso", "adivinhe o pro player", "CS2", "Counter-Strike", "jogo diário", "HLTV Top 20"],
+  keywords: ["mystery player", "guess the CS pro player", "CS2", "Counter-Strike", "daily game", "HLTV Top 20", "jogador misterioso"],
   alternates: { canonical: "/jogador-misterioso" },
-  openGraph: { url: "/jogador-misterioso", title: "Jogador misterioso", description },
+  openGraph: { url: "/jogador-misterioso", title: "Mystery player", description },
 };
 
 export default function MysteryPlayerLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <JsonLd data={gameJsonLd("mystery", "/jogador-misterioso", "Jogador misterioso", description)} />
+      <JsonLd data={gameJsonLd("mystery", "/jogador-misterioso", "Mystery player", description)} />
       {children}
       <GameGuide game="mystery" />
     </>

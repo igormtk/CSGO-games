@@ -26,7 +26,7 @@ export const gameJsonLd = (game: GameId, path: string, name: string, description
       genre: ["Trivia", "Puzzle", "Esports"],
       gamePlatform: "Web browser",
       operatingSystem: "Any",
-      inLanguage: ["pt-BR", "en", "es"],
+      inLanguage: ["en", "pt-BR", "es"],
       isAccessibleForFree: true,
       offers: { "@type": "Offer", price: 0, priceCurrency: "BRL" },
       about: { "@type": "VideoGame", name: "Counter-Strike 2" },
@@ -36,7 +36,7 @@ export const gameJsonLd = (game: GameId, path: string, name: string, description
     {
       "@type": "FAQPage",
       "@id": `${siteUrl}${path}#faq`,
-      mainEntity: gameGuides[game].pt.faq.map((item) => ({
+      mainEntity: gameGuides[game].en.faq.map((item) => ({
         "@type": "Question",
         name: item.question,
         acceptedAnswer: { "@type": "Answer", text: item.answer },
@@ -54,7 +54,7 @@ export const siteJsonLd = (games: { name: string; path: string; description: str
       name: siteName,
       url: `${siteUrl}/`,
       description,
-      inLanguage: ["pt-BR", "en", "es"],
+      inLanguage: ["en", "pt-BR", "es"],
       publisher: { "@id": `${siteUrl}/#organization` },
     },
     {
@@ -66,7 +66,7 @@ export const siteJsonLd = (games: { name: string; path: string; description: str
     },
     {
       "@type": "ItemList",
-      name: "Jogos de Counter-Strike",
+      name: "Counter-Strike games",
       itemListElement: games.map((game, index) => ({
         "@type": "ListItem",
         position: index + 1,

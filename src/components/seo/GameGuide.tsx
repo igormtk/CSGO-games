@@ -5,7 +5,7 @@ import type { GameId } from "@/data/gameGuides";
 import { useLanguage } from "@/lib/language";
 
 // "Como jogar" abaixo do jogo: quem joga vê ao rolar, e buscadores e IAs leem no HTML inicial
-// (em português, o idioma do build). No navegador o texto acompanha o idioma escolhido.
+// (no idioma base, inglês). No navegador o texto acompanha o idioma escolhido.
 export function GameGuide({ game }: { game: GameId }) {
   const guide = gameGuides[game][useLanguage()];
 

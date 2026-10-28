@@ -17,13 +17,13 @@ const fontSans = FontSans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: `${siteName} · Jogos diários de Counter-Strike`, template: `%s · ${siteName}` },
+  title: { default: `${siteName} · Daily Counter-Strike games`, template: `%s · ${siteName}` },
   description: siteDescription,
   applicationName: siteName,
-  keywords: ["Counter-Strike", "CS2", "CS:GO", "jogos diários", "pro players", "quiz de CS", "HLTV", "Major", "esports"],
+  keywords: ["Counter-Strike", "CS2", "CS:GO", "daily games", "CS quiz", "pro players", "HLTV", "Major", "esports", "jogos de CS"],
   category: "games",
   alternates: { canonical: "/" },
-  openGraph: { type: "website", siteName, locale: "pt_BR", alternateLocale: ["en_US", "es_ES"], url: "/" },
+  openGraph: { type: "website", siteName, locale: "en_US", alternateLocale: ["pt_BR", "es_ES"], url: "/" },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   // Verificação de propriedade dos buscadores. O Google está verificado por registro TXT no DNS
@@ -32,9 +32,9 @@ export const metadata: Metadata = {
 };
 
 const games = [
-  { name: "CS Bingo", path: "/bingo", description: "Cartela diária 4x4 de pro players de Counter-Strike." },
-  { name: "Jogador misterioso", path: "/jogador-misterioso", description: "Descubra o pro player do dia em 6 palpites." },
-  { name: "Adivinhe o jogador", path: "/guess-name", description: "Acerte o nome real dos pro players." },
+  { name: "CS Bingo", path: "/bingo", description: "Daily 4x4 board of Counter-Strike pro players." },
+  { name: "Mystery player", path: "/jogador-misterioso", description: "Find today's pro player in 6 guesses." },
+  { name: "Guess the player", path: "/guess-name", description: "Name the pro players' real names." },
 ];
 
 export const viewport: Viewport = {
@@ -49,7 +49,7 @@ export default async function RootLayout({
   // Ler os cabeçalhos torna a página dinâmica: cada visita recebe um nonce novo (ver middleware).
   await headers();
   return (
-    <html lang="pt-BR">
+    <html lang="en">
       {/* A página ocupa exatamente a altura da tela; cada jogo se ajusta ao espaço abaixo do menu. */}
       <body
         className={cn(
