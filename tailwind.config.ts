@@ -20,6 +20,10 @@ const config = {
       },
     },
     extend: {
+      screens: {
+        // Celular deitado e telas baixas: o conteúdo vai para o lado em vez de empilhar
+        short: { raw: "(min-aspect-ratio: 4/3) and (max-height: 640px)" },
+      },
       fontFamily: {
         sans: ["var(--font-sans)", ...fontFamily.sans],
       },
@@ -56,6 +60,20 @@ const config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Paleta HUD do Counter-Strike usada em toda a plataforma
+        cs: {
+          bg: "#0e1114",
+          panel: "#14181c",
+          surface: "#1a1f24",
+          raised: "#232a30",
+          line: "#2c343c",
+          orange: "#f2a33a",
+          gold: "#e0b04a",
+          blue: "#5b8bd6",
+          green: "#7fc35b",
+          red: "#e5484d",
+          text: "#e8e4d8",
         },
       },
       borderRadius: {

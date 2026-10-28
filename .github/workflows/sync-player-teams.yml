@@ -1,0 +1,31 @@
+name: Sync player teams
+
+# Toda segunda às 06:00 UTC confere no Liquipedia o time atual e o status dos jogadores
+# e grava as transferências no Supabase. Também pode ser disparado à mão na aba Actions.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Só mostrar as mudanças, sem gravar"
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sincronizar com o Liquipedia
+        run: node scripts/sync-player-teams.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          LIQUIPEDIA_CONTACT: ${{ vars.LIQUIPEDIA_CONTACT }}

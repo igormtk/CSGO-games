@@ -3,49 +3,29 @@
 @tailwind utilities;
 
 @layer base {
+  /* Tema único escuro no estilo HUD do CS; os componentes shadcn herdam estas variáveis */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
-    --primary: 24.6 95% 53.1%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 60 4.8% 95.9%;
-    --secondary-foreground: 24 9.8% 10%;
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --accent: 60 4.8% 95.9%;
-    --accent-foreground: 24 9.8% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --ring: 24.6 95% 53.1%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 20 14.3% 4.1%;
-    --card-foreground: 60 9.1% 97.8%;
-    --popover: 20 14.3% 4.1%;
-    --popover-foreground: 60 9.1% 97.8%;
-    --primary: 20.5 90.2% 48.2%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 72.2% 50.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 20.5 90.2% 48.2%;
+    --background: 210 18% 7%;
+    --foreground: 45 28% 88%;
+    --card: 210 16% 12%;
+    --card-foreground: 45 28% 88%;
+    --popover: 210 16% 12%;
+    --popover-foreground: 45 28% 88%;
+    --primary: 34 88% 59%;
+    --primary-foreground: 210 18% 7%;
+    --secondary: 208 16% 16%;
+    --secondary-foreground: 45 28% 88%;
+    --muted: 208 16% 16%;
+    --muted-foreground: 45 10% 60%;
+    --accent: 208 16% 16%;
+    --accent-foreground: 34 88% 59%;
+    --destructive: 358 75% 59%;
+    --destructive-foreground: 45 28% 88%;
+    --border: 210 15% 20%;
+    --input: 210 15% 20%;
+    --ring: 34 88% 59%;
+    --radius: 0.125rem;
+    color-scheme: dark;
   }
 }
 
@@ -113,4 +93,25 @@
     linear-gradient(rgb(242 163 58 / 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgb(242 163 58 / 0.04) 1px, transparent 1px);
   background-size: 32px 32px;
+}
+
+/* Cartela que ocupa o maior quadrado possível dentro do espaço livre, sem rolagem */
+.cs-board-fit {
+  container-type: size;
+  container-name: board;
+}
+
+.cs-board {
+  width: 100cqmin;
+  height: 100cqmin;
+}
+
+.cs-board-helper {
+  display: none;
+}
+
+@container board (min-width: 440px) and (min-height: 440px) {
+  .cs-board-helper {
+    display: block;
+  }
 }
