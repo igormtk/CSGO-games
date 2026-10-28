@@ -26,6 +26,14 @@ const content = {
         site no seu navegador.
       </p>
 
+      <h2>Métricas de audiência</h2>
+      <p>
+        Usamos o Vercel Web Analytics para contar visitas e entender quais páginas são mais usadas. Ele não usa
+        cookies e não identifica você: registra de forma anônima e agregada a página visitada, o site de origem, o país,
+        o tipo de dispositivo, o sistema e o navegador. Não há como ligar esses números a uma pessoa, e eles não são
+        usados para publicidade.
+      </p>
+
       <h2>Publicidade</h2>
       <p>
         O site exibe anúncios de patrocinadores, identificados como &ldquo;Publicidade&rdquo;. Ao clicar em um anúncio,
@@ -35,8 +43,8 @@ const content = {
 
       <h2>Mudanças</h2>
       <p>
-        Se passarmos a usar contas de usuário, métricas de audiência ou cookies, esta política será atualizada antes, e
-        pediremos seu consentimento quando a lei exigir.
+        Se passarmos a usar contas de usuário ou cookies, esta política será atualizada antes, e pediremos seu
+        consentimento quando a lei exigir.
       </p>
 
       <h2>Seus direitos</h2>
@@ -64,6 +72,14 @@ const content = {
         This data is not sent to our servers. You can delete it at any time by clearing the site data in your browser.
       </p>
 
+      <h2>Audience metrics</h2>
+      <p>
+        We use Vercel Web Analytics to count visits and see which pages are used the most. It uses no cookies and does
+        not identify you: it records, anonymously and in aggregate, the page visited, the referring site, country,
+        device type, operating system and browser. These numbers cannot be tied to a person and are not used for
+        advertising.
+      </p>
+
       <h2>Advertising</h2>
       <p>
         The site shows sponsor ads, labeled as &ldquo;Advertisement&rdquo;. If you click an ad, you go to the
@@ -72,8 +88,8 @@ const content = {
 
       <h2>Changes</h2>
       <p>
-        If we start using user accounts, audience metrics or cookies, this policy will be updated beforehand, and we will
-        ask for your consent where the law requires it.
+        If we start using user accounts or cookies, this policy will be updated beforehand, and we will ask for your
+        consent where the law requires it.
       </p>
 
       <h2>Your rights</h2>
@@ -102,6 +118,14 @@ const content = {
         en tu navegador.
       </p>
 
+      <h2>Métricas de audiencia</h2>
+      <p>
+        Usamos Vercel Web Analytics para contar visitas y saber qué páginas se usan más. No usa cookies y no te
+        identifica: registra de forma anónima y agregada la página visitada, el sitio de origen, el país, el tipo de
+        dispositivo, el sistema operativo y el navegador. Estos números no se pueden vincular a una persona y no se usan
+        para publicidad.
+      </p>
+
       <h2>Publicidad</h2>
       <p>
         El sitio muestra anuncios de patrocinadores, identificados como &ldquo;Publicidad&rdquo;. Al hacer clic en un
@@ -111,8 +135,8 @@ const content = {
 
       <h2>Cambios</h2>
       <p>
-        Si empezamos a usar cuentas de usuario, métricas de audiencia o cookies, esta política se actualizará antes y
-        pediremos tu consentimiento cuando la ley lo exija.
+        Si empezamos a usar cuentas de usuario o cookies, esta política se actualizará antes y pediremos tu
+        consentimiento cuando la ley lo exija.
       </p>
 
       <h2>Tus derechos</h2>

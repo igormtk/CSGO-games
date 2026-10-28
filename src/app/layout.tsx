@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { Analytics } from "@vercel/analytics/next";
 import { Rajdhani as FontSans } from "next/font/google";
 import Header from "@/components/headers/Header";
 import "./globals.css";
@@ -61,6 +62,8 @@ export default async function RootLayout({
         <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
           {children}
         </div>
+        {/* Contagem de visitas da Vercel: sem cookies e sem identificar quem visita (ver /privacidade). */}
+        <Analytics />
       </body>
     </html>
   );
