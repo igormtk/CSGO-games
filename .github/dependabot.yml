@@ -1,0 +1,18 @@
+# Atualizações automáticas: um PR por semana com as correções de dependências e das Actions.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Patches e versões menores num PR só; versões principais (que podem quebrar) vêm separadas.
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday

@@ -12,6 +12,10 @@ on:
         type: boolean
         default: false
 
+# O token do GitHub só lê o repositório; a gravação no banco usa o secret do Supabase.
+permissions:
+  contents: read
+
 jobs:
   sync:
     runs-on: ubuntu-latest
