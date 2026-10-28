@@ -1,0 +1,25 @@
+export const countryFlags: Record<string, string> = {
+  Brazil: "🇧🇷",
+  Denmark: "🇩🇰",
+  France: "🇫🇷",
+  Russia: "🇷🇺",
+  Ukraine: "🇺🇦",
+  Israel: "🇮🇱",
+  "Bosnia and Herzegovina": "🇧🇦",
+  Canada: "🇨🇦",
+  Estonia: "🇪🇪",
+  Norway: "🇳🇴",
+  Sweden: "🇸🇪",
+  "United States": "🇺🇸",
+  Kazakhstan: "🇰🇿",
+  Latvia: "🇱🇻",
+  "United Kingdom": "🇬🇧",
+  Hungary: "🇭🇺",
+  Slovakia: "🇸🇰",
+  Romania: "🇷🇴",
+  Finland: "🇫🇮",
+  Lithuania: "🇱🇹",
+  Mongolia: "🇲🇳",
+};
+
+export const getCountryFlag = (country: string) => countryFlags[country] ?? "🏳️";

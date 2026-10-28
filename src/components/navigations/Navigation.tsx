@@ -3,24 +3,39 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid3x3, Home, Menu, UserSearch, X } from "lucide-react";
+import { Grid3x3, ScanFace, Home, Menu, UserSearch, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/language";
+import type { Language } from "@/lib/language";
 
 const links = [
-  { title: "Início", href: "/", icon: Home },
-  { title: "CS Bingo", href: "/bingo", icon: Grid3x3 },
-  { title: "Adivinhe o jogador", href: "/guess-name", icon: UserSearch },
+  { title: { pt: "Início", en: "Home", es: "Inicio" }, href: "/", icon: Home },
+  { title: { pt: "CS Bingo", en: "CS Bingo", es: "CS Bingo" }, href: "/bingo", icon: Grid3x3 },
+  {
+    title: { pt: "Jogador misterioso", en: "Mystery player", es: "Jugador misterioso" },
+    href: "/jogador-misterioso",
+    icon: ScanFace,
+  },
+  { title: { pt: "Adivinhe o jogador", en: "Guess the player", es: "Adivina el jugador" }, href: "/guess-name", icon: UserSearch },
 ];
+
+const menuCopy: Record<Language, { nav: string; open: string; close: string }> = {
+  pt: { nav: "Jogos", open: "Abrir menu", close: "Fechar menu" },
+  en: { nav: "Games", open: "Open menu", close: "Close menu" },
+  es: { nav: "Juegos", open: "Abrir menú", close: "Cerrar menú" },
+};
 
 export function Navigation() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const language = useLanguage();
+  const copy = menuCopy[language];
 
   useEffect(() => setOpen(false), [pathname]);
 
   return (
-    <nav aria-label="Jogos">
+    <nav aria-label={copy.nav}>
       <ul className="hidden items-center gap-1 sm:flex">
         {links.map((link) => {
           const active = pathname === link.href;
@@ -35,7 +50,7 @@ export function Navigation() {
                 )}
               >
                 <link.icon className="h-4 w-4" />
-                {link.title}
+                {link.title[language]}
               </Link>
             </li>
           );
@@ -47,7 +62,7 @@ export function Navigation() {
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
         aria-controls="mobile-menu"
-        aria-label={open ? "Fechar menu" : "Abrir menu"}
+        aria-label={open ? copy.close : copy.open}
         className="cs-cut-sm grid h-9 w-9 place-items-center bg-cs-raised text-cs-text transition hover:text-cs-orange sm:hidden"
       >
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -74,7 +89,7 @@ export function Navigation() {
                   )}
                 >
                   <link.icon className="h-5 w-5" />
-                  {link.title}
+                  {link.title[language]}
                 </Link>
               </li>
             );

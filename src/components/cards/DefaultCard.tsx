@@ -8,9 +8,10 @@ type CardProps = {
   linkTo: string;
   icon: LucideIcon;
   tag: string;
+  cta: string;
 };
 
-export function DefaultCard({ title, description, linkTo, icon: Icon, tag }: CardProps) {
+export function DefaultCard({ title, description, linkTo, icon: Icon, tag, cta }: CardProps) {
   return (
     <Link
       href={linkTo}
@@ -31,7 +32,7 @@ export function DefaultCard({ title, description, linkTo, icon: Icon, tag }: Car
         <p className="flex-1 px-4 py-2 text-sm font-semibold leading-5 text-cs-text/70 sm:py-3 sm:text-base sm:leading-6">{description}</p>
         <div className="px-4 pb-3 sm:pb-4">
           <span className="cs-cut-sm inline-flex items-center gap-1 bg-cs-orange px-4 py-1.5 text-base font-bold uppercase tracking-wider text-cs-bg transition group-hover:bg-[#ffb85a]">
-            Jogar <ChevronRight className="h-4 w-4" />
+            {cta} <ChevronRight className="h-4 w-4" />
           </span>
         </div>
       </div>

@@ -4,7 +4,7 @@ import Header from "@/components/headers/Header";
 import "./globals.css";
 
 import { cn } from "@/lib/utils";
-import StoreProvider from "./StoreProvider";
+import { siteDescription, siteName, siteUrl } from "@/lib/site";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -13,8 +13,12 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
-  title: "CS Games",
-  description: "Jogos diários de Counter-Strike: bingo de pro players, adivinhe o jogador e mais.",
+  metadataBase: new URL(siteUrl),
+  title: { default: `${siteName} · Jogos diários de Counter-Strike`, template: `%s · ${siteName}` },
+  description: siteDescription,
+  applicationName: siteName,
+  openGraph: { type: "website", siteName, locale: "pt_BR", url: "/" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
@@ -35,12 +39,10 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <StoreProvider>
-          <Header />
-          <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
-            {children}
-          </div>
-        </StoreProvider>
+        <Header />
+        <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
+          {children}
+        </div>
       </body>
     </html>
   );

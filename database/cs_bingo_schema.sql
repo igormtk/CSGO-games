@@ -10,8 +10,13 @@ CREATE TABLE IF NOT EXISTS teams (
   country TEXT NOT NULL,
   region TEXT NOT NULL,
   founded INTEGER,
-  status TEXT NOT NULL CHECK (status IN ('active', 'inactive'))
+  status TEXT NOT NULL CHECK (status IN ('active', 'inactive')),
+  -- Caminho da logo em public/teams (ou URL do Supabase Storage).
+  logo_url TEXT
 );
+
+-- Bancos criados antes da coluna existir.
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS logo_url TEXT;
 
 CREATE TABLE IF NOT EXISTS players (
   id TEXT PRIMARY KEY,
@@ -105,6 +110,9 @@ ON CONFLICT (id) DO UPDATE SET
   region = EXCLUDED.region,
   founded = EXCLUDED.founded,
   status = EXCLUDED.status;
+
+-- Logos baixadas por scripts/fetch-team-logos.mjs.
+UPDATE teams SET logo_url = '/teams/' || id || '.png' WHERE logo_url IS NULL;
 
 INSERT INTO players (id, nickname, full_name, nationality, region, majors_won, major_mvp, active, current_team_id, current_team_name) VALUES
   ('s1mple', 's1mple', 'Oleksandr Kostyliev', 'Ukraine', 'Europe/CIS', 1, TRUE, TRUE, 'bcgame', 'BC.Game Esports'),

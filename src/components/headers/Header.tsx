@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Crosshair } from "lucide-react";
 import { Navigation } from "../navigations/Navigation";
+import { LanguageSelect } from "./LanguageSelect";
 
 export default function Header() {
   return (
@@ -13,7 +14,10 @@ export default function Header() {
           <Crosshair className="h-5 w-5 text-cs-orange" />
           CS<span className="text-cs-orange">Games</span>
         </Link>
-        <Navigation />
+        <div className="flex items-center gap-2">
+          <Navigation />
+          <LanguageSelect />
+        </div>
       </div>
     </header>
   );
