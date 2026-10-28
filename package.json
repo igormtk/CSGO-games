@@ -10,7 +10,8 @@
     "data:import": "node --experimental-strip-types scripts/import-players.mjs",
     "data:logos": "node --experimental-strip-types scripts/fetch-team-logos.mjs",
     "data:seed": "node --experimental-strip-types scripts/generate-seed.mjs",
-    "data:update": "npm run data:import && npm run data:logos && npm run data:seed"
+    "data:update": "npm run data:import && npm run data:logos && npm run data:seed",
+    "record:demo": "node --experimental-strip-types scripts/record-demo.mts"
   },
   "dependencies": {
     "@next/env": "^15.0.3",
@@ -39,6 +40,7 @@
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "^15.5.28",
+    "playwright-core": "^1.56.1",
     "postcss": "^8.5.32",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Rajdhani as FontSans } from "next/font/google";
 import Header from "@/components/headers/Header";
 import "./globals.css";
@@ -40,11 +41,13 @@ export const viewport: Viewport = {
   themeColor: "#0e1114",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Ler os cabeçalhos torna a página dinâmica: cada visita recebe um nonce novo (ver middleware).
+  await headers();
   return (
     <html lang="pt-BR">
       {/* A página ocupa exatamente a altura da tela; cada jogo se ajusta ao espaço abaixo do menu. */}

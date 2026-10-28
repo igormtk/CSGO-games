@@ -43,8 +43,8 @@ export const setStoredLanguage = (language: Language) => {
 };
 
 // O título do HTML vem da metadata em português; no navegador ele acompanha o idioma escolhido.
-// O Next aplica a metadata por streaming depois da hidratação, então o título é vigiado e
-// reaplicado sempre que voltar a ser outro.
+// O Next aplica a metadata por streaming depois da hidratação (nas páginas dinâmicas, dentro do
+// body), então o título é vigiado no documento todo e reaplicado sempre que voltar a ser outro.
 export const useDocumentTitle = (title: string) => {
   useEffect(() => {
     const apply = () => {
@@ -52,7 +52,7 @@ export const useDocumentTitle = (title: string) => {
     };
     apply();
     const observer = new MutationObserver(apply);
-    observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+    observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
     return () => observer.disconnect();
   }, [title]);
 };
