@@ -6,7 +6,11 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "data:import": "node --experimental-strip-types scripts/import-players.mjs",
+    "data:logos": "node --experimental-strip-types scripts/fetch-team-logos.mjs",
+    "data:seed": "node --experimental-strip-types scripts/generate-seed.mjs",
+    "data:update": "npm run data:import && npm run data:logos && npm run data:seed"
   },
   "dependencies": {
     "@next/env": "^15.0.3",

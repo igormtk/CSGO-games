@@ -64,9 +64,12 @@ const loadDatabase = async () => {
       active: player.active,
       current_team_id: player.currentTeam ?? null,
       current_team_name: player.currentTeam ? data.getTeamName(player.currentTeam) : null,
-      liquipedia_page: null,
+      liquipedia_page: player.liquipediaPage ?? null,
     })),
-    teams: data.csTeams.map((team) => ({ id: team.id, name: team.name })),
+    teams: data.csTeams.flatMap((team) => [
+      { id: team.id, name: team.name },
+      ...(team.liquipediaPage && team.liquipediaPage !== team.name ? [{ id: team.id, name: team.liquipediaPage }] : []),
+    ]),
     playerTeams: data.csPlayers.flatMap((player) => player.teams.map((teamId) => ({ player_id: player.id, team_id: teamId }))),
   };
 };
@@ -122,9 +125,15 @@ const fetchLiquipediaPlayers = async (players) => {
         results.set(player.id, { error: page?.missing ? "página não existe" : "página sem infobox de jogador" });
         return;
       }
+      // O campo team= usa apelidos de template ("VP", "gl"); a entrada "Present" do histórico traz
+      // o nome da página, igual ao de scripts/import-players.mjs.
+      const presentTeam = [...wikitext.matchAll(/\{\{TH\|([^|}]*)\|([^|}]+)(?:\|[^}]*)?\}\}/g)]
+        .filter((match) => /present/i.test(match[1]))
+        .map((match) => cleanWikiValue(match[2]))
+        .at(-1);
       results.set(player.id, {
         page: page.title,
-        team: readInfoboxField(wikitext, "team"),
+        team: presentTeam ?? "",
         status: readInfoboxField(wikitext, "status"),
       });
     });
@@ -152,8 +161,9 @@ const main = async () => {
       return;
     }
 
-    const active = remote.status ? remote.status.toLowerCase() === "active" : player.active;
-    // Para aposentados e inativos o infobox mantém o último time; isso não é time atual.
+    // "Inactive" cobre banco e quem trocou de jogo: conta como ativo só quem ainda tem time.
+    const status = remote.status.toLowerCase();
+    const active = remote.status ? status === "active" || (status === "inactive" && Boolean(remote.team)) : player.active;
     const teamName = active ? remote.team || null : null;
     const teamId = teamName ? teamIdByName.get(teamName.toLowerCase()) ?? null : null;
     // Compara pelo id quando o time está na base: o Liquipedia escreve o mesmo time de jeitos

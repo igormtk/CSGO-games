@@ -36,7 +36,7 @@ import { GAME_TIME_ZONE, getGameDateKey, getPreviousDateKey, getPuzzleNumber, ha
 
 const GRID_SIZE = 4;
 // Prefixo novo a cada mudança no sorteio da cartela: partidas salvas antigas apontariam para outras casas.
-const GAME_KEY_PREFIX = "cs-bingo-daily-v3";
+const GAME_KEY_PREFIX = "cs-bingo-daily-v4";
 const STATS_KEY = "cs-bingo-stats";
 const POINTS_PER_HIT = 100;
 const PERFECT_BONUS = 300;
@@ -51,6 +51,8 @@ const MIN_COMBO_CANDIDATES = 2;
 const MAX_COMBO_CANDIDATES = 6;
 const COMBO_CELLS = 6;
 const BOARD_ATTEMPTS = 300;
+// Jogadores sorteados da base para o baralho do dia. A cartela é calibrada para esse tamanho.
+const DECK_SIZE = 42;
 const MAX_LIVES = 2;
 
 type CellPick = {
@@ -189,7 +191,7 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Melhor sequência",
     rulesTitle: "Como jogar",
     rules: [
-      `Os ${csPlayers.length} jogadores da base aparecem um por vez, em ordem aleatória. Cada uma das ${GRID_SIZE * GRID_SIZE} casas tem um critério próprio: coloque o nome da vez numa casa cujo critério ele cumpra.`,
+      `${DECK_SIZE} dos ${csPlayers.length} jogadores da base são sorteados para o dia e aparecem um por vez. Cada uma das ${GRID_SIZE * GRID_SIZE} casas tem um critério próprio: coloque o nome da vez numa casa cujo critério ele cumpra.`,
       "Algumas casas combinam dois critérios (ex.: Brasil + AWPer): o jogador precisa cumprir os dois.",
       "Se o nome não serve em nenhuma casa livre, pule. Pular não custa vida, mas o nome não volta.",
       `Errou a casa? Você perde uma vida e o nome continua na tela para tentar outra casa. São ${MAX_LIVES} vidas por partida.`,
@@ -249,7 +251,7 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Best streak",
     rulesTitle: "How to play",
     rules: [
-      `All ${csPlayers.length} players in the database appear one at a time, in random order. Each of the ${GRID_SIZE * GRID_SIZE} cells has its own criterion: place the current name in a cell whose criterion they meet.`,
+      `${DECK_SIZE} of the ${csPlayers.length} players in the database are drawn for the day and appear one at a time. Each of the ${GRID_SIZE * GRID_SIZE} cells has its own criterion: place the current name in a cell whose criterion they meet.`,
       "Some cells combine two criteria (e.g. Brazil + AWPer): the player must meet both.",
       "If the name fits no open cell, skip it. Skipping costs no life, but the name does not come back.",
       `Wrong cell? You lose a life and the name stays on screen so you can try another cell. You have ${MAX_LIVES} lives per game.`,
@@ -309,7 +311,7 @@ const translations: Record<Language, TranslationCopy> = {
     bestStreak: "Mejor racha",
     rulesTitle: "Cómo jugar",
     rules: [
-      `Los ${csPlayers.length} jugadores de la base aparecen uno por vez, en orden aleatorio. Cada una de las ${GRID_SIZE * GRID_SIZE} casillas tiene su propio criterio: coloca el nombre actual en una casilla cuyo criterio cumpla.`,
+      `${DECK_SIZE} de los ${csPlayers.length} jugadores de la base se sortean para el día y aparecen uno por vez. Cada una de las ${GRID_SIZE * GRID_SIZE} casillas tiene su propio criterio: coloca el nombre actual en una casilla cuyo criterio cumpla.`,
       "Algunas casillas combinan dos criterios (ej.: Brasil + AWPer): el jugador debe cumplir ambos.",
       "Si el nombre no sirve en ninguna casilla libre, sáltalo. Saltar no cuesta vida, pero el nombre no vuelve.",
       `¿Casilla equivocada? Pierdes una vida y el nombre sigue en pantalla para probar otra casilla. Tienes ${MAX_LIVES} vidas por partida.`,
@@ -331,6 +333,8 @@ const criterionTranslations: Record<Language, Record<string, CriterionCopy>> = {
     "nat-russia": { label: "Russia", helper: "Russian player" },
     "nat-ukraine": { label: "Ukraine", helper: "Ukrainian player" },
     "nat-israel": { label: "Israel", helper: "Israeli player" },
+    "nat-sweden": { label: "Sweden", helper: "Swedish player" },
+    "nat-poland": { label: "Poland", helper: "Polish player" },
     "role-entry": { label: "Entry fragger", helper: "Plays or played as an entry fragger" },
     "multi-major": { label: "2+ Majors", helper: "Won two or more Majors" },
     "no-major": { label: "No Major", helper: "Never won a Major" },
@@ -353,6 +357,8 @@ const criterionTranslations: Record<Language, Record<string, CriterionCopy>> = {
     "nat-russia": { label: "Rusia", helper: "Jugador ruso" },
     "nat-ukraine": { label: "Ucrania", helper: "Jugador ucraniano" },
     "nat-israel": { label: "Israel", helper: "Jugador israelí" },
+    "nat-sweden": { label: "Suecia", helper: "Jugador sueco" },
+    "nat-poland": { label: "Polonia", helper: "Jugador polaco" },
     "role-entry": { label: "Entry fragger", helper: "Juega o jugó como entry fragger" },
     "multi-major": { label: "2+ Majors", helper: "Ganó dos Majors o más" },
     "no-major": { label: "Sin Major", helper: "Nunca ganó un Major" },
@@ -385,33 +391,41 @@ const getGameClockSeconds = () => {
 const playerFitsCell = (player: CsPlayer, cell: BoardCell) =>
   cell.every((criterion) => playerMatchesCriterion(player, criterion));
 
-const countCandidates = (cell: BoardCell) => csPlayers.filter((player) => playerFitsCell(player, cell)).length;
-
-const singleCells: BoardCell[] = bingoCriteria
-  .filter((criterion) => countCandidates([criterion]) <= MAX_SINGLE_CANDIDATES)
-  .map((criterion) => [criterion]);
+const countCandidates = (cell: BoardCell, deck: CsPlayer[]) => deck.filter((player) => playerFitsCell(player, cell)).length;
 
 // Pares sem sentido juntos: "Vitality + 3+ times" lê como se fossem três times da Vitality.
 const isConfusingPair = (first: BingoCriterion, second: BingoCriterion) =>
   [first, second].some((criterion) => criterion.id === "teams-3") &&
   [first, second].some((criterion) => criterion.type === "team");
 
-// Pares que restringem de verdade: nenhum dos dois critérios implica o outro. Dois critérios do
-// mesmo tipo ("2+ Majors + Top 20 5+ vezes") ficam de fora: confundem mais do que desafiam.
-const comboCells: BoardCell[] = bingoCriteria.flatMap((first, firstIndex) =>
-  bingoCriteria.slice(firstIndex + 1).flatMap((second) => {
-    if (first.type === second.type || isConfusingPair(first, second)) return [];
-    const candidates = countCandidates([first, second]);
-    const narrowsBoth = candidates < Math.min(countCandidates([first]), countCandidates([second]));
-    return candidates >= MIN_COMBO_CANDIDATES && candidates <= MAX_COMBO_CANDIDATES && narrowsBoth ? [[first, second]] : [];
-  })
-);
+// Casas possíveis para o baralho do dia. Simples: critérios com poucos candidatos. Combinadas: pares
+// que restringem de verdade (nenhum dos dois implica o outro). Dois critérios do mesmo tipo
+// ("2+ Majors + Top 20 5+ vezes") ficam de fora: confundem mais do que desafiam.
+const buildCandidateCells = (deck: CsPlayer[]) => {
+  const singleCells: BoardCell[] = bingoCriteria
+    .filter((criterion) => {
+      const candidates = countCandidates([criterion], deck);
+      return candidates > 0 && candidates <= MAX_SINGLE_CANDIDATES;
+    })
+    .map((criterion) => [criterion]);
+
+  const comboCells: BoardCell[] = bingoCriteria.flatMap((first, firstIndex) =>
+    bingoCriteria.slice(firstIndex + 1).flatMap((second) => {
+      if (first.type === second.type || isConfusingPair(first, second)) return [];
+      const candidates = countCandidates([first, second], deck);
+      const narrowsBoth = candidates < Math.min(countCandidates([first], deck), countCandidates([second], deck));
+      return candidates >= MIN_COMBO_CANDIDATES && candidates <= MAX_COMBO_CANDIDATES && narrowsBoth ? [[first, second]] : [];
+    })
+  );
+
+  return { singleCells, comboCells };
+};
 
 // Cada jogador ocupa uma casa só, então não basta toda casa ter uma resposta: precisa existir
 // um jogador diferente para cada casa (emparelhamento bipartido com caminhos aumentantes).
-const boardHasAnswers = (cells: GameBoard) => {
+const boardHasAnswers = (cells: GameBoard, deck: CsPlayer[]) => {
   const cellCandidates = cells.map((cell) =>
-    csPlayers.filter((player) => playerFitsCell(player, cell)).map((player) => player.id)
+    deck.filter((player) => playerFitsCell(player, cell)).map((player) => player.id)
   );
   const cellByPlayer: Record<string, number> = {};
 
@@ -435,7 +449,7 @@ const boardHasAnswers = (cells: GameBoard) => {
 // casa livre compatível; o experiente conhece a base e usa a casa com menos candidatos.
 const simulateFill = (cells: GameBoard, queue: CsPlayer[], strategy: "naive" | "expert") => {
   const filled = new Set<number>();
-  const candidates = cells.map(countCandidates);
+  const candidates = cells.map((cell) => countCandidates(cell, queue));
 
   queue.forEach((player) => {
     const options = cells
@@ -448,13 +462,14 @@ const simulateFill = (cells: GameBoard, queue: CsPlayer[], strategy: "naive" | "
   return filled.size;
 };
 
-const countUsefulPlayers = (cells: GameBoard) =>
-  csPlayers.filter((player) => cells.some((cell) => playerFitsCell(player, cell))).length;
+const countUsefulPlayers = (cells: GameBoard, deck: CsPlayer[]) =>
+  deck.filter((player) => cells.some((cell) => playerFitsCell(player, cell))).length;
 
 // Entre várias cartelas sorteadas com solução, fica a que mais derrota o jogador experiente,
 // depois o ingênuo, e que tem mais nomes que não servem em casa nenhuma.
 const createDailyBoard = (dateKey: string, queue: CsPlayer[]): GameBoard => {
   const seed = hashDate(dateKey);
+  const { singleCells, comboCells } = buildCandidateCells(queue);
   let bestBoard: GameBoard | undefined;
   let bestScore = Infinity;
 
@@ -477,10 +492,10 @@ const createDailyBoard = (dateKey: string, queue: CsPlayer[]): GameBoard => {
       GRID_SIZE * GRID_SIZE - combos.length
     );
     const cells = seededShuffle([...combos, ...singles], seed + attempt);
-    if (cells.length < GRID_SIZE * GRID_SIZE || !boardHasAnswers(cells)) continue;
+    if (cells.length < GRID_SIZE * GRID_SIZE || !boardHasAnswers(cells, queue)) continue;
 
     const score =
-      simulateFill(cells, queue, "expert") * 100 + simulateFill(cells, queue, "naive") * 10 + countUsefulPlayers(cells) / 10;
+      simulateFill(cells, queue, "expert") * 100 + simulateFill(cells, queue, "naive") * 10 + countUsefulPlayers(cells, queue) / 10;
     if (score < bestScore) {
       bestBoard = cells;
       bestScore = score;
@@ -490,12 +505,12 @@ const createDailyBoard = (dateKey: string, queue: CsPlayer[]): GameBoard => {
   return bestBoard ?? bingoCriteria.slice(0, GRID_SIZE * GRID_SIZE).map((criterion) => [criterion]);
 };
 
-// O baralho tem todos os jogadores da base, inclusive os que não servem em nenhuma casa:
+// O baralho do dia sorteia DECK_SIZE jogadores da base, inclusive os que não servem em nenhuma casa:
 // reconhecer esses nomes e pulá-los faz parte do desafio.
-const createPlayerQueue = (dateKey: string) => seededShuffle(csPlayers, hashDate(dateKey) * 17);
+const createPlayerQueue = (dateKey: string) => seededShuffle(csPlayers, hashDate(dateKey) * 17).slice(0, DECK_SIZE);
 
-const getPossibleAnswers = (cell: BoardCell, usedPlayerIds: Set<string>) =>
-  csPlayers
+const getPossibleAnswers = (cell: BoardCell, usedPlayerIds: Set<string>, deck: CsPlayer[]) =>
+  deck
     .filter((player) => !usedPlayerIds.has(player.id) && playerFitsCell(player, cell))
     .slice(0, REVEALED_ANSWERS)
     .map((player) => player.nickname);
@@ -559,7 +574,7 @@ const readAnswersRevealed = (dateKey: string) =>
 const isStoredGameOver = (game: StoredGame) =>
   Object.keys(game.picks ?? {}).length === GRID_SIZE * GRID_SIZE ||
   (game.mistakes ?? 0) >= MAX_LIVES ||
-  (game.playerIndex ?? 0) >= csPlayers.length;
+  (game.playerIndex ?? 0) >= DECK_SIZE;
 
 const getTimeToNextPuzzle = () => {
   const totalSeconds = Math.max(24 * 60 * 60 - getGameClockSeconds(), 0);
@@ -1041,7 +1056,7 @@ export default function BingoPage() {
                       )}
                       {isGameOver ? (
                         <p className="break-words text-[length:clamp(8px,2.4cqmin,13px)] font-semibold leading-tight text-cs-orange/80">
-                          {answersRevealed ? getPossibleAnswers(cell, usedPlayerIds).join(", ") : copy.answersLocked}
+                          {answersRevealed ? getPossibleAnswers(cell, usedPlayerIds, playerQueue).join(", ") : copy.answersLocked}
                         </p>
                       ) : cell.length === 1 ? (
                         <p className="cs-board-helper text-[11px] font-semibold leading-tight text-cs-text/40">{criterionCopy.helper}</p>

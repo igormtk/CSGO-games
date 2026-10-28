@@ -3,13 +3,15 @@
 // escuro, que combina com o site. O nome do time já aparece no nosso rótulo.
 //
 // Uso:
-//   node scripts/fetch-team-logos.mjs           baixa só as logos que ainda não existem
-//   node scripts/fetch-team-logos.mjs --force   baixa todas de novo
+//   node --experimental-strip-types scripts/fetch-team-logos.mjs           só as que faltam
+//   node --experimental-strip-types scripts/fetch-team-logos.mjs --force   todas de novo
 //
-// Time novo: inclua o id em TEAMS_WITH_LOGO, em src/data/teamLogos.ts.
+// Os times vêm de src/data/generated/liquipedia.ts (scripts/import-players.mjs). No fim, grava em
+// src/data/generated/teamLogos.ts o arquivo de cada time com logo; os outros mostram as iniciais.
 // As logos são marcas dos times: usamos só para identificar o time (ver /termos).
 
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { generatedTeams } from "../src/data/generated/liquipedia.ts";
 import { extname, join } from "node:path";
 
 const API_URL = "https://liquipedia.net/counterstrike/api.php";
@@ -18,27 +20,7 @@ const USER_AGENT = `CSGamesBingo/1.0 (${CONTACT})`;
 const DELAY_BETWEEN_REQUESTS_MS = 2500;
 const OUTPUT_DIR = "public/teams";
 
-// Página do Liquipedia de cada time, quando o nome não bate com o nosso.
-const PAGE_BY_TEAM = {
-  navi: "Natus Vincere",
-  astralis: "Astralis",
-  faze: "FaZe Clan",
-  g2: "G2 Esports",
-  vitality: "Team Vitality",
-  liquid: "Team Liquid",
-  furia: "FURIA",
-  fnatic: "Fnatic",
-  mibr: "MIBR",
-  cloud9: "Cloud9",
-  spirit: "Team Spirit",
-  mousesports: "MOUZ",
-  falcons: "Team Falcons",
-  mongolz: "The MongolZ",
-  nip: "Ninjas in Pyjamas",
-  bcgame: "BC.Game Esports",
-  "100thieves": "100 Thieves",
-  withoutaroof: "Without a Roof",
-};
+const PAGE_BY_TEAM = Object.fromEntries(generatedTeams.map((team) => [team.id, team.liquipediaPage ?? team.name]));
 
 const force = process.argv.includes("--force");
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -64,11 +46,32 @@ const readIconUrl = (html) => {
 
 const existingLogo = (teamId) => readdirSync(OUTPUT_DIR).find((file) => file.replace(extname(file), "") === teamId);
 
+const LOGO_LIST_FILE = "src/data/generated/teamLogos.ts";
+
+const writeLogoList = () => {
+  // A extensão vem do arquivo original no Liquipedia (png na maioria, às vezes svg).
+  const files = Object.fromEntries(
+    Object.keys(PAGE_BY_TEAM)
+      .map((teamId) => [teamId, existingLogo(teamId)])
+      .filter(([, file]) => file)
+  );
+  writeFileSync(
+    LOGO_LIST_FILE,
+    [
+      "// Gerado por scripts/fetch-team-logos.mjs: arquivo da logo de cada time em public/teams.",
+      `export const teamLogoFiles: Record<string, string> = ${JSON.stringify(files, null, 2)};`,
+      "",
+    ].join("\n")
+  );
+  console.log(`${Object.keys(files).length} de ${Object.keys(PAGE_BY_TEAM).length} times com logo (${LOGO_LIST_FILE})`);
+};
+
 const main = async () => {
   mkdirSync(OUTPUT_DIR, { recursive: true });
   const pending = Object.entries(PAGE_BY_TEAM).filter(([teamId]) => force || !existingLogo(teamId));
   if (pending.length === 0) {
     console.log("Todas as logos já existem. Use --force para baixar de novo.");
+    writeLogoList();
     return;
   }
 
@@ -98,6 +101,7 @@ const main = async () => {
     writeFileSync(outputPath, Buffer.from(await response.arrayBuffer()));
     console.log(`✓ ${teamId} → /${outputPath.replace(/^public\//, "")}`);
   }
+  writeLogoList();
 };
 
 main().catch((error) => {

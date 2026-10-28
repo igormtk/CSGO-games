@@ -16,7 +16,8 @@ const MAX_GUESSES = 6;
 // Depois desses erros, mostramos um time antigo do jogador como dica.
 const HINT_AFTER_MISSES = 3;
 const MAX_SUGGESTIONS = 6;
-const GAME_KEY_PREFIX = "cs-mystery-daily-v1";
+// Prefixo novo a cada mudança na ordem dos jogadores: palpites salvos apontariam para outro alvo.
+const GAME_KEY_PREFIX = "cs-mystery-daily-v2";
 const STATS_KEY = "cs-mystery-stats";
 // Semente fixa da ordem dos jogadores: cada um aparece uma vez antes de qualquer repetição.
 const ORDER_SEED = 4242;
@@ -75,7 +76,7 @@ const mysteryCopy = {
     partnerLabel: "Publicidade",
     noTeam: "Sem time",
     clues: { team: "Time", country: "País", region: "Região", role: "Função", majors: "Majors", top20: "Top 20" },
-    regions: { "Europe/CIS": "Europa/CEI", Europe: "Europa", International: "Internacional", "North America": "América do Norte", "South America": "América do Sul", "Middle East": "Oriente Médio", Asia: "Ásia" } as Record<string, string>,
+    regions: { "Europe/CIS": "Europa/CEI", Europe: "Europa", International: "Internacional", "North America": "América do Norte", "South America": "América do Sul", "Middle East": "Oriente Médio", Asia: "Ásia", Oceania: "Oceania", Africa: "África" } as Record<string, string>,
   },
   en: {
     eyebrow: "Mystery player",
@@ -110,7 +111,7 @@ const mysteryCopy = {
     partnerLabel: "Advertisement",
     noTeam: "No team",
     clues: { team: "Team", country: "Country", region: "Region", role: "Role", majors: "Majors", top20: "Top 20" },
-    regions: { "Europe/CIS": "Europe/CIS", Europe: "Europe", International: "International", "North America": "North America", "South America": "South America", "Middle East": "Middle East", Asia: "Asia" } as Record<string, string>,
+    regions: { "Europe/CIS": "Europe/CIS", Europe: "Europe", International: "International", "North America": "North America", "South America": "South America", "Middle East": "Middle East", Asia: "Asia", Oceania: "Oceania", Africa: "Africa" } as Record<string, string>,
   },
   es: {
     eyebrow: "Jugador misterioso",
@@ -145,13 +146,16 @@ const mysteryCopy = {
     partnerLabel: "Publicidad",
     noTeam: "Sin equipo",
     clues: { team: "Equipo", country: "País", region: "Región", role: "Rol", majors: "Majors", top20: "Top 20" },
-    regions: { "Europe/CIS": "Europa/CEI", Europe: "Europa", International: "Internacional", "North America": "Norteamérica", "South America": "Sudamérica", "Middle East": "Oriente Medio", Asia: "Asia" } as Record<string, string>,
+    regions: { "Europe/CIS": "Europa/CEI", Europe: "Europa", International: "Internacional", "North America": "Norteamérica", "South America": "Sudamérica", "Middle East": "Oriente Medio", Asia: "Asia", Oceania: "Oceanía", Africa: "África" } as Record<string, string>,
   },
 } satisfies Record<Language, unknown>;
 
 type MysteryCopy = (typeof mysteryCopy)["pt"];
 
-const playerOrder = seededShuffle(csPlayers, ORDER_SEED);
+// O alvo do dia é sempre um nome conhecido (Top 20 da HLTV ou campeão de Major); os palpites
+// aceitam qualquer jogador da base.
+const mysteryCandidates = csPlayers.filter((player) => player.hltvTop20Years.length > 0 || player.majorsWon > 0);
+const playerOrder = seededShuffle(mysteryCandidates, ORDER_SEED);
 
 const getMysteryPlayer = (dateKey: string) => {
   const puzzle = getPuzzleNumber(dateKey);
