@@ -5,6 +5,7 @@ import "./globals.css";
 
 import { cn } from "@/lib/utils";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
+import { JsonLd, siteJsonLd } from "@/components/seo/JsonLd";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -17,9 +18,23 @@ export const metadata: Metadata = {
   title: { default: `${siteName} · Jogos diários de Counter-Strike`, template: `%s · ${siteName}` },
   description: siteDescription,
   applicationName: siteName,
-  openGraph: { type: "website", siteName, locale: "pt_BR", url: "/" },
+  keywords: ["Counter-Strike", "CS2", "CS:GO", "jogos diários", "pro players", "quiz de CS", "HLTV", "Major", "esports"],
+  category: "games",
+  alternates: { canonical: "/" },
+  openGraph: { type: "website", siteName, locale: "pt_BR", alternateLocale: ["en_US", "es_ES"], url: "/" },
   twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
+  // Código do Google Search Console (Configurações → Propriedade → Verificação por tag HTML).
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
+
+const games = [
+  { name: "CS Bingo", path: "/bingo", description: "Cartela diária 4x4 de pro players de Counter-Strike." },
+  { name: "Jogador misterioso", path: "/jogador-misterioso", description: "Descubra o pro player do dia em 6 palpites." },
+  { name: "Adivinhe o jogador", path: "/guess-name", description: "Acerte o nome real dos pro players." },
+];
 
 export const viewport: Viewport = {
   themeColor: "#0e1114",
@@ -39,6 +54,7 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
+        <JsonLd data={siteJsonLd(games, siteDescription)} />
         <Header />
         <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
           {children}

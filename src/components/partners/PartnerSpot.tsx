@@ -1,5 +1,8 @@
+"use client";
+
 import { ExternalLink } from "lucide-react";
 import type { Partner } from "@/data/partners";
+import { useLanguage } from "@/lib/language";
 
 type PartnerSpotProps = {
   partner: Partner;
@@ -8,7 +11,9 @@ type PartnerSpotProps = {
 };
 
 // Espaço publicitário identificado como "Publicidade", como exige o CONAR.
-export function PartnerSpot({ partner, label, variant }: PartnerSpotProps) {
+export function PartnerSpot({ partner: basePartner, label, variant }: PartnerSpotProps) {
+  const language = useLanguage();
+  const partner = { ...basePartner, ...basePartner.translations?.[language] };
   const hasLink = Boolean(partner.href);
   const Wrapper = hasLink ? "a" : "div";
   const linkProps = hasLink ? { href: partner.href, target: "_blank", rel: "sponsored noopener noreferrer" } : {};

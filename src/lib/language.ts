@@ -42,6 +42,21 @@ export const setStoredLanguage = (language: Language) => {
   window.dispatchEvent(new CustomEvent<Language>(LANGUAGE_EVENT, { detail: language }));
 };
 
+// O título do HTML vem da metadata em português; no navegador ele acompanha o idioma escolhido.
+// O Next aplica a metadata por streaming depois da hidratação, então o título é vigiado e
+// reaplicado sempre que voltar a ser outro.
+export const useDocumentTitle = (title: string) => {
+  useEffect(() => {
+    const apply = () => {
+      if (document.title !== title) document.title = title;
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+    return () => observer.disconnect();
+  }, [title]);
+};
+
 // Começa em português (o HTML do build) e troca depois da montagem para não divergir na hidratação.
 export const useLanguage = () => {
   const [language, setLanguage] = useState<Language>("pt");

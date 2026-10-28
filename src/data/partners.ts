@@ -2,7 +2,11 @@
 // aqui (imagens em public/partners/), sem rede de anúncios.
 // Nomes de arquivos e classes evitam "ad"/"ads": bloqueadores escondem esses elementos.
 
+import type { Language } from "@/lib/language";
+
 export type PartnerPlacement = "post-game" | "home";
+
+type PartnerCopy = { headline: string; description?: string; cta: string };
 
 export type Partner = {
   id: string;
@@ -18,6 +22,8 @@ export type Partner = {
   startsOn?: string;
   endsOn?: string;
   placements: PartnerPlacement[];
+  // Textos em outros idiomas; sem tradução, aparece o texto principal.
+  translations?: Partial<Record<Language, PartnerCopy>>;
 };
 
 // Adicione aqui cada campanha vendida. Exemplo:
@@ -46,6 +52,10 @@ export const housePartner: Partner = {
   href: advertiseContact ?? "",
   cta: "Anuncie aqui",
   placements: ["post-game", "home"],
+  translations: {
+    en: { headline: "Your brand here", description: "Advertise to people who play CS every day.", cta: "Advertise here" },
+    es: { headline: "Tu marca aquí", description: "Anúnciate para quienes juegan CS todos los días.", cta: "Anúnciate aquí" },
+  },
 };
 
 const isRunning = (partner: Partner, dateKey: string) =>
