@@ -160,48 +160,48 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
     pt: {
       heading: "Como jogar o Adivinhe o jogador",
       intro:
-        "No Adivinhe o jogador você mostra o quanto conhece a cena de Counter-Strike: aparece o nick de um pro player e você escolhe o nome verdadeiro dele entre 4 opções.",
+        "O Adivinhe o jogador é um desafio diário de Counter-Strike: aparecem os nicks de 20 pro players, os mesmos para todo mundo, e você escolhe o nome verdadeiro de cada um entre 4 opções, com 10 segundos por nome.",
       steps: [
-        "Clique em Começar: os nicks aparecem em ordem aleatória.",
-        "Escolha o nome real entre 4 opções. As erradas costumam ser da mesma nacionalidade, para dificultar.",
-        "Você tem 3 vidas; cada erro custa uma.",
-        "Acerte o máximo de nomes que conseguir e bata o seu recorde.",
+        "Clique em Começar: os 20 nomes do dia aparecem um por vez.",
+        "Escolha o nome real entre 4 opções antes de o cronômetro de 10 segundos zerar. As erradas costumam ser da mesma nacionalidade, para dificultar.",
+        "Errou ou o tempo acabou? Perde uma das 3 vidas. Trocar de aba não pausa o tempo, e recarregar a página conta o nome da tela como erro.",
+        "No fim, compartilhe o resultado em quadradinhos e volte amanhã para manter a sequência.",
       ],
       faqHeading: "Perguntas frequentes",
       faq: [
-        { question: "Tem limite de partidas?", answer: "Não: diferente dos jogos diários, aqui dá para jogar quantas vezes quiser." },
+        { question: "Posso jogar mais de uma vez por dia?", answer: "Não: é uma tentativa por dia, com os mesmos 20 nomes para todos. Um desafio novo aparece à meia-noite (horário de Brasília)." },
         ...commonFaq.pt,
       ],
     },
     en: {
       heading: "How to play Guess the player",
       intro:
-        "Guess the player tests how well you know the Counter-Strike scene: you see a pro player's nickname and pick their real name from 4 options.",
+        "Guess the player is a daily Counter-Strike challenge: you see the nicknames of 20 pro players, the same for everyone, and pick each one's real name from 4 options, with 10 seconds per name.",
       steps: [
-        "Click Start: nicknames appear in random order.",
-        "Pick the real name from 4 options. Wrong answers are usually from the same country, to make it harder.",
-        "You have 3 lives; each miss costs one.",
-        "Get as many names right as you can and beat your record.",
+        "Click Start: today's 20 names appear one at a time.",
+        "Pick the real name from 4 options before the 10-second timer runs out. Wrong answers are usually from the same country, to make it harder.",
+        "Wrong answer or time's up? You lose one of your 3 lives. Switching tabs doesn't pause the timer, and reloading the page counts the name on screen as a miss.",
+        "At the end, share your result and come back tomorrow to keep your streak.",
       ],
       faqHeading: "FAQ",
       faq: [
-        { question: "Is there a limit on games?", answer: "No: unlike the daily games, you can play as many times as you like." },
+        { question: "Can I play more than once a day?", answer: "No: there is one attempt per day, with the same 20 names for everyone. A new challenge arrives at midnight Brasília time." },
         ...commonFaq.en,
       ],
     },
     es: {
       heading: "Cómo jugar a Adivina el jugador",
       intro:
-        "En Adivina el jugador demuestras cuánto conoces la escena de Counter-Strike: aparece el nick de un pro player y eliges su nombre real entre 4 opciones.",
+        "Adivina el jugador es un desafío diario de Counter-Strike: aparecen los nicks de 20 pro players, los mismos para todos, y eliges el nombre real de cada uno entre 4 opciones, con 10 segundos por nombre.",
       steps: [
-        "Haz clic en Empezar: los nicks aparecen en orden aleatorio.",
-        "Elige el nombre real entre 4 opciones. Las incorrectas suelen ser de la misma nacionalidad, para complicarlo.",
-        "Tienes 3 vidas; cada error cuesta una.",
-        "Acierta todos los nombres que puedas y supera tu récord.",
+        "Haz clic en Empezar: los 20 nombres del día aparecen uno por vez.",
+        "Elige el nombre real entre 4 opciones antes de que el cronómetro de 10 segundos llegue a cero. Las incorrectas suelen ser de la misma nacionalidad, para complicarlo.",
+        "¿Fallaste o se acabó el tiempo? Pierdes una de tus 3 vidas. Cambiar de pestaña no pausa el tiempo, y recargar la página cuenta el nombre en pantalla como error.",
+        "Al final, comparte tu resultado y vuelve mañana para mantener tu racha.",
       ],
       faqHeading: "Preguntas frecuentes",
       faq: [
-        { question: "¿Hay límite de partidas?", answer: "No: a diferencia de los juegos diarios, aquí puedes jugar todas las veces que quieras." },
+        { question: "¿Puedo jugar más de una vez al día?", answer: "No: hay un solo intento por día, con los mismos 20 nombres para todos. Hay un desafío nuevo a medianoche (hora de Brasilia)." },
         ...commonFaq.es,
       ],
     },

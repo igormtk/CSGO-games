@@ -33,3 +33,23 @@ export const seededShuffle = <T,>(items: T[], seed: number) => {
 
   return result;
 };
+
+const getGameClockSeconds = () => {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: GAME_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const part = (type: string) => Number(parts.find((entry) => entry.type === type)?.value ?? 0);
+  return part("hour") * 3600 + part("minute") * 60 + part("second");
+};
+
+// "HH:MM:SS" até a meia-noite de Brasília, quando os desafios diários viram.
+export const getTimeToNextPuzzle = () => {
+  const totalSeconds = Math.max(24 * 60 * 60 - getGameClockSeconds(), 0);
+  return [Math.floor(totalSeconds / 3600), Math.floor((totalSeconds % 3600) / 60), totalSeconds % 60]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":");
+};

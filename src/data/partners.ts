@@ -4,7 +4,8 @@
 
 import type { Language } from "@/lib/language";
 
-export type PartnerPlacement = "post-game" | "home";
+// sidebar: colunas laterais (160x600) que aparecem só em telas largas.
+export type PartnerPlacement = "post-game" | "home" | "sidebar";
 
 type PartnerCopy = { headline: string; description?: string; cta: string };
 
@@ -16,6 +17,8 @@ export type Partner = {
   description?: string;
   // Caminho dentro de public/, ex.: "/partners/marca.png" (proporção 16:9 no pós-jogo)
   imageSrc?: string;
+  // Imagem vertical para as colunas laterais (160x600); sem ela, a coluna mostra o texto.
+  railImageSrc?: string;
   href: string;
   cta: string;
   // Período da campanha em datas UTC (YYYY-MM-DD), inclusive
@@ -37,7 +40,8 @@ export type Partner = {
 //   cta: "Comprar",
 //   startsOn: "2026-11-01",
 //   endsOn: "2026-11-30",
-//   placements: ["post-game", "home"],
+//   railImageSrc: "/partners/marca-lateral.png",
+//   placements: ["post-game", "home", "sidebar"],
 // },
 export const partners: Partner[] = [];
 
@@ -51,7 +55,7 @@ export const housePartner: Partner = {
   description: "Anuncie para quem joga CS todo dia.",
   href: advertiseContact ?? "",
   cta: "Anuncie aqui",
-  placements: ["post-game", "home"],
+  placements: ["post-game", "home", "sidebar"],
   translations: {
     en: { headline: "Your brand here", description: "Advertise to people who play CS every day.", cta: "Advertise here" },
     es: { headline: "Tu marca aquí", description: "Anúnciate para quienes juegan CS todos los días.", cta: "Anúnciate aquí" },

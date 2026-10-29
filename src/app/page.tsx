@@ -43,8 +43,8 @@ const homeCopy: Record<
       },
       "/guess-name": {
         title: "Adivinhe o jogador",
-        description: "Você sabe o nome real dos pro players? Acerte o máximo que conseguir.",
-        tag: "Infinito",
+        description: "20 pro players por dia e 10 segundos para cada um: você sabe o nome real deles?",
+        tag: "Diário",
       },
       "/bingo/multiplayer": {
         title: "Bingo multiplayer",
@@ -77,8 +77,8 @@ const homeCopy: Record<
       },
       "/guess-name": {
         title: "Guess the player",
-        description: "Do you know the pro players' real names? Get as many right as you can.",
-        tag: "Endless",
+        description: "20 pro players a day and 10 seconds for each: do you know their real names?",
+        tag: "Daily",
       },
       "/bingo/multiplayer": {
         title: "Bingo multiplayer",
@@ -111,8 +111,8 @@ const homeCopy: Record<
       },
       "/guess-name": {
         title: "Adivina el jugador",
-        description: "¿Sabes el nombre real de los pro players? Acierta todos los que puedas.",
-        tag: "Infinito",
+        description: "20 pro players por día y 10 segundos para cada uno: ¿sabes su nombre real?",
+        tag: "Diario",
       },
       "/bingo/multiplayer": {
         title: "Bingo multijugador",

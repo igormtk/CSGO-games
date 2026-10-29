@@ -35,11 +35,12 @@ import { DECK_SIZE, GRID_SIZE, createBoard, createPlayerQueue, getPossibleAnswer
 import type { BoardCell, GameBoard } from "@/lib/bingo/board";
 import { comboJoiners, getCellCopy, getCriterionCopy } from "@/lib/bingo/copy";
 import { TeamBadge } from "@/components/teams/TeamBadge";
+import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
 import { countryFlags } from "@/data/countryFlags";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
 import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
-import { GAME_TIME_ZONE, getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
+import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 
 // Prefixo novo a cada mudança no sorteio da cartela: partidas salvas antigas apontariam para outras casas.
 const GAME_KEY_PREFIX = "cs-bingo-daily-v4";
@@ -311,17 +312,6 @@ const translations: Record<Language, TranslationCopy> = {
   },
 };
 
-const getGameClockSeconds = () => {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: GAME_TIME_ZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date());
-  const part = (type: string) => Number(parts.find((entry) => entry.type === type)?.value ?? 0);
-  return part("hour") * 3600 + part("minute") * 60 + part("second");
-};
 
 const parseStoredGame = (dateKey: string): StoredGame => {
   if (typeof window === "undefined") return {};
@@ -384,12 +374,6 @@ const isStoredGameOver = (game: StoredGame) =>
   (game.mistakes ?? 0) >= MAX_LIVES ||
   (game.playerIndex ?? 0) >= DECK_SIZE;
 
-const getTimeToNextPuzzle = () => {
-  const totalSeconds = Math.max(24 * 60 * 60 - getGameClockSeconds(), 0);
-  return [Math.floor(totalSeconds / 3600), Math.floor((totalSeconds % 3600) / 60), totalSeconds % 60]
-    .map((part) => String(part).padStart(2, "0"))
-    .join(":");
-};
 
 const emptyStats: PlayerStats = { played: 0, finished: 0, currentStreak: 0, bestStreak: 0 };
 
@@ -1023,17 +1007,6 @@ function PartnerBreak({
       </button>
     </div>
   );
-}
-
-function NextPuzzleCountdown() {
-  const [timeLeft, setTimeLeft] = useState(getTimeToNextPuzzle);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setTimeLeft(getTimeToNextPuzzle()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  return <p className="text-3xl font-bold tabular-nums text-cs-orange">{timeLeft}</p>;
 }
 
 function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
