@@ -7,6 +7,10 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Versões principais (Next 16, Tailwind 4...) mudam a API: atualizar à mão, com testes.
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
     groups:
       # Patches e versões menores num PR só; versões principais (que podem quebrar) vêm separadas.
       minor-and-patch:
