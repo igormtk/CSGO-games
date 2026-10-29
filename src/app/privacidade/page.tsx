@@ -17,7 +17,7 @@ const content = {
       <h2>O que guardamos</h2>
       <p>Você joga sem cadastro. Guardamos apenas no seu próprio navegador (armazenamento local):</p>
       <ul>
-        <li>o andamento e o resultado dos desafios do dia (CS Bingo, Jogador misterioso e Adivinhe o jogador);</li>
+        <li>o andamento e o resultado dos desafios do dia (CS Bingo, Jogador misterioso, Adivinhe o jogador e Caminho de carreira);</li>
         <li>suas estatísticas e sequência de dias jogados;</li>
         <li>o idioma escolhido.</li>
       </ul>
@@ -71,7 +71,7 @@ const content = {
       <h2>What we store</h2>
       <p>You play without signing up. We only store, in your own browser (local storage):</p>
       <ul>
-        <li>the progress and result of the daily challenges (CS Bingo, Mystery player and Guess the player);</li>
+        <li>the progress and result of the daily challenges (CS Bingo, Mystery player, Guess the player and Career path);</li>
         <li>your stats and streak of days played;</li>
         <li>your chosen language.</li>
       </ul>
@@ -123,7 +123,7 @@ const content = {
       <h2>Qué guardamos</h2>
       <p>Juegas sin registrarte. Solo guardamos en tu propio navegador (almacenamiento local):</p>
       <ul>
-        <li>el progreso y el resultado de los desafíos del día (CS Bingo, Jugador misterioso y Adivina el jugador);</li>
+        <li>el progreso y el resultado de los desafíos del día (CS Bingo, Jugador misterioso, Adivina el jugador y Camino de carrera);</li>
         <li>tus estadísticas y racha de días jugados;</li>
         <li>el idioma elegido.</li>
       </ul>

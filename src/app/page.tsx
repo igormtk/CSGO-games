@@ -3,7 +3,7 @@
 import { DefaultCard } from "@/components/cards/DefaultCard";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Grid3x3, ScanFace, UserSearch, Users } from "lucide-react";
+import { Grid3x3, Route, ScanFace, UserSearch, Users } from "lucide-react";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPartnerFor } from "@/data/partners";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
@@ -46,6 +46,11 @@ const homeCopy: Record<
         description: "20 pro players por dia e 10 segundos para cada um: você sabe o nome real deles?",
         tag: "Diário",
       },
+      "/career-path": {
+        title: "Caminho de carreira",
+        description: "Os times de um pro player, em ordem: descubra de quem é a carreira em 6 palpites.",
+        tag: "Diário",
+      },
       "/bingo/multiplayer": {
         title: "Bingo multiplayer",
         description: "Crie uma sala, mande o código para os amigos e disputem a mesma cartela em tempo real.",
@@ -78,6 +83,11 @@ const homeCopy: Record<
       "/guess-name": {
         title: "Guess the player",
         description: "20 pro players a day and 10 seconds for each: do you know their real names?",
+        tag: "Daily",
+      },
+      "/career-path": {
+        title: "Career path",
+        description: "A pro player's teams, in order: find out whose career it is in 6 guesses.",
         tag: "Daily",
       },
       "/bingo/multiplayer": {
@@ -114,6 +124,11 @@ const homeCopy: Record<
         description: "20 pro players por día y 10 segundos para cada uno: ¿sabes su nombre real?",
         tag: "Diario",
       },
+      "/career-path": {
+        title: "Camino de carrera",
+        description: "Los equipos de un pro player, en orden: descubre de quién es la carrera en 6 intentos.",
+        tag: "Diario",
+      },
       "/bingo/multiplayer": {
         title: "Bingo multijugador",
         description: "Crea una sala, envía el código a tus amigos y compitan en el mismo cartón en tiempo real.",
@@ -133,6 +148,7 @@ const games = [
   { linkTo: "/bingo", icon: Grid3x3 },
   { linkTo: "/jogador-misterioso", icon: ScanFace },
   { linkTo: "/guess-name", icon: UserSearch },
+  { linkTo: "/career-path", icon: Route },
   { linkTo: "/bingo/multiplayer", icon: Users },
 ];
 
@@ -155,7 +171,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:gap-6 md:grid-cols-2 short:grid-cols-2 short:gap-3">
+        <div className="grid gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 short:grid-cols-3 short:gap-3">
           {games.map((game, index) => (
             <motion.div
               key={game.linkTo}

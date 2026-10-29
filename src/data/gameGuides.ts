@@ -3,7 +3,7 @@ import type { Language } from "@/lib/language";
 // Texto de "como jogar" de cada jogo. Aparece abaixo do jogo (já no HTML, em inglês, para
 // buscadores e IAs que não executam JavaScript) e alimenta o FAQ dos dados estruturados.
 
-export type GameId = "bingo" | "mystery" | "guessName";
+export type GameId = "bingo" | "mystery" | "guessName" | "careerPath";
 
 type GuideCopy = {
   heading: string;
@@ -202,6 +202,56 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
       faqHeading: "Preguntas frecuentes",
       faq: [
         { question: "¿Puedo jugar más de una vez al día?", answer: "No: hay un solo intento por día, con los mismos 20 nombres para todos. Hay un desafío nuevo a medianoche (hora de Brasilia)." },
+        ...commonFaq.es,
+      ],
+    },
+  },
+  careerPath: {
+    pt: {
+      heading: "Como jogar o Caminho de carreira",
+      intro:
+        "O Caminho de carreira é um desafio diário de Counter-Strike: aparecem os times por onde um pro player passou, em ordem, e você descobre quem é em até 6 palpites.",
+      steps: [
+        "Os 2 primeiros times da carreira começam revelados; os outros ficam escondidos.",
+        "Digite o nick de qualquer pro player para dar um palpite.",
+        "Cada erro revela o próximo time. Quando os times acabam, aparecem o país e depois a função do jogador.",
+        "Acertou? Compartilhe o resultado e volte amanhã para manter a sequência.",
+      ],
+      faqHeading: "Perguntas frequentes",
+      faq: [
+        { question: "Quando muda a carreira do dia?", answer: "Todo dia à meia-noite (horário de Brasília). O jogador é o mesmo para todo mundo." },
+        ...commonFaq.pt,
+      ],
+    },
+    en: {
+      heading: "How to play Career path",
+      intro:
+        "Career path is a daily Counter-Strike challenge: you see the teams a pro player has played for, in order, and find out who it is in up to 6 guesses.",
+      steps: [
+        "The first 2 teams of the career start revealed; the rest stay hidden.",
+        "Type any pro player's nickname to make a guess.",
+        "Each miss reveals the next team. Once the teams run out, the player's country and then role appear.",
+        "Got it? Share your result and come back tomorrow to keep your streak.",
+      ],
+      faqHeading: "FAQ",
+      faq: [
+        { question: "When does the career of the day change?", answer: "Every day at midnight Brasília time (UTC−3). Everyone gets the same player." },
+        ...commonFaq.en,
+      ],
+    },
+    es: {
+      heading: "Cómo jugar a Camino de carrera",
+      intro:
+        "Camino de carrera es un desafío diario de Counter-Strike: aparecen los equipos por los que pasó un pro player, en orden, y descubres quién es en hasta 6 intentos.",
+      steps: [
+        "Los 2 primeros equipos de la carrera empiezan revelados; los demás quedan ocultos.",
+        "Escribe el nick de cualquier pro player para hacer un intento.",
+        "Cada error revela el siguiente equipo. Cuando se acaban los equipos, aparecen el país y después el rol del jugador.",
+        "¿Acertaste? Comparte tu resultado y vuelve mañana para mantener tu racha.",
+      ],
+      faqHeading: "Preguntas frecuentes",
+      faq: [
+        { question: "¿Cuándo cambia la carrera del día?", answer: "Todos los días a medianoche, hora de Brasilia (UTC−3). El jugador es el mismo para todos." },
         ...commonFaq.es,
       ],
     },
