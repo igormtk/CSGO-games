@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Crown, Heart, Play, RotateCcw, SkipForward, Sparkles, Users } from "lucide-react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { Check, Copy, Crown, Heart, Play, RotateCcw, SkipForward, Sparkles, Timer, Users } from "lucide-react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { csPlayers } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
@@ -22,6 +22,10 @@ const MAX_NAME_LENGTH = 16;
 // Sem letras e números parecidos (0/O, 1/I) para o código ser fácil de ditar.
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 5;
+// Modo contra o relógio: decidido na criação da sala e igual para todas as rodadas dela.
+const SECONDS_PER_NAME = 10;
+
+type RoomMode = "classic" | "timed";
 
 // O que cada jogador publica no canal da sala (Supabase Realtime Presence).
 type PlayerState = {
@@ -34,6 +38,8 @@ type PlayerState = {
   lives: number;
   done: boolean;
   finishedAt?: number;
+  // Modo da sala que este jogador conhece; quem entra adota o do anfitrião.
+  mode?: RoomMode;
 };
 
 const multiplayerCopy = {
@@ -69,6 +75,12 @@ const multiplayerCopy = {
     connectionError: "Não foi possível conectar à sala. Verifique a internet e recarregue a página.",
     invalidCode: "O código tem 5 letras ou números.",
     leave: "Sair da sala",
+    modeLabel: "Modo da sala",
+    classicMode: "Clássico",
+    classicHint: "Sem tempo por nome.",
+    timedMode: "Contra o relógio",
+    timedHint: `${SECONDS_PER_NAME} s por nome; quando acaba, o nome passa.`,
+    timeUp: (player: string) => `Tempo esgotado: ${player} passou.`,
     hit: (player: string, cell: string) => `Boa! ${player} preenche ${cell}.`,
     miss: (player: string) => `${player} não cumpre essa casa. Você perdeu uma vida.`,
   },
@@ -104,6 +116,12 @@ const multiplayerCopy = {
     connectionError: "Couldn't connect to the room. Check your connection and reload the page.",
     invalidCode: "The code has 5 letters or numbers.",
     leave: "Leave room",
+    modeLabel: "Room mode",
+    classicMode: "Classic",
+    classicHint: "No timer per name.",
+    timedMode: "Against the clock",
+    timedHint: `${SECONDS_PER_NAME} s per name; when it runs out, the name passes.`,
+    timeUp: (player: string) => `Time's up: ${player} passed.`,
     hit: (player: string, cell: string) => `Nice! ${player} fills ${cell}.`,
     miss: (player: string) => `${player} doesn't fit that cell. You lost a life.`,
   },
@@ -139,6 +157,12 @@ const multiplayerCopy = {
     connectionError: "No se pudo conectar a la sala. Revisa tu conexión y recarga la página.",
     invalidCode: "El código tiene 5 letras o números.",
     leave: "Salir de la sala",
+    modeLabel: "Modo de la sala",
+    classicMode: "Clásico",
+    classicHint: "Sin tiempo por nombre.",
+    timedMode: "Contrarreloj",
+    timedHint: `${SECONDS_PER_NAME} s por nombre; cuando se acaba, el nombre pasa.`,
+    timeUp: (player: string) => `Se acabó el tiempo: ${player} pasó.`,
     hit: (player: string, cell: string) => `¡Bien! ${player} llena ${cell}.`,
     miss: (player: string) => `${player} no cumple esa casilla. Perdiste una vida.`,
   },
@@ -178,6 +202,14 @@ const timestamp = () => Date.now();
 
 const readRoomFromUrl = () => normalizeCode(new URLSearchParams(window.location.search).get("sala") ?? "");
 
+// O link de convite leva o modo da sala (?modo=timed); quem digita só o código recebe pelo canal.
+const readModeFromUrl = (): RoomMode | undefined => {
+  const value = new URLSearchParams(window.location.search).get("modo");
+  return value === "timed" || value === "classic" ? value : undefined;
+};
+
+const roomUrl = (code: string, mode?: RoomMode) => `/bingo/multiplayer?sala=${code}${mode ? `&modo=${mode}` : ""}`;
+
 // Mais pontos primeiro; no empate, quem terminou antes.
 const rankPlayers = (players: PlayerState[]) =>
   [...players].sort((a, b) => b.points - a.points || (a.finishedAt ?? Infinity) - (b.finishedAt ?? Infinity));
@@ -205,15 +237,19 @@ function Multiplayer({ copy, language }: { copy: MultiplayerCopy; language: Lang
   const [name, setName] = useState(readName);
   const [room, setRoom] = useState(readRoomFromUrl);
   const [joined, setJoined] = useState(() => Boolean(readRoomFromUrl() && readName().trim()));
+  const [roomMode, setRoomMode] = useState<RoomMode | undefined>(readModeFromUrl);
+  const [createMode, setCreateMode] = useState<RoomMode>("classic");
 
-  const enterRoom = (code: string) => {
+  // Criar sala leva o modo escolhido; entrar por código deixa o modo vir da sala.
+  const enterRoom = (code: string, mode?: RoomMode) => {
     const cleanName = name.trim().slice(0, MAX_NAME_LENGTH);
     if (!cleanName || code.length !== CODE_LENGTH) return;
     saveName(cleanName);
     setName(cleanName);
     setRoom(code);
+    setRoomMode(mode);
     setJoined(true);
-    window.history.replaceState(null, "", `/bingo/multiplayer?sala=${code}`);
+    window.history.replaceState(null, "", roomUrl(code, mode));
   };
 
   const leaveRoom = () => {
@@ -223,7 +259,9 @@ function Multiplayer({ copy, language }: { copy: MultiplayerCopy; language: Lang
   };
 
   if (joined && room) {
-    return <Room key={room} code={room} name={name} copy={copy} language={language} onLeave={leaveRoom} />;
+    return (
+      <Room key={room} code={room} name={name} initialMode={roomMode} copy={copy} language={language} onLeave={leaveRoom} />
+    );
   }
 
   return (
@@ -244,10 +282,37 @@ function Multiplayer({ copy, language }: { copy: MultiplayerCopy; language: Lang
             className="cs-cut-sm w-full border-2 border-cs-line bg-cs-bg px-3 py-2.5 text-lg font-bold outline-none focus:border-cs-orange"
           />
         </label>
+        <fieldset className="space-y-1">
+          <legend className="text-xs font-bold uppercase tracking-wider text-cs-text/60">{copy.modeLabel}</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                ["classic", copy.classicMode, copy.classicHint],
+                ["timed", copy.timedMode, copy.timedHint],
+              ] as const
+            ).map(([value, label, hint]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setCreateMode(value)}
+                aria-pressed={createMode === value}
+                className={`cs-cut-sm flex flex-col items-start gap-0.5 border-l-4 px-3 py-2 text-left transition ${
+                  createMode === value ? "border-cs-orange bg-cs-raised" : "border-cs-line bg-cs-bg hover:bg-cs-raised"
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide">
+                  {value === "timed" ? <Timer className="h-4 w-4 text-cs-orange" /> : <Play className="h-4 w-4 text-cs-orange" />}
+                  {label}
+                </span>
+                <span className="text-xs font-semibold leading-4 text-cs-text/55">{hint}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
         <button
           type="button"
           disabled={!name.trim()}
-          onClick={() => enterRoom(randomCode())}
+          onClick={() => enterRoom(randomCode(), createMode)}
           className="cs-cut-sm flex w-full items-center justify-center gap-2 bg-cs-orange px-4 py-3 text-lg font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a] disabled:opacity-40"
         >
           <Users className="h-5 w-5" /> {copy.create}
@@ -287,12 +352,14 @@ const emptyMove: Move = { picks: {}, playerIndex: 0, mistakes: 0, wildcardUsed: 
 function Room({
   code,
   name,
+  initialMode,
   copy,
   language,
   onLeave,
 }: {
   code: string;
   name: string;
+  initialMode?: RoomMode;
   copy: MultiplayerCopy;
   language: Language;
   onLeave: () => void;
@@ -306,7 +373,12 @@ function Room({
   const [finishedAt, setFinishedAt] = useState<number>();
   const [message, setMessage] = useState<{ text: string; tone: "success" | "error" }>();
   const [linkCopied, setLinkCopied] = useState(false);
+  const [knownMode, setKnownMode] = useState<RoomMode | undefined>(initialMode);
+  // Prazo do nome da vez no contra o relógio (segue o relógio: trocar de aba não pausa).
+  const [deadline, setDeadline] = useState<number>();
+  const [now, setNow] = useState(timestamp);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const roundRef = useRef(0);
 
   const seedKey = `${code}:${round}`;
   const queue = useMemo(() => (round ? createPlayerQueue(seedKey) : []), [round, seedKey]);
@@ -318,9 +390,24 @@ function Room({
   const points = filled * POINTS_PER_HIT + (filled === board.length && move.mistakes === 0 ? PERFECT_BONUS : 0);
   const currentPlayer: CsPlayer | undefined = done ? undefined : queue[move.playerIndex];
 
-  const me: PlayerState = { id: playerId, name, joinedAt, round, filled, points, lives, done, finishedAt };
   // Anfitrião: quem está na sala há mais tempo (se ele sair, o próximo assume).
   const host = [...players].sort((a, b) => a.joinedAt - b.joinedAt)[0];
+  // O modo da sala é o do anfitrião; até a presença chegar, vale o que veio do link ou da criação.
+  const mode: RoomMode = host?.mode ?? knownMode ?? "classic";
+  const me: PlayerState = {
+    id: playerId,
+    name,
+    joinedAt,
+    round,
+    filled,
+    points,
+    lives,
+    done,
+    finishedAt,
+    mode: host?.mode ?? knownMode,
+  };
+  const secondsLeft = deadline ? Math.max(0, Math.ceil((deadline - now) / 1000)) : SECONDS_PER_NAME;
+  const timeShare = deadline ? Math.max(0, (deadline - now) / (SECONDS_PER_NAME * 1000)) : 1;
   const isHost = host?.id === playerId;
   const roundPlayers = players.filter((player) => player.round === round);
   const everyoneDone = round > 0 && roundPlayers.length > 0 && roundPlayers.every((player) => player.done);
@@ -338,15 +425,24 @@ function Room({
         const state = channel.presenceState<PlayerState>();
         const list = Object.values(state).map((entries) => entries[0]);
         setPlayers(list);
-        // Quem chega no meio de uma rodada entra nela (a do anfitrião).
+        // Quem chega no meio de uma rodada entra nela (a do anfitrião), já com o relógio correndo.
         const currentHost = [...list].sort((a, b) => a.joinedAt - b.joinedAt)[0];
-        setRound((current) => (current === 0 && currentHost && currentHost.round > 0 ? currentHost.round : current));
+        if (roundRef.current === 0 && currentHost && currentHost.round > 0) {
+          roundRef.current = currentHost.round;
+          setRound(currentHost.round);
+          if (currentHost.mode === "timed") setDeadline(timestamp() + SECONDS_PER_NAME * 1000);
+        }
       })
       .on("broadcast", { event: "start" }, ({ payload }) => {
+        const nextMode = payload.mode as RoomMode;
+        roundRef.current = payload.round as number;
         setRound(payload.round as number);
+        setKnownMode(nextMode);
         setMove(emptyMove);
         setFinishedAt(undefined);
         setMessage(undefined);
+        setDeadline(nextMode === "timed" ? timestamp() + SECONDS_PER_NAME * 1000 : undefined);
+        setNow(timestamp());
       })
       .subscribe((subscription) => {
         if (subscription === "SUBSCRIBED") setStatus("connected");
@@ -367,7 +463,7 @@ function Room({
   }, [meKey, status]);
 
   const startRound = () => {
-    void channelRef.current?.send({ type: "broadcast", event: "start", payload: { round: round + 1 } });
+    void channelRef.current?.send({ type: "broadcast", event: "start", payload: { round: round + 1, mode } });
   };
 
   const applyMove = (next: Move) => {
@@ -375,7 +471,33 @@ function Room({
     const nextFilled = Object.keys(next.picks).length;
     const ended = nextFilled === board.length || next.mistakes >= MAX_LIVES || next.playerIndex >= queue.length;
     if (ended && !finishedAt) setFinishedAt(timestamp());
+    // Nome novo na tela: o relógio recomeça. Erro de casa mantém o mesmo nome e o mesmo prazo.
+    if (mode === "timed") {
+      if (ended) setDeadline(undefined);
+      else if (next.playerIndex !== move.playerIndex) {
+        setDeadline(timestamp() + SECONDS_PER_NAME * 1000);
+        setNow(timestamp());
+      }
+    }
   };
+
+  const onTimeUp = useEffectEvent(() => {
+    if (!currentPlayer) return;
+    setMessage({ text: copy.timeUp(currentPlayer.nickname), tone: "error" });
+    applyMove({ ...move, playerIndex: move.playerIndex + 1 });
+  });
+
+  useEffect(() => {
+    if (deadline === undefined) return;
+    const interval = window.setInterval(() => {
+      setNow(timestamp());
+      if (timestamp() >= deadline) {
+        window.clearInterval(interval);
+        onTimeUp();
+      }
+    }, 100);
+    return () => window.clearInterval(interval);
+  }, [deadline]);
 
   const handleCellClick = (cellIndex: number) => {
     if (!currentPlayer || move.picks[cellIndex]) return;
@@ -408,7 +530,7 @@ function Room({
 
   const copyInvite = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/bingo/multiplayer?sala=${code}`);
+      await navigator.clipboard.writeText(`${window.location.origin}${roomUrl(code, mode)}`);
       setLinkCopied(true);
     } catch {
       setLinkCopied(false);
@@ -434,6 +556,10 @@ function Room({
             {linkCopied ? copy.linkCopied : copy.copyLink}
           </button>
         </div>
+        <p className="cs-cut-sm inline-flex items-center gap-1.5 bg-cs-bg px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-cs-text/70">
+          {mode === "timed" ? <Timer className="h-3.5 w-3.5 text-cs-orange" /> : <Play className="h-3.5 w-3.5 text-cs-orange" />}
+          {copy.modeLabel}: {mode === "timed" ? `${copy.timedMode} · ${SECONDS_PER_NAME}s` : copy.classicMode}
+        </p>
         <div>
           <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.2em] text-cs-text/45">
             {copy.players} · {players.length}
@@ -503,8 +629,16 @@ function Room({
             ) : currentPlayer ? (
               <div className="cs-cut flex items-center gap-3 border-b-2 border-cs-orange bg-cs-surface px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">
+                  <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">
                     {copy.currentName} · {move.playerIndex + 1}/{queue.length}
+                    {mode === "timed" ? (
+                      <span
+                        className={`inline-flex items-center gap-1 tracking-normal tabular-nums ${secondsLeft <= 3 ? "text-cs-red" : "text-cs-text/70"}`}
+                        aria-live="polite"
+                      >
+                        <Timer className="h-3.5 w-3.5" /> {secondsLeft}s
+                      </span>
+                    ) : null}
                   </p>
                   <h1 className="truncate text-3xl font-bold uppercase leading-none tracking-wide">{currentPlayer.nickname}</h1>
                 </div>
@@ -535,6 +669,15 @@ function Room({
                     <Sparkles className="h-3.5 w-3.5" /> {copy.wildcard}
                   </button>
                 </div>
+              </div>
+            ) : null}
+
+            {mode === "timed" && currentPlayer ? (
+              <div className="h-1 bg-cs-bg" aria-hidden="true">
+                <div
+                  className={`h-full transition-[width] duration-100 ease-linear ${timeShare <= 0.3 ? "bg-cs-red" : "bg-cs-orange"}`}
+                  style={{ width: `${timeShare * 100}%` }}
+                />
               </div>
             ) : null}
 
