@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -16,6 +16,8 @@ import {
   SkipForward,
   Sparkles,
   Trophy,
+  Play,
+  Timer,
   Users,
   X,
 } from "lucide-react";
@@ -29,7 +31,7 @@ import {
 import type { BingoCriterion, CsPlayer } from "@/data/csBingoDatabase";
 import { getPartnerFor } from "@/data/partners";
 import type { Partner } from "@/data/partners";
-import { PartnerSpot } from "@/components/partners/PartnerSpot";
+import { PartnerBreak } from "@/components/partners/PartnerBreak";
 import { CriterionIcon } from "@/components/bingo/CriterionIcon";
 import { DECK_SIZE, GRID_SIZE, createBoard, createPlayerQueue, getPossibleAnswers, playerFitsCell } from "@/lib/bingo/board";
 import type { BoardCell, GameBoard } from "@/lib/bingo/board";
@@ -47,9 +49,14 @@ const GAME_KEY_PREFIX = "cs-bingo-daily-v4";
 const STATS_KEY = "cs-bingo-stats";
 const POINTS_PER_HIT = 100;
 const PERFECT_BONUS = 300;
-// Tempo mínimo de anúncio (com a aba visível) antes de revelar o resultado e as respostas.
-const PARTNER_BREAK_SECONDS = 5;
 const MAX_LIVES = 2;
+// Modo contra o relógio: tempo por nome; quando acaba, o nome passa sozinho.
+const SECONDS_PER_NAME = 10;
+
+type GameMode = "classic" | "timed";
+
+// Horário atual para os prazos, chamado só em jogadas e no carregamento (fora da renderização).
+const timestamp = () => Date.now();
 
 type CellPick = {
   player: CsPlayer;
@@ -62,6 +69,7 @@ type GameStatus = "playing" | "completed" | "out-of-names" | "out-of-lives";
 type MessageTone = "neutral" | "success" | "error" | "wildcard";
 
 type StoredGame = {
+  mode?: GameMode;
   picks?: Record<string, string>;
   playerIndex?: number;
   skippedPlayerIds?: string[];
@@ -88,6 +96,15 @@ type TranslationCopy = {
   currentPlayerEyebrow: string;
   noCurrentPlayerTitle: string;
   namesLeft: string;
+  chooseModeTitle: string;
+  chooseModeHint: string;
+  classicMode: string;
+  classicModeHint: string;
+  timedMode: string;
+  timedModeHint: string;
+  timeUpMessage: (player: string) => string;
+  reloadSkipMessage: (player: string) => string;
+  timedShare: string;
   skippedLabel: string;
   skip: string;
   wildcard: string;
@@ -140,6 +157,15 @@ const translations: Record<Language, TranslationCopy> = {
     currentPlayerEyebrow: "Nome da vez",
     noCurrentPlayerTitle: "Nenhum nome restante",
     namesLeft: "Nomes restantes",
+    chooseModeTitle: "Escolha o modo de hoje",
+    chooseModeHint: "A escolha vale para o desafio do dia inteiro.",
+    classicMode: "Clássico",
+    classicModeHint: "Sem tempo: pense com calma em cada nome.",
+    timedMode: "Contra o relógio",
+    timedModeHint: `${SECONDS_PER_NAME} segundos por nome; quando o tempo acaba, o nome passa.`,
+    timeUpMessage: (player) => `Tempo esgotado: ${player} passou.`,
+    reloadSkipMessage: (player) => `${player} estava na tela quando a página recarregou e passou.`,
+    timedShare: "⏱️ Contra o relógio",
     skippedLabel: "Nome perdido",
     skip: "Pular",
     wildcard: "Coringa",
@@ -180,6 +206,7 @@ const translations: Record<Language, TranslationCopy> = {
     rulesTitle: "Como jogar",
     rules: [
       `${DECK_SIZE} dos ${csPlayers.length} jogadores da base são sorteados para o dia e aparecem um por vez. Cada uma das ${GRID_SIZE * GRID_SIZE} casas tem um critério próprio: coloque o nome da vez numa casa cujo critério ele cumpra.`,
+      `Antes de começar, escolha o modo: Clássico, sem tempo, ou Contra o relógio, com ${SECONDS_PER_NAME} segundos por nome (quando o tempo acaba, o nome passa e não volta).`,
       "Algumas casas combinam dois critérios (ex.: Brasil + AWPer): o jogador precisa cumprir os dois.",
       "Se o nome não serve em nenhuma casa livre, pule. Pular não custa vida, mas o nome não volta.",
       `Errou a casa? Você perde uma vida e o nome continua na tela para tentar outra casa. São ${MAX_LIVES} vidas por partida.`,
@@ -200,6 +227,15 @@ const translations: Record<Language, TranslationCopy> = {
     currentPlayerEyebrow: "Current name",
     noCurrentPlayerTitle: "No names remaining",
     namesLeft: "Names left",
+    chooseModeTitle: "Choose today's mode",
+    chooseModeHint: "Your choice applies to the whole daily challenge.",
+    classicMode: "Classic",
+    classicModeHint: "No timer: take your time with each name.",
+    timedMode: "Against the clock",
+    timedModeHint: `${SECONDS_PER_NAME} seconds per name; when time runs out, the name passes.`,
+    timeUpMessage: (player) => `Time's up: ${player} passed.`,
+    reloadSkipMessage: (player) => `${player} was on screen when the page reloaded and passed.`,
+    timedShare: "⏱️ Against the clock",
     skippedLabel: "Lost name",
     skip: "Skip",
     wildcard: "Wildcard",
@@ -240,6 +276,7 @@ const translations: Record<Language, TranslationCopy> = {
     rulesTitle: "How to play",
     rules: [
       `${DECK_SIZE} of the ${csPlayers.length} players in the database are drawn for the day and appear one at a time. Each of the ${GRID_SIZE * GRID_SIZE} cells has its own criterion: place the current name in a cell whose criterion they meet.`,
+      `Before you start, choose the mode: Classic, with no timer, or Against the clock, with ${SECONDS_PER_NAME} seconds per name (when time runs out, the name passes and does not come back).`,
       "Some cells combine two criteria (e.g. Brazil + AWPer): the player must meet both.",
       "If the name fits no open cell, skip it. Skipping costs no life, but the name does not come back.",
       `Wrong cell? You lose a life and the name stays on screen so you can try another cell. You have ${MAX_LIVES} lives per game.`,
@@ -260,6 +297,15 @@ const translations: Record<Language, TranslationCopy> = {
     currentPlayerEyebrow: "Nombre actual",
     noCurrentPlayerTitle: "No quedan nombres",
     namesLeft: "Nombres restantes",
+    chooseModeTitle: "Elige el modo de hoy",
+    chooseModeHint: "La elección vale para todo el desafío del día.",
+    classicMode: "Clásico",
+    classicModeHint: "Sin tiempo: piensa con calma cada nombre.",
+    timedMode: "Contrarreloj",
+    timedModeHint: `${SECONDS_PER_NAME} segundos por nombre; cuando se acaba el tiempo, el nombre pasa.`,
+    timeUpMessage: (player) => `Se acabó el tiempo: ${player} pasó.`,
+    reloadSkipMessage: (player) => `${player} estaba en pantalla cuando la página se recargó y pasó.`,
+    timedShare: "⏱️ Contrarreloj",
     skippedLabel: "Nombre perdido",
     skip: "Saltar",
     wildcard: "Comodín",
@@ -300,6 +346,7 @@ const translations: Record<Language, TranslationCopy> = {
     rulesTitle: "Cómo jugar",
     rules: [
       `${DECK_SIZE} de los ${csPlayers.length} jugadores de la base se sortean para el día y aparecen uno por vez. Cada una de las ${GRID_SIZE * GRID_SIZE} casillas tiene su propio criterio: coloca el nombre actual en una casilla cuyo criterio cumpla.`,
+      `Antes de empezar, elige el modo: Clásico, sin tiempo, o Contrarreloj, con ${SECONDS_PER_NAME} segundos por nombre (cuando se acaba el tiempo, el nombre pasa y no vuelve).`,
       "Algunas casillas combinan dos criterios (ej.: Brasil + AWPer): el jugador debe cumplir ambos.",
       "Si el nombre no sirve en ninguna casilla libre, sáltalo. Saltar no cuesta vida, pero el nombre no vuelve.",
       `¿Casilla equivocada? Pierdes una vida y el nombre sigue en pantalla para probar otra casilla. Tienes ${MAX_LIVES} vidas por partida.`,
@@ -351,6 +398,7 @@ const serializePicks = (picks: Record<string, CellPick>) =>
 
 const saveGame = (
   dateKey: string,
+  mode: GameMode | undefined,
   picks: Record<string, CellPick>,
   playerIndex: number,
   skippedPlayerIds: string[],
@@ -360,8 +408,32 @@ const saveGame = (
   const wildcardCells = Object.keys(picks).filter((cellKey) => picks[cellKey].wildcard);
   window.localStorage.setItem(
     `${GAME_KEY_PREFIX}-${dateKey}`,
-    JSON.stringify({ picks: serializePicks(picks), playerIndex, skippedPlayerIds, mistakes, wildcardUsed, wildcardCells })
+    JSON.stringify({ mode, picks: serializePicks(picks), playerIndex, skippedPlayerIds, mistakes, wildcardUsed, wildcardCells })
   );
+};
+
+// Contra o relógio: recarregar com um nome na tela faz esse nome passar, para ninguém recarregar
+// e ganhar tempo para pesquisar. Partidas anteriores a esta função contam como clássicas.
+const loadStoredGame = (dateKey: string, queue: CsPlayer[]) => {
+  const game = parseStoredGame(dateKey);
+  const started = (game.playerIndex ?? 0) > 0 || Object.keys(game.picks ?? {}).length > 0 || (game.mistakes ?? 0) > 0;
+  const mode: GameMode | undefined = game.mode ?? (started ? "classic" : undefined);
+  if (mode !== "timed" || isStoredGameOver(game)) return { game: { ...game, mode }, skippedOnLoad: undefined };
+
+  const index = game.playerIndex ?? 0;
+  const skipped = queue[index];
+  const next: StoredGame = {
+    ...game,
+    mode,
+    playerIndex: index + 1,
+    skippedPlayerIds: [...(game.skippedPlayerIds ?? []), skipped.id],
+  };
+  try {
+    window.localStorage.setItem(`${GAME_KEY_PREFIX}-${dateKey}`, JSON.stringify(next));
+  } catch {
+    // Sem armazenamento: o jogo segue, só não salva.
+  }
+  return { game: next, skippedOnLoad: skipped };
 };
 
 const getRevealedKey = (dateKey: string) => `${GAME_KEY_PREFIX}-${dateKey}-revealed`;
@@ -409,7 +481,16 @@ export default function BingoPage() {
   const language = useLanguage();
   const copy = translations[language];
   useDocumentTitle(`${{ pt: "CS Bingo diário", en: "Daily CS Bingo", es: "CS Bingo diario" }[language]} · CS Games`);
-  const [storedGame] = useState<StoredGame>(() => parseStoredGame(dateKey));
+  const [loaded] = useState(() =>
+    typeof window === "undefined" ? { game: {} as StoredGame, skippedOnLoad: undefined } : loadStoredGame(dateKey, playerQueue)
+  );
+  const storedGame = loaded.game;
+  const [mode, setMode] = useState<GameMode | undefined>(storedGame.mode);
+  // Prazo do nome da vez no modo contra o relógio (segue o relógio: trocar de aba não pausa).
+  const [deadline, setDeadline] = useState<number | undefined>(() =>
+    storedGame.mode === "timed" && !isStoredGameOver(storedGame) ? timestamp() + SECONDS_PER_NAME * 1000 : undefined
+  );
+  const [now, setNow] = useState(() => timestamp());
   const [picks, setPicks] = useState<Record<string, CellPick>>(() =>
     hydratePicks(storedGame.picks, storedGame.wildcardCells)
   );
@@ -463,7 +544,11 @@ export default function BingoPage() {
       : playerIndex < playerQueue.length
         ? "playing"
         : "out-of-names";
-  const currentPlayer = gameStatus === "playing" ? playerQueue[playerIndex] : undefined;
+  // Enquanto o modo não é escolhido, o nome da vez fica escondido (ninguém pesquisa antes do relógio).
+  const choosingMode = mode === undefined && gameStatus === "playing";
+  const currentPlayer = gameStatus === "playing" && !choosingMode ? playerQueue[playerIndex] : undefined;
+  const secondsLeft = deadline ? Math.max(0, Math.ceil((deadline - now) / 1000)) : SECONDS_PER_NAME;
+  const timeShare = deadline ? Math.max(0, (deadline - now) / (SECONDS_PER_NAME * 1000)) : 1;
   const namesLeft = Math.max(playerQueue.length - playerIndex, 0);
   const usedPlayerIds = new Set(Object.values(picks).map((pick) => pick.player.id));
   const isGameOver = gameStatus !== "playing";
@@ -474,7 +559,9 @@ export default function BingoPage() {
     "out-of-lives": copy.gameOverOutOfLives,
   }[gameStatus];
   const gameOverMessage = {
-    playing: message ?? copy.initialMessage,
+    playing:
+      message ??
+      (loaded.skippedOnLoad ? copy.reloadSkipMessage(loaded.skippedOnLoad.nickname) : copy.initialMessage),
     completed: copy.completedMessage,
     "out-of-names": copy.outOfNamesMessage,
     "out-of-lives": copy.outOfLivesMessage,
@@ -498,12 +585,20 @@ export default function BingoPage() {
     setMistakes(nextMistakes);
     setWildcardUsed(nextWildcardUsed);
     setShareStatus(undefined);
-    saveGame(dateKey, nextPicks, nextPlayerIndex, nextSkippedPlayerIds, nextMistakes, nextWildcardUsed);
+    saveGame(dateKey, mode, nextPicks, nextPlayerIndex, nextSkippedPlayerIds, nextMistakes, nextWildcardUsed);
 
     const endsGame =
       Object.keys(nextPicks).length === totalCells ||
       nextMistakes >= MAX_LIVES ||
       nextPlayerIndex >= playerQueue.length;
+    // Nome novo na tela: o relógio recomeça. Erro de casa mantém o mesmo nome e o mesmo prazo.
+    if (mode === "timed") {
+      if (endsGame) setDeadline(undefined);
+      else if (nextPlayerIndex !== playerIndex) {
+        setDeadline(timestamp() + SECONDS_PER_NAME * 1000);
+        setNow(timestamp());
+      }
+    }
     if (!endsGame) return;
 
     setOpenPanel("result");
@@ -515,8 +610,35 @@ export default function BingoPage() {
     }
   };
 
-  const handleCellClick = (cellIndex: number) => {
+  const chooseMode = (nextMode: GameMode) => {
+    setMode(nextMode);
+    saveGame(dateKey, nextMode, picks, playerIndex, skippedPlayerIds, mistakes, wildcardUsed);
+    if (nextMode === "timed") {
+      setDeadline(timestamp() + SECONDS_PER_NAME * 1000);
+      setNow(timestamp());
+    }
+  };
+
+  const onTimeUp = useEffectEvent(() => {
     if (!currentPlayer) return;
+    advanceGame(picks, playerIndex + 1, [...skippedPlayerIds, currentPlayer.id]);
+    showMessage(copy.timeUpMessage(currentPlayer.nickname), "error");
+  });
+
+  useEffect(() => {
+    if (deadline === undefined) return;
+    const interval = window.setInterval(() => {
+      setNow(timestamp());
+      if (timestamp() >= deadline) {
+        window.clearInterval(interval);
+        onTimeUp();
+      }
+    }, 100);
+    return () => window.clearInterval(interval);
+  }, [deadline]);
+
+  const handleCellClick = (cellIndex: number) => {
+    if (!currentPlayer || !mode) return;
 
     const cellKey = String(cellIndex);
     if (picks[cellKey]) {
@@ -555,6 +677,8 @@ export default function BingoPage() {
     setSkippedPlayerIds([]);
     setMistakes(0);
     setWildcardUsed(false);
+    setMode(undefined);
+    setDeadline(undefined);
     setLastHitKeys([]);
     setShareStatus(undefined);
     setOpenPanel(undefined);
@@ -616,6 +740,7 @@ export default function BingoPage() {
     const shareText = [
       `CS Bingo #${getPuzzleNumber(dateKey)} · ${dateKey}`,
       `🎯 ${score} ${copy.points} · ${"❤️".repeat(livesLeft)}${"🖤".repeat(MAX_LIVES - livesLeft)} · 🔥 ${stats.currentStreak}`,
+      ...(mode === "timed" ? [copy.timedShare] : []),
       grid,
       `${window.location.origin}/bingo`,
     ].join("\n");
@@ -688,14 +813,51 @@ export default function BingoPage() {
         <div className="contents short:flex short:w-[min(24rem,48%)] short:shrink-0 short:flex-col short:justify-center short:gap-2">
         <div className="cs-cut shrink-0 bg-cs-line p-[2px] shadow-2xl shadow-black/50">
           <div className="cs-cut bg-cs-surface">
+            {choosingMode ? (
+              <div className="space-y-2 border-b-2 border-cs-orange bg-gradient-to-r from-cs-raised to-cs-surface px-3 py-3 sm:px-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cs-orange sm:text-xs">{copy.chooseModeTitle}</p>
+                  <p className="text-xs font-semibold text-cs-text/50">{copy.chooseModeHint}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      ["classic", copy.classicMode, copy.classicModeHint],
+                      ["timed", copy.timedMode, copy.timedModeHint],
+                    ] as const
+                  ).map(([value, label, hint]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => chooseMode(value)}
+                      className="cs-cut-sm flex flex-col items-start gap-0.5 border-l-4 border-cs-orange bg-cs-bg px-3 py-2 text-left transition hover:bg-cs-raised"
+                    >
+                      <span className="inline-flex items-center gap-1.5 text-base font-bold uppercase tracking-wide">
+                        {value === "timed" ? <Timer className="h-4 w-4 text-cs-orange" /> : <Play className="h-4 w-4 text-cs-orange" />}
+                        {label}
+                      </span>
+                      <span className="text-xs font-semibold leading-4 text-cs-text/55">{hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
             <div className="flex items-center gap-3 border-b-2 border-cs-orange bg-gradient-to-r from-cs-raised to-cs-surface px-3 py-2 sm:px-4">
               <div className="cs-cut-sm flex h-12 w-12 shrink-0 flex-col items-center justify-center bg-cs-bg text-cs-orange sm:h-14 sm:w-14">
                 <span className="text-xl font-bold leading-none sm:text-2xl">{namesLeft}</span>
                 <span className="text-[9px] font-bold uppercase tracking-wider text-cs-text/50">/ {playerQueue.length}</span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cs-orange sm:text-xs">
+                <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-cs-orange sm:text-xs">
                   {currentPlayer ? copy.currentPlayerEyebrow : copy.result}
+                  {currentPlayer && mode === "timed" ? (
+                    <span
+                      className={`inline-flex items-center gap-1 tracking-normal tabular-nums ${secondsLeft <= 3 ? "text-cs-red" : "text-cs-text/70"}`}
+                      aria-live="polite"
+                    >
+                      <Timer className="h-3.5 w-3.5" /> {secondsLeft}s
+                    </span>
+                  ) : null}
                 </p>
                 {currentPlayer ? (
                   <>
@@ -743,6 +905,15 @@ export default function BingoPage() {
                 </button>
               )}
             </div>
+            )}
+            {currentPlayer && mode === "timed" ? (
+              <div className="h-1 bg-cs-bg" aria-hidden="true">
+                <div
+                  className={`h-full transition-[width] duration-100 ease-linear ${timeShare <= 0.3 ? "bg-cs-red" : "bg-cs-orange"}`}
+                  style={{ width: `${timeShare * 100}%` }}
+                />
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-3 divide-x divide-cs-line py-1.5 text-center">
               <div className="flex items-center justify-center gap-1.5" aria-label={`${copy.lives}: ${livesLeft}/${MAX_LIVES}`}>
@@ -962,50 +1133,6 @@ export default function BingoPage() {
         </Modal>
       ) : null}
     </main>
-  );
-}
-
-// Anúncio de fim de jogo: o botão só libera depois de PARTNER_BREAK_SECONDS com a aba visível.
-function PartnerBreak({
-  partner,
-  label,
-  revealIn,
-  revealLabel,
-  onDone,
-}: {
-  partner: Partner;
-  label: string;
-  revealIn: (seconds: number) => string;
-  revealLabel: string;
-  onDone: () => void;
-}) {
-  const [secondsLeft, setSecondsLeft] = useState(PARTNER_BREAK_SECONDS);
-
-  // Soma só o tempo com a aba visível, medido em milissegundos para garantir os 5 s inteiros.
-  useEffect(() => {
-    let visibleMs = 0;
-    let lastTick = performance.now();
-    const interval = window.setInterval(() => {
-      const now = performance.now();
-      if (document.visibilityState === "visible") visibleMs += now - lastTick;
-      lastTick = now;
-      setSecondsLeft(Math.max(Math.ceil((PARTNER_BREAK_SECONDS * 1000 - visibleMs) / 1000), 0));
-    }, 200);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="space-y-3">
-      <PartnerSpot partner={partner} label={label} variant="card" />
-      <button
-        type="button"
-        onClick={onDone}
-        disabled={secondsLeft > 0}
-        className="cs-cut-sm w-full bg-cs-orange px-3 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a] disabled:cursor-wait disabled:bg-cs-raised disabled:text-cs-text/50"
-      >
-        {secondsLeft > 0 ? revealIn(secondsLeft) : revealLabel}
-      </button>
-    </div>
   );
 }
 
