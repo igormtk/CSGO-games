@@ -1,3 +1,5 @@
+import { statPages } from "@/data/articles/stats";
+import { strategyGuides } from "@/data/articles/strategyGuides";
 import { csPlayers, csTeams } from "@/data/csBingoDatabase";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
 
@@ -19,7 +21,14 @@ ${siteName} (${siteUrl}) is a set of Counter-Strike (CS2 and CS:GO) mini games f
 - [Career path](${siteUrl}/career-path): daily guessing game. The teams a pro player has played for are shown in order, starting with 2 revealed; each miss reveals the next team, then the country and the role. 6 guesses.
 - [Guess the player](${siteUrl}/guess-name): daily challenge. 20 pro players' nicknames, the same for everyone; the player picks each real name from 4 options within 10 seconds per name, with 3 lives and one attempt per day.
 
+## Guides and stats
+
+${strategyGuides.map((guide) => `- [${guide.title.en}](${siteUrl}/guides/${guide.slug}): ${guide.intro.en}`).join("\n")}
+${statPages.map((page) => `- [${page.title.en}](${siteUrl}/stats/${page.slug}): ${page.intro.en}`).join("\n")}
+
 ## Information
+
+- [About](${siteUrl}/about): who makes CS Games, data sources and how the daily challenges work.
 
 - [Terms of use](${siteUrl}/termos)
 - [Privacy policy](${siteUrl}/privacidade): progress is stored only in the browser; there are no accounts. Visits are counted with cookieless, anonymous Vercel Web Analytics.

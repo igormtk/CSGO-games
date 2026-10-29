@@ -28,7 +28,7 @@ export function LegalPage({ title, updatedAt, content }: LegalPageProps) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-10">
       <div className="cs-cut bg-cs-line p-[2px]">
-        <article className="cs-cut space-y-4 bg-cs-surface px-5 py-6 text-base font-semibold leading-7 text-cs-text/75 sm:px-8 [&_h2]:pt-2 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-wider [&_h2]:text-cs-text [&_li]:ml-5 [&_li]:list-disc">
+        <article className="cs-cut space-y-4 bg-cs-surface px-5 py-6 text-base font-semibold leading-7 text-cs-text/75 sm:px-8 [&_a]:text-cs-orange [&_a]:underline [&_h2]:pt-2 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-wider [&_h2]:text-cs-text [&_li]:ml-5 [&_li]:list-disc">
           <header className="border-b-2 border-cs-orange pb-3">
             <h1 className="text-3xl font-bold uppercase tracking-wide text-cs-text">{title[language]}</h1>
             <p className="text-sm text-cs-text/45">

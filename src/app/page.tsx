@@ -19,6 +19,8 @@ const homeCopy: Record<
     games: Record<string, { title: string; description: string; tag: string }>;
     play: string;
     partnerLabel: string;
+    guides: string;
+    about: string;
     privacy: string;
     terms: string;
     data: string;
@@ -59,6 +61,8 @@ const homeCopy: Record<
     },
     play: "Jogar",
     partnerLabel: "Publicidade",
+    guides: "Guias e estatísticas",
+    about: "Sobre",
     privacy: "Privacidade",
     terms: "Termos",
     data: "Dados",
@@ -98,6 +102,8 @@ const homeCopy: Record<
     },
     play: "Play",
     partnerLabel: "Advertisement",
+    guides: "Guides and stats",
+    about: "About",
     privacy: "Privacy",
     terms: "Terms",
     data: "Data",
@@ -137,6 +143,8 @@ const homeCopy: Record<
     },
     play: "Jugar",
     partnerLabel: "Publicidad",
+    guides: "Guías y estadísticas",
+    about: "Acerca de",
     privacy: "Privacidad",
     terms: "Términos",
     data: "Datos",
@@ -190,6 +198,8 @@ export default function Home() {
         </div>
 
         <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-cs-text/40">
+          <Link href="/guides" className="transition hover:text-cs-orange">{copy.guides}</Link>
+          <Link href="/about" className="transition hover:text-cs-orange">{copy.about}</Link>
           <Link href="/privacidade" className="transition hover:text-cs-orange">{copy.privacy}</Link>
           <Link href="/termos" className="transition hover:text-cs-orange">{copy.terms}</Link>
           <span>
