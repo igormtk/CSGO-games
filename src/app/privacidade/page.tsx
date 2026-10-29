@@ -26,6 +26,13 @@ const content = {
         site no seu navegador.
       </p>
 
+      <h2>Bingo multiplayer</h2>
+      <p>
+        No modo multiplayer, o apelido que você digita e o andamento da partida (casas preenchidas, pontos e vidas) são
+        enviados em tempo real aos outros jogadores da sala pelo Supabase Realtime. Essas informações só circulam
+        enquanto a sala está aberta e não ficam guardadas em banco de dados. Não use seu nome completo como apelido.
+      </p>
+
       <h2>Métricas de audiência</h2>
       <p>
         Usamos o Vercel Web Analytics para contar visitas e entender quais páginas são mais usadas. Ele não usa
@@ -72,6 +79,13 @@ const content = {
         This data is not sent to our servers. You can delete it at any time by clearing the site data in your browser.
       </p>
 
+      <h2>Bingo multiplayer</h2>
+      <p>
+        In multiplayer mode, the nickname you type and your game progress (filled cells, points and lives) are sent in
+        real time to the other players in the room through Supabase Realtime. This information only travels while the
+        room is open and is not stored in any database. Don&apos;t use your full name as a nickname.
+      </p>
+
       <h2>Audience metrics</h2>
       <p>
         We use Vercel Web Analytics to count visits and see which pages are used the most. It uses no cookies and does
@@ -116,6 +130,13 @@ const content = {
       <p>
         Estos datos no se envían a nuestros servidores. Puedes borrarlos en cualquier momento limpiando los datos del sitio
         en tu navegador.
+      </p>
+
+      <h2>Bingo multijugador</h2>
+      <p>
+        En el modo multijugador, el apodo que escribes y el progreso de la partida (casillas llenas, puntos y vidas) se
+        envían en tiempo real a los demás jugadores de la sala mediante Supabase Realtime. Esta información solo circula
+        mientras la sala está abierta y no se guarda en ninguna base de datos. No uses tu nombre completo como apodo.
       </p>
 
       <h2>Métricas de audiencia</h2>
