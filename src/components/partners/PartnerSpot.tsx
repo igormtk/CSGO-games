@@ -1,8 +1,11 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import { housePartner } from "@/data/partners";
 import type { Partner } from "@/data/partners";
+import { adsenseClient, adsenseSlots } from "@/lib/adsense";
 import { useLanguage } from "@/lib/language";
+import { GoogleSpot } from "./GoogleSpot";
 
 type PartnerSpotProps = {
   partner: Partner;
@@ -13,10 +16,18 @@ type PartnerSpotProps = {
 
 const defaultLabel = { pt: "Publicidade", en: "Advertisement", es: "Publicidad" };
 
-// Espaço publicitário identificado como "Publicidade", como exige o CONAR.
-export function PartnerSpot({ partner: basePartner, label: labelProp, variant }: PartnerSpotProps) {
+// Espaço publicitário identificado como "Publicidade", como exige o CONAR. Campanha direta vem primeiro;
+// sem ela, o Google AdSense (quando configurado) ocupa o lugar do "Anuncie aqui".
+export function PartnerSpot({ partner, label: labelProp, variant }: PartnerSpotProps) {
   const language = useLanguage();
   const label = labelProp ?? defaultLabel[language];
+  const direct = <DirectSpot partner={partner} label={label} variant={variant} />;
+  const slot = partner.id === housePartner.id && adsenseClient ? adsenseSlots[variant] : undefined;
+  return slot ? <GoogleSpot slot={slot} variant={variant} label={label} fallback={direct} /> : direct;
+}
+
+function DirectSpot({ partner: basePartner, label, variant }: PartnerSpotProps & { label: string }) {
+  const language = useLanguage();
   const partner = { ...basePartner, ...basePartner.translations?.[language] };
   const hasLink = Boolean(partner.href);
   const Wrapper = hasLink ? "a" : "div";

@@ -1,5 +1,6 @@
 // Campanhas de patrocinadores exibidas no site. Os anúncios são vendidos direto e hospedados
-// aqui (imagens em public/partners/), sem rede de anúncios.
+// aqui (imagens em public/partners/). Espaço sem campanha fica com o Google AdSense, se configurado
+// (src/lib/adsense.ts), ou com o "Anuncie aqui".
 // Nomes de arquivos e classes evitam "ad"/"ads": bloqueadores escondem esses elementos.
 
 import type { Language } from "@/lib/language";

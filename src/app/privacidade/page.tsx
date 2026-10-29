@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { adsenseClient } from "@/lib/adsense";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
   alternates: { canonical: "/privacidade" },
 };
+
+// Os textos sobre o Google só aparecem quando o AdSense está configurado (ver src/lib/adsense.ts).
+const googleAds = Boolean(adsenseClient);
+const partnerSitesUrl = "https://policies.google.com/technologies/partner-sites";
+const adSettingsUrl = "https://adssettings.google.com";
 
 const content = {
   pt: (
@@ -42,16 +48,34 @@ const content = {
       </p>
 
       <h2>Publicidade</h2>
-      <p>
-        O site exibe anúncios de patrocinadores, identificados como &ldquo;Publicidade&rdquo;. Ao clicar em um anúncio,
-        você vai para o site do anunciante, que tem sua própria política de privacidade. Não compartilhamos dados seus com
-        anunciantes.
-      </p>
+      {googleAds ? (
+        <>
+          <p>
+            O site exibe anúncios identificados como &ldquo;Publicidade&rdquo;. Alguns são vendidos diretamente a
+            patrocinadores; os demais são servidos pelo Google AdSense. O Google e seus parceiros usam cookies e
+            identificadores para exibir anúncios, medir resultados e evitar fraudes e, com o seu consentimento,
+            personalizá-los com base nas suas visitas a este e a outros sites.
+          </p>
+          <p>
+            Quem visita da Europa, do Reino Unido ou da Suíça vê uma mensagem para aceitar ou recusar. Em qualquer lugar,
+            você pode desativar anúncios personalizados nas <a href={adSettingsUrl}>Configurações de anúncios do Google</a>.
+            Veja <a href={partnerSitesUrl}>como o Google usa dados de sites parceiros</a>. Ao clicar em um anúncio, você vai
+            para o site do anunciante, que tem sua própria política de privacidade.
+          </p>
+        </>
+      ) : (
+        <p>
+          O site exibe anúncios de patrocinadores, identificados como &ldquo;Publicidade&rdquo;. Ao clicar em um anúncio,
+          você vai para o site do anunciante, que tem sua própria política de privacidade. Não compartilhamos dados seus
+          com anunciantes.
+        </p>
+      )}
 
       <h2>Mudanças</h2>
       <p>
-        Se passarmos a usar contas de usuário ou cookies, esta política será atualizada antes, e pediremos seu
-        consentimento quando a lei exigir.
+        {googleAds
+          ? "Se passarmos a usar contas de usuário, esta política será atualizada antes."
+          : "Se passarmos a usar contas de usuário ou cookies, esta política será atualizada antes, e pediremos seu consentimento quando a lei exigir."}
       </p>
 
       <h2>Seus direitos</h2>
@@ -95,15 +119,32 @@ const content = {
       </p>
 
       <h2>Advertising</h2>
-      <p>
-        The site shows sponsor ads, labeled as &ldquo;Advertisement&rdquo;. If you click an ad, you go to the
-        advertiser&apos;s site, which has its own privacy policy. We do not share your data with advertisers.
-      </p>
+      {googleAds ? (
+        <>
+          <p>
+            The site shows ads labeled as &ldquo;Advertisement&rdquo;. Some are sold directly to sponsors; the rest are
+            served by Google AdSense. Google and its partners use cookies and identifiers to show ads, measure results and
+            prevent fraud and, with your consent, to personalize them based on your visits to this and other sites.
+          </p>
+          <p>
+            Visitors from Europe, the UK or Switzerland see a message to accept or decline. Anywhere, you can turn off
+            personalized ads in <a href={adSettingsUrl}>Google&apos;s Ad Settings</a>. See{" "}
+            <a href={partnerSitesUrl}>how Google uses data from partner sites</a>. If you click an ad, you go to the
+            advertiser&apos;s site, which has its own privacy policy.
+          </p>
+        </>
+      ) : (
+        <p>
+          The site shows sponsor ads, labeled as &ldquo;Advertisement&rdquo;. If you click an ad, you go to the
+          advertiser&apos;s site, which has its own privacy policy. We do not share your data with advertisers.
+        </p>
+      )}
 
       <h2>Changes</h2>
       <p>
-        If we start using user accounts or cookies, this policy will be updated beforehand, and we will ask for your
-        consent where the law requires it.
+        {googleAds
+          ? "If we start using user accounts, this policy will be updated beforehand."
+          : "If we start using user accounts or cookies, this policy will be updated beforehand, and we will ask for your consent where the law requires it."}
       </p>
 
       <h2>Your rights</h2>
@@ -148,16 +189,35 @@ const content = {
       </p>
 
       <h2>Publicidad</h2>
-      <p>
-        El sitio muestra anuncios de patrocinadores, identificados como &ldquo;Publicidad&rdquo;. Al hacer clic en un
-        anuncio, vas al sitio del anunciante, que tiene su propia política de privacidad. No compartimos tus datos con
-        anunciantes.
-      </p>
+      {googleAds ? (
+        <>
+          <p>
+            El sitio muestra anuncios identificados como &ldquo;Publicidad&rdquo;. Algunos se venden directamente a
+            patrocinadores; los demás los sirve Google AdSense. Google y sus socios usan cookies e identificadores para
+            mostrar anuncios, medir resultados y evitar fraudes y, con tu consentimiento, personalizarlos según tus visitas
+            a este y otros sitios.
+          </p>
+          <p>
+            Quienes visitan desde Europa, el Reino Unido o Suiza ven un mensaje para aceptar o rechazar. En cualquier
+            lugar, puedes desactivar los anuncios personalizados en la{" "}
+            <a href={adSettingsUrl}>Configuración de anuncios de Google</a>. Mira{" "}
+            <a href={partnerSitesUrl}>cómo usa Google los datos de sitios asociados</a>. Al hacer clic en un anuncio, vas
+            al sitio del anunciante, que tiene su propia política de privacidad.
+          </p>
+        </>
+      ) : (
+        <p>
+          El sitio muestra anuncios de patrocinadores, identificados como &ldquo;Publicidad&rdquo;. Al hacer clic en un
+          anuncio, vas al sitio del anunciante, que tiene su propia política de privacidad. No compartimos tus datos con
+          anunciantes.
+        </p>
+      )}
 
       <h2>Cambios</h2>
       <p>
-        Si empezamos a usar cuentas de usuario o cookies, esta política se actualizará antes y pediremos tu
-        consentimiento cuando la ley lo exija.
+        {googleAds
+          ? "Si empezamos a usar cuentas de usuario, esta política se actualizará antes."
+          : "Si empezamos a usar cuentas de usuario o cookies, esta política se actualizará antes y pediremos tu consentimiento cuando la ley lo exija."}
       </p>
 
       <h2>Tus derechos</h2>

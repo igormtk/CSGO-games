@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
 import { JsonLd, siteJsonLd } from "@/components/seo/JsonLd";
 import { SideRails } from "@/components/partners/SideRails";
+import { adsensePublisherId, adsenseScriptSrc } from "@/lib/adsense";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -30,6 +31,8 @@ export const metadata: Metadata = {
   // Verificação de propriedade dos buscadores. O Google está verificado por registro TXT no DNS
   // (Hostinger); o Bing Webmaster Tools usa esta meta tag. Os códigos são públicos por natureza.
   verification: { other: { "msvalidate.01": "B1CC63B45848CAE0795F86FA799A8070" } },
+  // Confirma ao AdSense que o site é desta conta (junto com o /ads.txt).
+  ...(adsensePublisherId ? { other: { "google-adsense-account": adsensePublisherId } } : {}),
 };
 
 const games = [
@@ -48,7 +51,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // Ler os cabeçalhos torna a página dinâmica: cada visita recebe um nonce novo (ver src/proxy.ts).
-  await headers();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en">
       {/* A página ocupa exatamente a altura da tela; cada jogo se ajusta ao espaço abaixo do menu. */}
@@ -64,6 +67,9 @@ export default async function RootLayout({
           {children}
         </div>
         <SideRails />
+        {/* Script do AdSense, que também mostra a mensagem de consentimento de cookies do Google a quem
+            visita da Europa e do Reino Unido (configurada no painel do AdSense). O React o move para o <head>. */}
+        {adsenseScriptSrc ? <script async src={adsenseScriptSrc} crossOrigin="anonymous" nonce={nonce} /> : null}
         {/* Contagem de visitas da Vercel: sem cookies e sem identificar quem visita (ver /privacidade). */}
         <Analytics />
       </body>
