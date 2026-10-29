@@ -379,6 +379,8 @@ function Room({
   const [now, setNow] = useState(timestamp);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const roundRef = useRef(0);
+  // Anfitrião atual segundo a última presença: só ele pode iniciar rodadas (ver o aviso "start").
+  const hostIdRef = useRef<string | undefined>(undefined);
 
   const seedKey = `${code}:${round}`;
   const queue = useMemo(() => (round ? createPlayerQueue(seedKey) : []), [round, seedKey]);
@@ -427,6 +429,7 @@ function Room({
         setPlayers(list);
         // Quem chega no meio de uma rodada entra nela (a do anfitrião), já com o relógio correndo.
         const currentHost = [...list].sort((a, b) => a.joinedAt - b.joinedAt)[0];
+        hostIdRef.current = currentHost?.id;
         if (roundRef.current === 0 && currentHost && currentHost.round > 0) {
           roundRef.current = currentHost.round;
           setRound(currentHost.round);
@@ -434,6 +437,9 @@ function Room({
         }
       })
       .on("broadcast", { event: "start" }, ({ payload }) => {
+        // O botão só aparece para o anfitrião, mas qualquer um na sala poderia enviar o aviso pelas
+        // ferramentas do navegador: avisos de outra pessoa são ignorados.
+        if (!payload.from || payload.from !== hostIdRef.current) return;
         const nextMode = payload.mode as RoomMode;
         roundRef.current = payload.round as number;
         setRound(payload.round as number);
@@ -463,7 +469,7 @@ function Room({
   }, [meKey, status]);
 
   const startRound = () => {
-    void channelRef.current?.send({ type: "broadcast", event: "start", payload: { round: round + 1, mode } });
+    void channelRef.current?.send({ type: "broadcast", event: "start", payload: { round: round + 1, mode, from: playerId } });
   };
 
   const applyMove = (next: Move) => {
