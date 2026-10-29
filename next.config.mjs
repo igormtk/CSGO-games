@@ -16,7 +16,14 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    // Logos e imagens de patrocinadores mudam raramente: 7 dias no navegador, revalidando em segundo
+    // plano por mais 1 dia. Trocar uma logo exige outro nome de arquivo para valer na hora.
+    const imageCache = { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" };
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/teams/:file*", headers: [imageCache] },
+      { source: "/partners/:file*", headers: [imageCache] },
+    ];
   },
 };
 
