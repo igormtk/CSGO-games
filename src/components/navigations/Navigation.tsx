@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Grid3x3, ScanFace, Home, Menu, UserSearch, X } from "lucide-react";
@@ -28,11 +28,12 @@ const menuCopy: Record<Language, { nav: string; open: string; close: string }> =
 
 export function Navigation() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  // Guarda a página em que o menu foi aberto: ao navegar, deixa de bater e o menu fecha.
+  const [openOnPath, setOpenOnPath] = useState<string>();
+  const open = openOnPath === pathname;
+  const setOpen = (nextOpen: boolean) => setOpenOnPath(nextOpen ? pathname : undefined);
   const language = useLanguage();
   const copy = menuCopy[language];
-
-  useEffect(() => setOpen(false), [pathname]);
 
   return (
     <nav aria-label={copy.nav}>
@@ -59,7 +60,7 @@ export function Navigation() {
 
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls="mobile-menu"
         aria-label={open ? copy.close : copy.open}

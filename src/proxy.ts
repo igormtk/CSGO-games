@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Política de conteúdo com nonce: a cada visita sai um código novo, e só os scripts que o Next
-// marca com ele podem rodar ('strict-dynamic' libera os que esses scripts carregarem). Sem nonce
-// seria preciso 'unsafe-inline', que deixa passar qualquer script injetado na página.
-export function middleware(request: NextRequest) {
+// Proxy (no Next 15 se chamava middleware). Política de conteúdo com nonce: a cada visita sai um
+// código novo, e só os scripts que o Next marca com ele podem rodar ('strict-dynamic' libera os
+// que esses scripts carregarem). Sem nonce seria preciso 'unsafe-inline', que deixa passar
+// qualquer script injetado na página.
+export function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const isDev = process.env.NODE_ENV === "development";
 

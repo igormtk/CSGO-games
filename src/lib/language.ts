@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 // Idioma escolhido vale para o site todo. A chave antiga do bingo continua para não perder a escolha.
 export type Language = "pt" | "en" | "es";
@@ -63,19 +63,24 @@ export const useDocumentTitle = (title: string) => {
   }, [title]);
 };
 
-// Começa no idioma base (o do HTML) e troca depois da montagem para não divergir na hidratação.
+// Troca no seletor (mesma aba) e em outras abas (evento storage) avisam quem usa o idioma.
+const subscribeToLanguage = (onChange: () => void) => {
+  window.addEventListener(LANGUAGE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(LANGUAGE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+};
+
+// No servidor e na hidratação vale o idioma base (o do HTML); no navegador, o salvo ou o do
+// navegador. O useSyncExternalStore faz essa troca sem divergir na hidratação.
 export const useLanguage = () => {
-  const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
+  const language = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => DEFAULT_LANGUAGE);
 
   useEffect(() => {
-    const storedLanguage = getStoredLanguage();
-    setLanguage(storedLanguage);
-    document.documentElement.lang = htmlLang(storedLanguage);
-
-    const handleChange = (event: Event) => setLanguage((event as CustomEvent<Language>).detail);
-    window.addEventListener(LANGUAGE_EVENT, handleChange);
-    return () => window.removeEventListener(LANGUAGE_EVENT, handleChange);
-  }, []);
+    document.documentElement.lang = htmlLang(language);
+  }, [language]);
 
   return language;
 };
