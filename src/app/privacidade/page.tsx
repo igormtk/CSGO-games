@@ -17,9 +17,9 @@ const content = {
       <h2>O que guardamos</h2>
       <p>Você joga sem cadastro. Guardamos apenas no seu próprio navegador (armazenamento local):</p>
       <ul>
-        <li>o andamento e o resultado das partidas do dia (CS Bingo e Jogador misterioso);</li>
+        <li>o andamento e o resultado dos desafios do dia (CS Bingo, Jogador misterioso e Adivinhe o jogador);</li>
         <li>suas estatísticas e sequência de dias jogados;</li>
-        <li>o idioma escolhido e o seu recorde no Adivinhe o jogador.</li>
+        <li>o idioma escolhido.</li>
       </ul>
       <p>
         Esses dados não são enviados para nossos servidores. Você pode apagá-los a qualquer momento limpando os dados do
@@ -64,9 +64,9 @@ const content = {
       <h2>What we store</h2>
       <p>You play without signing up. We only store, in your own browser (local storage):</p>
       <ul>
-        <li>the progress and result of the daily games (CS Bingo and Mystery player);</li>
+        <li>the progress and result of the daily challenges (CS Bingo, Mystery player and Guess the player);</li>
         <li>your stats and streak of days played;</li>
-        <li>your chosen language and your Guess the player record.</li>
+        <li>your chosen language.</li>
       </ul>
       <p>
         This data is not sent to our servers. You can delete it at any time by clearing the site data in your browser.
@@ -109,9 +109,9 @@ const content = {
       <h2>Qué guardamos</h2>
       <p>Juegas sin registrarte. Solo guardamos en tu propio navegador (almacenamiento local):</p>
       <ul>
-        <li>el progreso y el resultado de las partidas del día (CS Bingo y Jugador misterioso);</li>
+        <li>el progreso y el resultado de los desafíos del día (CS Bingo, Jugador misterioso y Adivina el jugador);</li>
         <li>tus estadísticas y racha de días jugados;</li>
-        <li>el idioma elegido y tu récord en Adivina el jugador.</li>
+        <li>el idioma elegido.</li>
       </ul>
       <p>
         Estos datos no se envían a nuestros servidores. Puedes borrarlos en cualquier momento limpiando los datos del sitio

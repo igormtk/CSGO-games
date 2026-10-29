@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { GameGuide } from "@/components/seo/GameGuide";
 import { JsonLd, gameJsonLd } from "@/components/seo/JsonLd";
 
-const description = "Do you know the real names of Counter-Strike pro players? Pick from 4 options and beat your record.";
+const description =
+  "Daily challenge: 20 Counter-Strike pro players and 10 seconds each to pick their real name from 4 options. One attempt per day.";
 
 export const metadata: Metadata = {
   title: "Guess the player",
