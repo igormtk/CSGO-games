@@ -1,4 +1,4 @@
-// A Content-Security-Policy sai do middleware (src/middleware.ts), que gera um nonce por visita.
+// A Content-Security-Policy sai do proxy (src/proxy.ts), que gera um nonce por visita.
 const securityHeaders = [
   // HTTPS obrigatório por 2 anos, inclusive no www.
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },

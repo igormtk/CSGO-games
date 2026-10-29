@@ -46,7 +46,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Ler os cabeçalhos torna a página dinâmica: cada visita recebe um nonce novo (ver middleware).
+  // Ler os cabeçalhos torna a página dinâmica: cada visita recebe um nonce novo (ver src/proxy.ts).
   await headers();
   return (
     <html lang="en">

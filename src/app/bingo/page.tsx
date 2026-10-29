@@ -31,6 +31,7 @@ import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { countryFlags } from "@/data/countryFlags";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
 import { GAME_TIME_ZONE, getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 
@@ -664,9 +665,7 @@ export default function BingoPage() {
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   // O jogo salvo, o idioma e as estatísticas vêm do localStorage; esperar a montagem evita
   // divergência entre o HTML do servidor e o do navegador (erro de hidratação).
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   // Aba aberta na virada do dia: recarrega para trazer a cartela nova.
   useEffect(() => {
@@ -712,14 +711,6 @@ export default function BingoPage() {
     "out-of-lives": copy.outOfLivesMessage,
   }[gameStatus];
 
-  useEffect(() => {
-    if (!isGameOver || stats.lastPlayedDate === dateKey) return;
-
-    const nextStats = recordGame(stats, dateKey, isCompleted);
-    setStats(nextStats);
-    window.localStorage.setItem(STATS_KEY, JSON.stringify(nextStats));
-  }, [isGameOver, isCompleted, stats, dateKey]);
-
   const showMessage = (nextMessage: string, tone: MessageTone) => {
     setMessage(nextMessage);
     setMessageTone(tone);
@@ -744,7 +735,15 @@ export default function BingoPage() {
       Object.keys(nextPicks).length === totalCells ||
       nextMistakes >= MAX_LIVES ||
       nextPlayerIndex >= playerQueue.length;
-    if (endsGame) setOpenPanel("result");
+    if (!endsGame) return;
+
+    setOpenPanel("result");
+    // A partida terminou nesta jogada: entra nas estatísticas uma vez por dia.
+    if (stats.lastPlayedDate !== dateKey) {
+      const nextStats = recordGame(stats, dateKey, Object.keys(nextPicks).length === totalCells);
+      setStats(nextStats);
+      window.localStorage.setItem(STATS_KEY, JSON.stringify(nextStats));
+    }
   };
 
   const handleCellClick = (cellIndex: number) => {

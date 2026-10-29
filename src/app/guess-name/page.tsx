@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Check, Heart, Play, RotateCcw, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import { TeamBadge } from "@/components/teams/TeamBadge";
@@ -80,12 +80,32 @@ const createQuestion = (player: CsPlayer): Question => {
   return { player, options: shuffleArray([player.fullName, ...distractors]) };
 };
 
+const RECORD_EVENT = "cs-guess-name-record-change";
+
 const readRecord = () => {
   try {
     return Number(window.localStorage.getItem(RECORD_KEY) ?? window.localStorage.getItem(LEGACY_RECORD_KEY) ?? 0) || 0;
   } catch {
     return 0;
   }
+};
+
+const saveRecord = (record: number) => {
+  try {
+    window.localStorage.setItem(RECORD_KEY, String(record));
+  } catch {
+    // Sem armazenamento (aba anônima): o recorde vale só nesta visita.
+  }
+  window.dispatchEvent(new Event(RECORD_EVENT));
+};
+
+const subscribeToRecord = (onChange: () => void) => {
+  window.addEventListener(RECORD_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(RECORD_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
 };
 
 export default function GuessNamePage() {
@@ -95,21 +115,18 @@ export default function GuessNamePage() {
   const [answer, setAnswer] = useState<string>();
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
-  const [record, setRecord] = useState(0);
   const [status, setStatus] = useState<"idle" | "playing" | "over">("idle");
 
   const language = useLanguage();
   const copy = guessNameCopy[language];
   useDocumentTitle(`${copy.eyebrow} · CS Games`);
 
-  useEffect(() => setRecord(readRecord()), []);
+  // O recorde vem do localStorage: 0 no HTML do servidor, o salvo depois da hidratação.
+  const record = useSyncExternalStore(subscribeToRecord, readRecord, () => 0);
 
   const finishGame = (finalScore: number) => {
     setStatus("over");
-    if (finalScore > record) {
-      setRecord(finalScore);
-      window.localStorage.setItem(RECORD_KEY, String(finalScore));
-    }
+    if (finalScore > record) saveRecord(finalScore);
   };
 
   const handleStart = () => {

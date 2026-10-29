@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Flame, HelpCircle, Search, Share2, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
@@ -9,6 +9,7 @@ import { getPartnerFor } from "@/data/partners";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
 import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 
@@ -257,25 +258,37 @@ const normalize = (text: string) =>
     .toLowerCase();
 
 export default function MysteryPlayerPage() {
-  const [dateKey, setDateKey] = useState<string>();
-  const [guessIds, setGuessIds] = useState<string[]>([]);
-  const [stats, setStats] = useState<PlayerStats>(emptyStats);
+  const copy = mysteryCopy[useLanguage()];
+  useDocumentTitle(`${copy.eyebrow} · CS Games`);
+  const hydrated = useHydrated();
+
+  // A data e o progresso salvo só existem no navegador: o servidor manda só o título (que
+  // buscadores e IAs leem) e o jogo monta no cliente, já com tudo carregado.
+  if (!hydrated) {
+    return (
+      <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">{copy.eyebrow}</p>
+          <h1 className="text-3xl font-bold uppercase leading-none tracking-wide sm:text-4xl">{copy.title}</h1>
+        </div>
+      </main>
+    );
+  }
+
+  return <MysteryGame copy={copy} />;
+}
+
+function MysteryGame({ copy }: { copy: MysteryCopy }) {
+  const [dateKey] = useState(getGameDateKey);
+  const [guessIds, setGuessIds] = useState<string[]>(
+    () => readJson<{ guessIds: string[] }>(`${GAME_KEY_PREFIX}-${dateKey}`, { guessIds: [] }).guessIds
+  );
+  const [stats, setStats] = useState<PlayerStats>(() => readJson(STATS_KEY, emptyStats));
   const [search, setSearch] = useState("");
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   const [showRules, setShowRules] = useState(false);
-  const copy = mysteryCopy[useLanguage()];
-  useDocumentTitle(`${copy.eyebrow} · CS Games`);
 
-  // A data e o progresso salvo só existem no navegador: carregar depois da montagem evita
-  // divergência com o HTML gerado no build.
-  useEffect(() => {
-    const today = getGameDateKey();
-    setDateKey(today);
-    setGuessIds(readJson<{ guessIds: string[] }>(`${GAME_KEY_PREFIX}-${today}`, { guessIds: [] }).guessIds);
-    setStats(readJson(STATS_KEY, emptyStats));
-  }, []);
-
-  const target = useMemo(() => (dateKey ? getMysteryPlayer(dateKey) : undefined), [dateKey]);
+  const target = useMemo(() => getMysteryPlayer(dateKey), [dateKey]);
   const guesses = useMemo(
     () => guessIds.map((id) => csPlayers.find((player) => player.id === id)).filter((player): player is CsPlayer => Boolean(player)),
     [guessIds]
@@ -296,12 +309,12 @@ export default function MysteryPlayerPage() {
   }, [search, guessIds]);
 
   const partner = useMemo(
-    () => (dateKey ? getPartnerFor("post-game", dateKey, hashDate(dateKey)) : undefined),
+    () => getPartnerFor("post-game", dateKey, hashDate(dateKey)),
     [dateKey]
   );
 
   const handleGuess = (player: CsPlayer) => {
-    if (!dateKey || !target || isOver) return;
+    if (isOver) return;
     const nextGuessIds = [...guessIds, player.id];
     setGuessIds(nextGuessIds);
     setSearch("");
@@ -316,7 +329,6 @@ export default function MysteryPlayerPage() {
   };
 
   const handleShare = async () => {
-    if (!dateKey || !target) return;
     const rows = guesses.map((guess) => getClues(guess, target, copy).map((clue) => toneEmoji[clue.tone]).join("")).join("\n");
     const shareText = [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
@@ -333,17 +345,6 @@ export default function MysteryPlayerPage() {
     }
   };
 
-  // Antes de ler a data do navegador, o HTML já sai com o título (buscadores e IAs leem daqui).
-  if (!dateKey || !target) {
-    return (
-      <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">{copy.eyebrow}</p>
-          <h1 className="text-3xl font-bold uppercase leading-none tracking-wide sm:text-4xl">{copy.title}</h1>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">
