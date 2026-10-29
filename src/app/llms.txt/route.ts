@@ -14,6 +14,7 @@ ${siteName} (${siteUrl}) is a set of Counter-Strike (CS2 and CS:GO) mini games f
 ## Games
 
 - [CS Bingo](${siteUrl}/bingo): daily challenge. A 4x4 board with criteria such as teams, nationalities, roles and achievements; 42 players appear one at a time and the player places each one in a cell they fit. Two lives, free skips, one wildcard per game, one attempt per day.
+- [CS Bingo multiplayer](${siteUrl}/bingo/multiplayer): play CS Bingo with friends. One player creates a room and shares its code; everyone gets the same board and names and races in real time, with a live scoreboard. Most points wins; ties go to whoever finished first.
 - [Mystery player](${siteUrl}/jogador-misterioso): daily guessing game. Find the pro player of the day in up to 6 guesses; each guess compares current team, country, region, role, Majors and HLTV Top 20 years with the mystery player.
 - [Guess the player](${siteUrl}/guess-name): endless quiz. A pro player's nickname appears and the player picks the real name from 4 options, with 3 lives.
 

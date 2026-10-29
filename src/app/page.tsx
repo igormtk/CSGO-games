@@ -3,7 +3,7 @@
 import { DefaultCard } from "@/components/cards/DefaultCard";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Grid3x3, ScanFace, UserSearch } from "lucide-react";
+import { Grid3x3, ScanFace, UserSearch, Users } from "lucide-react";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPartnerFor } from "@/data/partners";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
@@ -46,6 +46,11 @@ const homeCopy: Record<
         description: "Você sabe o nome real dos pro players? Acerte o máximo que conseguir.",
         tag: "Infinito",
       },
+      "/bingo/multiplayer": {
+        title: "Bingo multiplayer",
+        description: "Crie uma sala, mande o código para os amigos e disputem a mesma cartela em tempo real.",
+        tag: "Com amigos",
+      },
     },
     play: "Jogar",
     partnerLabel: "Publicidade",
@@ -74,6 +79,11 @@ const homeCopy: Record<
         title: "Guess the player",
         description: "Do you know the pro players' real names? Get as many right as you can.",
         tag: "Endless",
+      },
+      "/bingo/multiplayer": {
+        title: "Bingo multiplayer",
+        description: "Create a room, send the code to your friends and race on the same board in real time.",
+        tag: "With friends",
       },
     },
     play: "Play",
@@ -104,6 +114,11 @@ const homeCopy: Record<
         description: "¿Sabes el nombre real de los pro players? Acierta todos los que puedas.",
         tag: "Infinito",
       },
+      "/bingo/multiplayer": {
+        title: "Bingo multijugador",
+        description: "Crea una sala, envía el código a tus amigos y compitan en el mismo cartón en tiempo real.",
+        tag: "Con amigos",
+      },
     },
     play: "Jugar",
     partnerLabel: "Publicidad",
@@ -118,6 +133,7 @@ const games = [
   { linkTo: "/bingo", icon: Grid3x3 },
   { linkTo: "/jogador-misterioso", icon: ScanFace },
   { linkTo: "/guess-name", icon: UserSearch },
+  { linkTo: "/bingo/multiplayer", icon: Users },
 ];
 
 export default function Home() {
@@ -139,7 +155,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:gap-6 md:grid-cols-3 short:grid-cols-3 short:gap-3">
+        <div className="grid gap-3 sm:gap-6 md:grid-cols-2 short:grid-cols-2 short:gap-3">
           {games.map((game, index) => (
             <motion.div
               key={game.linkTo}

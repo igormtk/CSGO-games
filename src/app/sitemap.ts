@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${siteUrl}/`, lastModified, changeFrequency: "daily", priority: 1 },
     { url: `${siteUrl}/bingo`, lastModified, changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/bingo/multiplayer`, lastModified, changeFrequency: "weekly", priority: 0.8 },
     { url: `${siteUrl}/jogador-misterioso`, lastModified, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/guess-name`, lastModified, changeFrequency: "weekly", priority: 0.7 },
     { url: `${siteUrl}/privacidade`, changeFrequency: "yearly", priority: 0.2 },
