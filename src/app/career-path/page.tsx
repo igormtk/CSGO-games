@@ -7,6 +7,7 @@ import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag, getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { PartnerBreak } from "@/components/partners/PartnerBreak";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
@@ -49,6 +50,8 @@ const careerCopy = {
     nextChallenge: "Próximo desafio em",
     guesses: "Palpites",
     partnerLabel: "Publicidade",
+    revealIn: (seconds: number) => `Resposta em ${seconds}s`,
+    revealLabel: "Ver resposta",
   },
   en: {
     eyebrow: "Career path",
@@ -71,6 +74,8 @@ const careerCopy = {
     nextChallenge: "Next challenge in",
     guesses: "Guesses",
     partnerLabel: "Advertisement",
+    revealIn: (seconds: number) => `Answer in ${seconds}s`,
+    revealLabel: "See the answer",
   },
   es: {
     eyebrow: "Camino de carrera",
@@ -93,6 +98,8 @@ const careerCopy = {
     nextChallenge: "Próximo desafío en",
     guesses: "Intentos",
     partnerLabel: "Publicidad",
+    revealIn: (seconds: number) => `Respuesta en ${seconds}s`,
+    revealLabel: "Ver la respuesta",
   },
 } satisfies Record<Language, unknown>;
 
@@ -170,12 +177,15 @@ function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }
   const [stats, setStats] = useState<PlayerStats>(() => readJson(STATS_KEY, emptyStats));
   const [search, setSearch] = useState("");
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
+  // A resposta só aparece depois do anúncio de fim de jogo (igual ao bingo); fica salvo que já foi vista.
+  const revealKey = `${gameKey}-revealed`;
+  const [revealed, setRevealed] = useState(() => readJson<{ revealed: boolean }>(revealKey, { revealed: false }).revealed);
 
   const won = guessIds.includes(target.id);
   const misses = guessIds.length - (won ? 1 : 0);
   const isOver = won || guessIds.length >= MAX_GUESSES;
-  // No fim mostra tudo; durante o jogo, 2 times mais um por erro, depois país e função.
-  const revealSteps = isOver ? Infinity : START_REVEALED + misses;
+  // Depois do anúncio mostra tudo; antes, 2 times mais um por erro, depois país e função.
+  const revealSteps = isOver && revealed ? Infinity : START_REVEALED + misses;
   const revealedTeams = Math.min(target.teams.length, revealSteps);
   const showCountry = revealSteps > target.teams.length;
   const showRole = revealSteps > target.teams.length + 1;
@@ -309,6 +319,17 @@ function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }
             </p>
           ) : null}
         </div>
+      ) : !revealed ? (
+        <PartnerBreak
+          partner={partner}
+          label={copy.partnerLabel}
+          revealIn={copy.revealIn}
+          revealLabel={copy.revealLabel}
+          onDone={() => {
+            setRevealed(true);
+            writeJson(revealKey, { revealed: true });
+          }}
+        />
       ) : (
         <div className="cs-cut w-full bg-cs-line p-[2px] shadow-2xl shadow-black/50">
           <div className="cs-cut space-y-3 bg-cs-surface p-4 text-center">
@@ -367,7 +388,7 @@ function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }
         </div>
       ) : null}
 
-      {isOver ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && revealed ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
     </main>
   );
 }

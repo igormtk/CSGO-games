@@ -56,6 +56,7 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
       intro:
         "O CS Bingo é um desafio diário de Counter-Strike: encaixe pro players numa cartela 4x4 cruzando times, nacionalidades, funções e conquistas. A cartela é a mesma para todo mundo e muda à meia-noite (horário de Brasília).",
       steps: [
+        "Antes de começar, escolha o modo: Clássico, sem tempo, ou Contra o relógio, com 10 segundos por nome.",
         "Um nome aparece por vez: 42 jogadores sorteados da base para o dia.",
         "Clique numa casa cujo critério o jogador cumpra, como \"Jogou pela NAVI\" ou \"Campeão de Major\". Seis casas combinam dois critérios.",
         "Errou a casa? Perde uma das 2 vidas. Não conhece o jogador? Pule sem custo.",
@@ -73,6 +74,7 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
       intro:
         "CS Bingo is a daily Counter-Strike challenge: fit pro players into a 4x4 board by matching teams, nationalities, roles and achievements. Everyone gets the same board, and a new one arrives at midnight Brasília time (UTC−3).",
       steps: [
+        "Before you start, choose the mode: Classic, with no timer, or Against the clock, with 10 seconds per name.",
         "One name appears at a time: 42 players drawn from the database for the day.",
         "Click a cell whose criterion the player meets, like \"Played for NAVI\" or \"Major winner\". Six cells combine two criteria.",
         "Wrong cell? You lose one of your 2 lives. Don't know the player? Skip for free.",
@@ -90,6 +92,7 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
       intro:
         "CS Bingo es un desafío diario de Counter-Strike: coloca pro players en un cartón 4x4 cruzando equipos, nacionalidades, roles y logros. El cartón es el mismo para todos y cambia a medianoche, hora de Brasilia (UTC−3).",
       steps: [
+        "Antes de empezar, elige el modo: Clásico, sin tiempo, o Contrarreloj, con 10 segundos por nombre.",
         "Aparece un nombre por vez: 42 jugadores sorteados de la base para el día.",
         "Haz clic en una casilla cuyo criterio cumpla el jugador, como \"Jugó en NAVI\" o \"Campeón de Major\". Seis casillas combinan dos criterios.",
         "¿Casilla equivocada? Pierdes una de tus 2 vidas. ¿No conoces al jugador? Sáltalo sin costo.",
