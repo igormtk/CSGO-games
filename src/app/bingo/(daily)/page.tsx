@@ -16,8 +16,10 @@ import {
   SkipForward,
   Sparkles,
   Trophy,
+  Users,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import {
   bingoCriteria,
   csPlayers,
@@ -28,6 +30,10 @@ import type { BingoCriterion, CsPlayer } from "@/data/csBingoDatabase";
 import { getPartnerFor } from "@/data/partners";
 import type { Partner } from "@/data/partners";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
+import { CriterionIcon } from "@/components/bingo/CriterionIcon";
+import { DECK_SIZE, GRID_SIZE, createBoard, createPlayerQueue, getPossibleAnswers, playerFitsCell } from "@/lib/bingo/board";
+import type { BoardCell, GameBoard } from "@/lib/bingo/board";
+import { comboJoiners, getCellCopy, getCriterionCopy } from "@/lib/bingo/copy";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
 import { countryFlags } from "@/data/countryFlags";
@@ -36,25 +42,13 @@ import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
 import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 
-const GRID_SIZE = 4;
 // Prefixo novo a cada mudança no sorteio da cartela: partidas salvas antigas apontariam para outras casas.
 const GAME_KEY_PREFIX = "cs-bingo-daily-v4";
 const STATS_KEY = "cs-bingo-stats";
 const POINTS_PER_HIT = 100;
 const PERFECT_BONUS = 300;
-const REVEALED_ANSWERS = 3;
 // Tempo mínimo de anúncio (com a aba visível) antes de revelar o resultado e as respostas.
 const PARTNER_BREAK_SECONDS = 5;
-// Dificuldade: casas simples só com critérios restritos (no máximo 8 jogadores), mais 6 casas que
-// combinam dois critérios (de 2 a 6 jogadores). Com isso, mesmo quem conhece a base inteira
-// raramente completa a cartela, mas toda cartela sorteada tem pelo menos uma solução.
-const MAX_SINGLE_CANDIDATES = 8;
-const MIN_COMBO_CANDIDATES = 2;
-const MAX_COMBO_CANDIDATES = 6;
-const COMBO_CELLS = 6;
-const BOARD_ATTEMPTS = 300;
-// Jogadores sorteados da base para o baralho do dia. A cartela é calibrada para esse tamanho.
-const DECK_SIZE = 42;
 const MAX_LIVES = 2;
 
 type CellPick = {
@@ -63,8 +57,6 @@ type CellPick = {
 };
 
 // Cada casa é independente e tem um critério próprio ou dois critérios combinados.
-type BoardCell = BingoCriterion[];
-type GameBoard = BoardCell[];
 
 type GameStatus = "playing" | "completed" | "out-of-names" | "out-of-lives";
 type MessageTone = "neutral" | "success" | "error" | "wildcard";
@@ -84,11 +76,6 @@ type PlayerStats = {
   currentStreak: number;
   bestStreak: number;
   lastPlayedDate?: string;
-};
-
-type CriterionCopy = {
-  label: string;
-  helper: string;
 };
 
 type TranslationCopy = {
@@ -114,8 +101,7 @@ type TranslationCopy = {
   revealAnswers: string;
   answersLocked: string;
   initialMessage: string;
-  // Liga os dois critérios de uma casa: "Brasil e IGL"
-  comboJoiner: string;
+  multiplayer: string;
   resetMessage: string;
   completedMessage: string;
   outOfNamesMessage: string;
@@ -167,7 +153,7 @@ const translations: Record<Language, TranslationCopy> = {
     revealAnswers: "Ver resultado e respostas",
     answersLocked: "Após o anúncio",
     initialMessage: "Um nome aparece por vez. Clique numa casa cujo critério esse jogador cumpra.",
-    comboJoiner: "e",
+    multiplayer: "Multiplayer",
     resetMessage: "Cartela reiniciada. O primeiro nome já está na tela.",
     completedMessage: "Bingo completo! Todas as casas foram preenchidas.",
     outOfNamesMessage: "Você ficou sem nomes. Veja na cartela quem poderia ocupar as casas vazias.",
@@ -227,7 +213,7 @@ const translations: Record<Language, TranslationCopy> = {
     revealAnswers: "See result and answers",
     answersLocked: "After the ad",
     initialMessage: "One name appears at a time. Click a cell whose criterion that player meets.",
-    comboJoiner: "and",
+    multiplayer: "Multiplayer",
     resetMessage: "Board reset. The first name is already on screen.",
     completedMessage: "Bingo complete! Every cell is filled.",
     outOfNamesMessage: "You ran out of names. Check the board to see who could fill the empty cells.",
@@ -287,7 +273,7 @@ const translations: Record<Language, TranslationCopy> = {
     revealAnswers: "Ver resultado y respuestas",
     answersLocked: "Tras el anuncio",
     initialMessage: "Aparece un nombre por vez. Haz clic en una casilla cuyo criterio cumpla ese jugador.",
-    comboJoiner: "y",
+    multiplayer: "Multijugador",
     resetMessage: "Cartela reiniciada. El primer nombre ya está en pantalla.",
     completedMessage: "¡Bingo completo! Todas las casillas están llenas.",
     outOfNamesMessage: "Te quedaste sin nombres. Mira en la cartela quién podría ocupar las casillas vacías.",
@@ -326,185 +312,6 @@ const translations: Record<Language, TranslationCopy> = {
   },
 };
 
-const criterionTranslations: Record<Language, Record<string, CriterionCopy>> = {
-  pt: {},
-  en: {
-    "nat-brazil": { label: "Brazil", helper: "Brazilian player" },
-    "nat-denmark": { label: "Denmark", helper: "Danish player" },
-    "nat-france": { label: "France", helper: "French player" },
-    "nat-russia": { label: "Russia", helper: "Russian player" },
-    "nat-ukraine": { label: "Ukraine", helper: "Ukrainian player" },
-    "nat-israel": { label: "Israel", helper: "Israeli player" },
-    "nat-sweden": { label: "Sweden", helper: "Swedish player" },
-    "nat-poland": { label: "Poland", helper: "Polish player" },
-    "role-entry": { label: "Entry fragger", helper: "Plays or played as an entry fragger" },
-    "multi-major": { label: "2+ Majors", helper: "Won two or more Majors" },
-    "no-major": { label: "No Major", helper: "Never won a Major" },
-    "top20-5": { label: "Top 20 5+ times", helper: "Made HLTV's Top 20 in five or more years" },
-    "teams-3": { label: "3+ teams", helper: "Played for three or more teams" },
-    retired: { label: "Retired", helper: "No longer plays professionally" },
-    "region-na": { label: "NA", helper: "Represents North America" },
-    "role-awper": { label: "AWPer", helper: "Plays or played as an AWPer" },
-    "role-igl": { label: "IGL", helper: "Plays or played as an in-game leader" },
-    "role-lurker": { label: "Lurker", helper: "Plays or played as a lurker" },
-    "major-winner": { label: "Major winner", helper: "Won at least one Major" },
-    "major-mvp": { label: "Major MVP", helper: "Was a Major MVP" },
-    top20: { label: "HLTV Top 20", helper: "Appeared in HLTV's Top 20" },
-    active: { label: "Active", helper: "Still active in the scene" },
-  },
-  es: {
-    "nat-brazil": { label: "Brasil", helper: "Jugador brasileño" },
-    "nat-denmark": { label: "Dinamarca", helper: "Jugador danés" },
-    "nat-france": { label: "Francia", helper: "Jugador francés" },
-    "nat-russia": { label: "Rusia", helper: "Jugador ruso" },
-    "nat-ukraine": { label: "Ucrania", helper: "Jugador ucraniano" },
-    "nat-israel": { label: "Israel", helper: "Jugador israelí" },
-    "nat-sweden": { label: "Suecia", helper: "Jugador sueco" },
-    "nat-poland": { label: "Polonia", helper: "Jugador polaco" },
-    "role-entry": { label: "Entry fragger", helper: "Juega o jugó como entry fragger" },
-    "multi-major": { label: "2+ Majors", helper: "Ganó dos Majors o más" },
-    "no-major": { label: "Sin Major", helper: "Nunca ganó un Major" },
-    "top20-5": { label: "Top 20 5+ veces", helper: "Entró en el Top 20 de HLTV en cinco años o más" },
-    "teams-3": { label: "3+ equipos", helper: "Pasó por tres equipos o más" },
-    retired: { label: "Retirado", helper: "Ya no juega profesionalmente" },
-    "region-na": { label: "NA", helper: "Representa a Norteamérica" },
-    "role-awper": { label: "AWPer", helper: "Juega o jugó como AWPer" },
-    "role-igl": { label: "IGL", helper: "Juega o jugó como líder dentro del juego" },
-    "role-lurker": { label: "Lurker", helper: "Juega o jugó como lurker" },
-    "major-winner": { label: "Campeón de Major", helper: "Ganó al menos un Major" },
-    "major-mvp": { label: "MVP de Major", helper: "Fue MVP de un Major" },
-    top20: { label: "HLTV Top 20", helper: "Apareció en el Top 20 de HLTV" },
-    active: { label: "Activo", helper: "Sigue activo en la escena" },
-  },
-};
-
-
-const playerFitsCell = (player: CsPlayer, cell: BoardCell) =>
-  cell.every((criterion) => playerMatchesCriterion(player, criterion));
-
-const countCandidates = (cell: BoardCell, deck: CsPlayer[]) => deck.filter((player) => playerFitsCell(player, cell)).length;
-
-// Pares sem sentido juntos: "Vitality + 3+ times" lê como se fossem três times da Vitality.
-const isConfusingPair = (first: BingoCriterion, second: BingoCriterion) =>
-  [first, second].some((criterion) => criterion.id === "teams-3") &&
-  [first, second].some((criterion) => criterion.type === "team");
-
-// Casas possíveis para o baralho do dia. Simples: critérios com poucos candidatos. Combinadas: pares
-// que restringem de verdade (nenhum dos dois implica o outro). Dois critérios do mesmo tipo
-// ("2+ Majors + Top 20 5+ vezes") ficam de fora: confundem mais do que desafiam.
-const buildCandidateCells = (deck: CsPlayer[]) => {
-  const singleCells: BoardCell[] = bingoCriteria
-    .filter((criterion) => {
-      const candidates = countCandidates([criterion], deck);
-      return candidates > 0 && candidates <= MAX_SINGLE_CANDIDATES;
-    })
-    .map((criterion) => [criterion]);
-
-  const comboCells: BoardCell[] = bingoCriteria.flatMap((first, firstIndex) =>
-    bingoCriteria.slice(firstIndex + 1).flatMap((second) => {
-      if (first.type === second.type || isConfusingPair(first, second)) return [];
-      const candidates = countCandidates([first, second], deck);
-      const narrowsBoth = candidates < Math.min(countCandidates([first], deck), countCandidates([second], deck));
-      return candidates >= MIN_COMBO_CANDIDATES && candidates <= MAX_COMBO_CANDIDATES && narrowsBoth ? [[first, second]] : [];
-    })
-  );
-
-  return { singleCells, comboCells };
-};
-
-// Cada jogador ocupa uma casa só, então não basta toda casa ter uma resposta: precisa existir
-// um jogador diferente para cada casa (emparelhamento bipartido com caminhos aumentantes).
-const boardHasAnswers = (cells: GameBoard, deck: CsPlayer[]) => {
-  const cellCandidates = cells.map((cell) =>
-    deck.filter((player) => playerFitsCell(player, cell)).map((player) => player.id)
-  );
-  const cellByPlayer: Record<string, number> = {};
-
-  const assignCell = (cellIndex: number, visited: Set<string>): boolean =>
-    cellCandidates[cellIndex].some((playerId) => {
-      if (visited.has(playerId)) return false;
-      visited.add(playerId);
-
-      const occupiedCell = cellByPlayer[playerId];
-      if (occupiedCell === undefined || assignCell(occupiedCell, visited)) {
-        cellByPlayer[playerId] = cellIndex;
-        return true;
-      }
-      return false;
-    });
-
-  return cellCandidates.every((_, cellIndex) => assignCell(cellIndex, new Set()));
-};
-
-// Simula quantas casas um jogador preenche jogando o baralho do dia. O ingênuo usa a primeira
-// casa livre compatível; o experiente conhece a base e usa a casa com menos candidatos.
-const simulateFill = (cells: GameBoard, queue: CsPlayer[], strategy: "naive" | "expert") => {
-  const filled = new Set<number>();
-  const candidates = cells.map((cell) => countCandidates(cell, queue));
-
-  queue.forEach((player) => {
-    const options = cells
-      .map((_, index) => index)
-      .filter((index) => !filled.has(index) && playerFitsCell(player, cells[index]));
-    if (!options.length) return;
-    filled.add(strategy === "naive" ? options[0] : options.sort((a, b) => candidates[a] - candidates[b])[0]);
-  });
-
-  return filled.size;
-};
-
-const countUsefulPlayers = (cells: GameBoard, deck: CsPlayer[]) =>
-  deck.filter((player) => cells.some((cell) => playerFitsCell(player, cell))).length;
-
-// Entre várias cartelas sorteadas com solução, fica a que mais derrota o jogador experiente,
-// depois o ingênuo, e que tem mais nomes que não servem em casa nenhuma.
-const createDailyBoard = (dateKey: string, queue: CsPlayer[]): GameBoard => {
-  const seed = hashDate(dateKey);
-  const { singleCells, comboCells } = buildCandidateCells(queue);
-  let bestBoard: GameBoard | undefined;
-  let bestScore = Infinity;
-
-  for (let attempt = 0; attempt < BOARD_ATTEMPTS; attempt += 1) {
-    // Cada critério aparece no máximo uma vez na cartela, para variar as casas.
-    const usedIds = new Set<string>();
-    const takeUnused = (cells: BoardCell[], limit: number) => {
-      const taken: BoardCell[] = [];
-      for (const cell of cells) {
-        if (taken.length === limit) break;
-        if (cell.some((criterion) => usedIds.has(criterion.id))) continue;
-        cell.forEach((criterion) => usedIds.add(criterion.id));
-        taken.push(cell);
-      }
-      return taken;
-    };
-    const combos = takeUnused(seededShuffle(comboCells, seed + attempt * 7919), COMBO_CELLS);
-    const singles = takeUnused(
-      seededShuffle(singleCells, seed * 3 + attempt * 104729),
-      GRID_SIZE * GRID_SIZE - combos.length
-    );
-    const cells = seededShuffle([...combos, ...singles], seed + attempt);
-    if (cells.length < GRID_SIZE * GRID_SIZE || !boardHasAnswers(cells, queue)) continue;
-
-    const score =
-      simulateFill(cells, queue, "expert") * 100 + simulateFill(cells, queue, "naive") * 10 + countUsefulPlayers(cells, queue) / 10;
-    if (score < bestScore) {
-      bestBoard = cells;
-      bestScore = score;
-    }
-  }
-
-  return bestBoard ?? bingoCriteria.slice(0, GRID_SIZE * GRID_SIZE).map((criterion) => [criterion]);
-};
-
-// O baralho do dia sorteia DECK_SIZE jogadores da base, inclusive os que não servem em nenhuma casa:
-// reconhecer esses nomes e pulá-los faz parte do desafio.
-const createPlayerQueue = (dateKey: string) => seededShuffle(csPlayers, hashDate(dateKey) * 17).slice(0, DECK_SIZE);
-
-const getPossibleAnswers = (cell: BoardCell, usedPlayerIds: Set<string>, deck: CsPlayer[]) =>
-  deck
-    .filter((player) => !usedPlayerIds.has(player.id) && playerFitsCell(player, cell))
-    .slice(0, REVEALED_ANSWERS)
-    .map((player) => player.nickname);
 
 const parseStoredGame = (dateKey: string): StoredGame => {
   if (typeof window === "undefined") return {};
@@ -595,32 +402,10 @@ const recordGame = (stats: PlayerStats, dateKey: string, completed: boolean): Pl
   };
 };
 
-const getCellCopy = (cell: BoardCell, language: Language) => {
-  const copies = cell.map((criterion) => getCriterionCopy(criterion, language));
-  return {
-    label: copies.map((criterionCopy) => criterionCopy.label).join(` ${translations[language].comboJoiner} `),
-    helper: copies.map((criterionCopy) => criterionCopy.helper).join(" · "),
-  };
-};
-
-const teamHelpers: Record<Language, (teamName: string) => string> = {
-  pt: (teamName) => `Jogou pela ${teamName}`,
-  en: (teamName) => `Played for ${teamName}`,
-  es: (teamName) => `Jugó en ${teamName}`,
-};
-
-const getCriterionCopy = (criterion: BingoCriterion, language: Language) => {
-  if (criterion.type === "team") {
-    return { label: criterion.label, helper: teamHelpers[language](getTeamName(String(criterion.value))) };
-  }
-  return criterionTranslations[language][criterion.id] ?? { label: criterion.label, helper: criterion.helper };
-};
-
-
 export default function BingoPage() {
   const dateKey = useMemo(() => getGameDateKey(), []);
   const playerQueue = useMemo(() => createPlayerQueue(dateKey), [dateKey]);
-  const board = useMemo(() => createDailyBoard(dateKey, playerQueue), [dateKey, playerQueue]);
+  const board = useMemo(() => createBoard(dateKey, playerQueue), [dateKey, playerQueue]);
   const language = useLanguage();
   const copy = translations[language];
   useDocumentTitle(`${{ pt: "CS Bingo diário", en: "Daily CS Bingo", es: "CS Bingo diario" }[language]} · CS Games`);
@@ -872,6 +657,15 @@ export default function BingoPage() {
             {dateKey}
           </p>
           <div className="flex shrink-0 items-center gap-1">
+            <Link
+              href="/bingo/multiplayer"
+              aria-label={copy.multiplayer}
+              title={copy.multiplayer}
+              className="inline-flex h-8 items-center gap-1 px-1.5 text-cs-text/75 transition hover:text-cs-orange"
+            >
+              <Users className="h-5 w-5" />
+              <span className="hidden text-xs font-bold uppercase tracking-wider sm:inline">{copy.multiplayer}</span>
+            </Link>
             <ToolbarButton label={copy.rulesTitle} onClick={() => setOpenPanel("rules")}>
               <HelpCircle className="h-5 w-5" />
             </ToolbarButton>
@@ -1036,7 +830,7 @@ export default function BingoPage() {
                         <p className="break-words text-[length:clamp(9px,2.6cqmin,15px)] font-bold uppercase leading-tight tracking-wide">
                           {getCriterionCopy(cell[0], language).label}
                           <span className="block text-cs-orange">
-                            <span className="lowercase text-cs-text/45">{copy.comboJoiner}</span>{" "}
+                            <span className="lowercase text-cs-text/45">{comboJoiners[language]}</span>{" "}
                             {getCriterionCopy(cell[1], language).label}
                           </span>
                         </p>
@@ -1273,32 +1067,3 @@ function Modal({
   );
 }
 
-function CriterionIcon({ criterion }: { criterion: BingoCriterion }) {
-  if (criterion.type === "nationality") {
-    return (
-      <span className="block text-[length:clamp(14px,4.5cqmin,26px)] leading-none">
-        {countryFlags[String(criterion.value)] ?? "🏳️"}
-      </span>
-    );
-  }
-
-  const iconClass = "h-[clamp(14px,4cqmin,22px)] w-[clamp(14px,4cqmin,22px)]";
-  switch (criterion.type) {
-    case "team":
-      return (
-        <TeamBadge
-          teamId={String(criterion.value)}
-          className="h-[clamp(16px,5cqmin,28px)] w-[clamp(20px,6.5cqmin,36px)]"
-          size={72}
-        />
-      );
-    case "region":
-      return <Globe2 className={`${iconClass} text-cs-blue`} />;
-    case "role":
-      return <Crosshair className={`${iconClass} text-cs-red`} />;
-    case "achievement":
-      return <Trophy className={`${iconClass} text-cs-gold`} />;
-    default:
-      return <Activity className={`${iconClass} text-cs-green`} />;
-  }
-}

@@ -6,17 +6,48 @@ import { useLanguage } from "@/lib/language";
 
 type PartnerSpotProps = {
   partner: Partner;
-  label: string;
-  variant: "card" | "banner";
+  // Sem rótulo, usa "Publicidade" no idioma de quem lê.
+  label?: string;
+  variant: "card" | "banner" | "rail";
 };
 
+const defaultLabel = { pt: "Publicidade", en: "Advertisement", es: "Publicidad" };
+
 // Espaço publicitário identificado como "Publicidade", como exige o CONAR.
-export function PartnerSpot({ partner: basePartner, label, variant }: PartnerSpotProps) {
+export function PartnerSpot({ partner: basePartner, label: labelProp, variant }: PartnerSpotProps) {
   const language = useLanguage();
+  const label = labelProp ?? defaultLabel[language];
   const partner = { ...basePartner, ...basePartner.translations?.[language] };
   const hasLink = Boolean(partner.href);
   const Wrapper = hasLink ? "a" : "div";
   const linkProps = hasLink ? { href: partner.href, target: "_blank", rel: "sponsored noopener noreferrer" } : {};
+
+  if (variant === "rail") {
+    return (
+      <Wrapper
+        {...linkProps}
+        className="cs-cut-sm group flex h-[600px] w-[160px] flex-col overflow-hidden border-t-2 border-cs-gold bg-cs-surface/90 transition hover:bg-cs-raised"
+      >
+        <span className="px-2 pt-2 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-cs-text/40">{label}</span>
+        {partner.railImageSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={partner.railImageSrc} alt={partner.sponsor} className="mt-2 w-full flex-1 object-cover" />
+        ) : (
+          <div className="cs-grid-bg mt-2 flex flex-1 flex-col items-center justify-center gap-4 bg-cs-bg px-3 text-center">
+            <p className="text-2xl font-bold uppercase leading-tight tracking-wide text-cs-gold">{partner.headline}</p>
+            {partner.description ? (
+              <p className="text-sm font-semibold leading-5 text-cs-text/60">{partner.description}</p>
+            ) : null}
+          </div>
+        )}
+        {hasLink ? (
+          <span className="flex items-center justify-center gap-1 py-2 text-xs font-bold uppercase tracking-wider text-cs-gold">
+            {partner.cta} <ExternalLink className="h-3 w-3" />
+          </span>
+        ) : null}
+      </Wrapper>
+    );
+  }
 
   if (variant === "banner") {
     return (

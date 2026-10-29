@@ -19,13 +19,13 @@ export function DefaultCard({ title, description, linkTo, icon: Icon, tag, cta }
     >
       <div className="cs-cut flex h-full flex-col bg-cs-surface">
         <div className="flex items-center justify-between gap-3 border-b-2 border-cs-orange bg-gradient-to-r from-cs-raised to-cs-surface px-4 py-2.5 sm:py-3">
-          <div className="flex items-center gap-3">
-            <span className="cs-cut-sm grid h-10 w-10 place-items-center bg-cs-bg text-cs-orange">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="cs-cut-sm grid h-10 w-10 shrink-0 place-items-center bg-cs-bg text-cs-orange">
               <Icon className="h-5 w-5" />
             </span>
-            <h2 className="text-xl font-bold uppercase leading-none tracking-wide sm:text-3xl">{title}</h2>
+            <h2 className="min-w-0 text-xl font-bold uppercase leading-none tracking-wide sm:text-2xl lg:text-xl">{title}</h2>
           </div>
-          <span className="cs-cut-sm shrink-0 bg-cs-bg px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-cs-gold">
+          <span className="cs-cut-sm shrink-0 whitespace-nowrap bg-cs-bg px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-cs-gold">
             {tag}
           </span>
         </div>

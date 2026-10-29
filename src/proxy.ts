@@ -15,7 +15,8 @@ export function proxy(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    `connect-src 'self' https://*.supabase.co${isDev ? " ws:" : ""}`,
+    // wss: canais em tempo real do Supabase (bingo multiplayer).
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co${isDev ? " ws:" : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -8,6 +8,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
 import { JsonLd, siteJsonLd } from "@/components/seo/JsonLd";
+import { SideRails } from "@/components/partners/SideRails";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -62,6 +63,7 @@ export default async function RootLayout({
         <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
           {children}
         </div>
+        <SideRails />
         {/* Contagem de visitas da Vercel: sem cookies e sem identificar quem visita (ver /privacidade). */}
         <Analytics />
       </body>
