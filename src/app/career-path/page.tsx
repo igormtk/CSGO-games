@@ -8,7 +8,7 @@ import { getCountryFlag, getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
-import { PartnerBreak } from "@/components/partners/PartnerBreak";
+import { PartnerBreakModal } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
@@ -334,9 +334,8 @@ function CareerGame({
           ) : null}
         </div>
       ) : !revealed ? (
-        <PartnerBreak
+        <PartnerBreakModal
           partner={partner}
-          label={copy.partnerLabel}
           revealIn={copy.revealIn}
           revealLabel={copy.revealLabel}
           onDone={() => {

@@ -7,6 +7,7 @@ import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
+import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
@@ -315,6 +316,7 @@ function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: 
     () => getPartnerFor("post-game", dateKey, hashDate(dateKey)),
     [dateKey]
   );
+  const [breakSeen, markBreakSeen] = useBreakSeen(`${GAME_KEY_PREFIX}-${dateKey}-break`);
 
   const handleGuess = (player: CsPlayer) => {
     if (isOver) return;
@@ -525,7 +527,8 @@ function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: 
         </p>
       )}
 
-      {isOver && partner ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && breakSeen ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && !breakSeen ? <PartnerBreakModal partner={partner} onDone={markBreakSeen} /> : null}
     </main>
   );
 }

@@ -4,10 +4,11 @@ import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { Check, Play, Share2, Timer, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
-import { getCountryName } from "@/data/countryFlags";
+import { getCountryFlag, getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 import { MIN_MAJORS, MIN_TOP20_YEARS, candidateCriteria, countMatches, matchesCriterion } from "@/lib/groups";
@@ -18,8 +19,10 @@ import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 
 // Desafio diário: um tema para todo mundo e 60 segundos para digitar o máximo de jogadores que
-// se encaixam nele. Sem sugestões na digitação: elas entregariam as respostas.
+// se encaixam nele. As sugestões vêm da base inteira, não só do tema, para ajudar a escrever o
+// nick sem entregar as respostas.
 const ROUND_SECONDS = 60;
+const MAX_SUGGESTIONS = 6;
 // Tema só com bastante gente possível, para dar o que digitar durante o minuto inteiro.
 const MIN_THEME_PLAYERS = 10;
 const GAME_KEY_PREFIX = "cs-sixty-daily-v1";
@@ -87,11 +90,11 @@ const sixtyCopy = {
   pt: {
     eyebrow: "60 segundos",
     title: "Quantos você lembra?",
-    intro: `Um tema por dia, igual para todo mundo. Digite o nick de todos os pro players que você lembrar em ${ROUND_SECONDS} segundos e aperte Enter a cada nome. Uma tentativa por dia.`,
+    intro: `Um tema por dia, igual para todo mundo. Cite todos os pro players que você lembrar em ${ROUND_SECONDS} segundos: comece a digitar o nick e escolha na lista (ou aperte Enter). Uma tentativa por dia.`,
     theme: "Pro players",
     start: "Começar",
     inputLabel: "Nick do jogador",
-    placeholder: "Digite um nick e aperte Enter",
+    placeholder: "Digite um nick e escolha na lista",
     found: "Acertos",
     notInTheme: "Não entra no tema",
     unknown: "Não está na nossa base",
@@ -111,11 +114,11 @@ const sixtyCopy = {
   en: {
     eyebrow: "60 seconds",
     title: "How many can you name?",
-    intro: `One theme a day, the same for everyone. Type the nickname of every pro player you can think of in ${ROUND_SECONDS} seconds, pressing Enter after each name. One attempt per day.`,
+    intro: `One theme a day, the same for everyone. Name every pro player you can think of in ${ROUND_SECONDS} seconds: start typing the nickname and pick it from the list (or press Enter). One attempt per day.`,
     theme: "Pro players",
     start: "Start",
     inputLabel: "Player nickname",
-    placeholder: "Type a nickname and press Enter",
+    placeholder: "Type a nickname and pick it from the list",
     found: "Found",
     notInTheme: "Doesn't fit the theme",
     unknown: "Not in our database",
@@ -135,11 +138,11 @@ const sixtyCopy = {
   es: {
     eyebrow: "60 segundos",
     title: "¿Cuántos recuerdas?",
-    intro: `Un tema por día, el mismo para todos. Escribe el nick de todos los pro players que recuerdes en ${ROUND_SECONDS} segundos y pulsa Enter después de cada nombre. Un intento por día.`,
+    intro: `Un tema por día, el mismo para todos. Nombra a todos los pro players que recuerdes en ${ROUND_SECONDS} segundos: empieza a escribir el nick y elígelo de la lista (o pulsa Enter). Un intento por día.`,
     theme: "Pro players",
     start: "Empezar",
     inputLabel: "Nick del jugador",
-    placeholder: "Escribe un nick y pulsa Enter",
+    placeholder: "Escribe un nick y elígelo de la lista",
     found: "Aciertos",
     notInTheme: "No entra en el tema",
     unknown: "No está en nuestra base",
@@ -251,7 +254,24 @@ function SixtyGame({
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<{ text: string; good: boolean }>();
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
+  const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [breakSeen, markBreakSeen] = useBreakSeen(`${gameKey}-break`);
+
+  // Nick exato primeiro, depois os que começam com o texto, depois os mais curtos.
+  const suggestions = useMemo(() => {
+    const query = normalize(input);
+    if (!query) return [];
+    const named = [...game.foundIds, ...game.misses];
+    const rank = (player: CsPlayer) => {
+      const key = normalize(player.nickname);
+      return key === query ? 0 : key.startsWith(query) ? 1 : 2;
+    };
+    return csPlayers
+      .filter((player) => !named.includes(player.id) && normalize(player.nickname).includes(query))
+      .sort((a, b) => rank(a) - rank(b) || a.nickname.length - b.nickname.length)
+      .slice(0, MAX_SUGGESTIONS);
+  }, [input, game]);
 
   const deadline = game.startedAt !== undefined ? game.startedAt + ROUND_SECONDS * 1000 : undefined;
   const isOver = deadline !== undefined && now >= deadline;
@@ -291,11 +311,18 @@ function SixtyGame({
     window.setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const submit = () => {
+  const changeInput = (value: string) => {
+    setInput(value);
+    setHighlight(0);
+  };
+
+  // Enter escolhe a sugestão destacada; sem sugestão, tenta o nick exato (para avisar "já foi").
+  const submit = (chosen?: CsPlayer) => {
     const key = normalize(input);
-    if (!key || !playing) return;
-    setInput("");
-    const player = playersByNickname.get(key);
+    if ((!key && !chosen) || !playing) return;
+    changeInput("");
+    inputRef.current?.focus();
+    const player = chosen ?? suggestions[highlight] ?? playersByNickname.get(key);
     if (!player) {
       setFeedback({ text: `${input.trim()}: ${copy.unknown}`, good: false });
       return;
@@ -374,25 +401,56 @@ function SixtyGame({
               style={{ width: `${((deadline - now) / (ROUND_SECONDS * 1000)) * 100}%` }}
             />
           </div>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit();
-            }}
-            className="cs-cut-sm flex items-center gap-2 border-2 border-cs-line bg-cs-surface px-3 focus-within:border-cs-orange"
-          >
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={copy.placeholder}
-              aria-label={copy.inputLabel}
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              className="w-full bg-transparent py-3 text-lg font-bold uppercase tracking-wide outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-cs-text/35"
-            />
-          </form>
+          <div className="relative">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                submit();
+              }}
+              className="cs-cut-sm flex items-center gap-2 border-2 border-cs-line bg-cs-surface px-3 focus-within:border-cs-orange"
+            >
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(event) => changeInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (!suggestions.length) return;
+                  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault();
+                    const step = event.key === "ArrowDown" ? 1 : -1;
+                    setHighlight((highlight + step + suggestions.length) % suggestions.length);
+                  }
+                  if (event.key === "Escape") changeInput("");
+                }}
+                placeholder={copy.placeholder}
+                aria-label={copy.inputLabel}
+                aria-autocomplete="list"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                className="w-full bg-transparent py-3 text-lg font-bold uppercase tracking-wide outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-cs-text/35"
+              />
+            </form>
+            {suggestions.length ? (
+              <ul className="absolute inset-x-0 top-full z-20 mt-1 border-2 border-cs-line bg-cs-panel shadow-2xl shadow-black/60" role="listbox">
+                {suggestions.map((player, index) => (
+                  <li key={player.id} role="option" aria-selected={index === highlight}>
+                    <button
+                      type="button"
+                      // mousedown sem foco: o teclado do celular não fecha entre um nome e outro.
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => submit(player)}
+                      onMouseEnter={() => setHighlight(index)}
+                      className={`flex w-full items-center gap-3 px-3 py-2 text-left transition ${index === highlight ? "bg-cs-raised text-cs-orange" : ""}`}
+                    >
+                      <span className="text-lg font-bold uppercase tracking-wide">{player.nickname}</span>
+                      <span className="ml-auto text-lg leading-none">{getCountryFlag(player.nationality)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
           {feedback ? (
             <p className={`inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wider ${feedback.good ? "text-cs-green" : "text-cs-gold"}`}>
               {feedback.good ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />} {feedback.text}
@@ -460,7 +518,8 @@ function SixtyGame({
         </ul>
       ) : null}
 
-      {isOver ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && breakSeen ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && !breakSeen ? <PartnerBreakModal partner={partner} onDone={markBreakSeen} /> : null}
     </main>
   );
 }

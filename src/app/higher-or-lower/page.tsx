@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Check, Flame, Play, RotateCcw, Share2, Trophy, X } from "lucide-react";
+import { Check, Flame, Play, RotateCcw, Share2, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
-import { getCountryFlag, getCountryName } from "@/data/countryFlags";
+import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
+import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getGameDateKey, hashDate } from "@/lib/daily";
@@ -13,20 +14,21 @@ import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { useHydrated } from "@/lib/useHydrated";
 
-// Modo infinito: cada rodada compara dois pro players num número da base. Acertou, o jogador de
-// baixo sobe e um novo aparece; errou, acaba. Não é diário: dá para jogar quantas vezes quiser.
+// Modo infinito: cada rodada pergunta quem tem mais entre dois pro players. O da esquerda mostra o
+// número; toque em quem tem mais. Acertou, o da direita passa para a esquerda e um novo aparece;
+// errou, acaba. Não é diário: dá para jogar quantas vezes quiser.
 const STATS_KEY = "cs-higher-lower-stats";
 const REVEAL_DELAY_MS = 1300;
 // Jogadores que não voltam logo em seguida, para a partida não ficar repetitiva.
 const RECENT_LIMIT = 12;
 
-type CategoryId = "majors" | "top20" | "teams";
-type Direction = "higher" | "lower";
+// Só números que a comunidade conhece; "times na carreira" saiu porque ninguém sabe contar.
+type CategoryId = "majors" | "top20";
+type Side = "left" | "right";
 
 const categories: Record<CategoryId, (player: CsPlayer) => number> = {
   majors: (player) => player.majorsWon,
   top20: (player) => player.hltvTop20Years.length,
-  teams: (player) => player.teams.length,
 };
 
 type Round = { left: CsPlayer; right: CsPlayer; category: CategoryId };
@@ -42,21 +44,20 @@ const higherLowerCopy = {
     eyebrow: "Mais ou menos",
     title: "Quem tem mais?",
     intro:
-      "Dois pro players lado a lado. O de cima mostra o número; diga se o de baixo tem mais ou menos. Cada acerto soma um na sequência, e um erro encerra a partida. Sem limite diário: jogue quantas vezes quiser.",
+      "Dois pro players, uma pergunta: quem tem mais? Você vê o número de um deles; toque no jogador que você acha que tem mais. Cada acerto soma na sequência, e um erro encerra a partida. Sem limite diário.",
     start: "Começar",
     category: {
-      majors: { label: "Títulos de Major", unit: unit("Major", "Majors") },
-      top20: { label: "Anos no Top 20 da HLTV", unit: unit("ano", "anos") },
-      teams: { label: "Times na carreira", unit: unit("time", "times") },
+      majors: { question: "Quem tem mais títulos de Major?", unit: unit("Major", "Majors") },
+      top20: { question: "Quem ficou mais anos no Top 20 da HLTV?", unit: unit("ano no Top 20", "anos no Top 20") },
     },
-    question: (name: string) => `${name} tem mais ou menos?`,
-    higher: "Mais",
-    lower: "Menos",
+    hint: "Toque no jogador que tem mais",
+    hasMore: (name: string) => `${name} tem mais`,
     streak: "Sequência",
     best: "Recorde",
     played: "Partidas",
     gameOver: "Fim de jogo",
     result: (score: number) => (score === 1 ? "Você acertou 1 seguida." : `Você acertou ${score} seguidas.`),
+    lastRound: "A rodada que você errou:",
     newRecord: "Novo recorde!",
     again: "Jogar de novo",
     share: "Compartilhar resultado",
@@ -64,28 +65,26 @@ const higherLowerCopy = {
     copied: "Resultado copiado!",
     copyFailed: "Não foi possível copiar o resultado.",
     noTeam: "Sem time",
-    teamsNote: "Contamos os times principais da carreira, segundo o Liquipedia.",
     partnerLabel: "Publicidade",
   },
   en: {
     eyebrow: "Higher or lower",
     title: "Who has more?",
     intro:
-      "Two pro players side by side. The top one shows the number; say whether the bottom one has more or less. Each right answer adds to your streak, and one miss ends the run. No daily limit: play as often as you like.",
+      "Two pro players, one question: who has more? You see one player's number; tap the player you think has more. Each right answer adds to your streak, and one miss ends the run. No daily limit.",
     start: "Start",
     category: {
-      majors: { label: "Major titles", unit: unit("Major", "Majors") },
-      top20: { label: "Years in the HLTV Top 20", unit: unit("year", "years") },
-      teams: { label: "Teams in career", unit: unit("team", "teams") },
+      majors: { question: "Who has more Major titles?", unit: unit("Major", "Majors") },
+      top20: { question: "Who spent more years in the HLTV Top 20?", unit: unit("year in the Top 20", "years in the Top 20") },
     },
-    question: (name: string) => `Does ${name} have more or less?`,
-    higher: "Higher",
-    lower: "Lower",
+    hint: "Tap the player who has more",
+    hasMore: (name: string) => `${name} has more`,
     streak: "Streak",
     best: "Best",
     played: "Played",
     gameOver: "Game over",
     result: (score: number) => (score === 1 ? "You got 1 in a row." : `You got ${score} in a row.`),
+    lastRound: "The round you missed:",
     newRecord: "New record!",
     again: "Play again",
     share: "Share result",
@@ -93,28 +92,26 @@ const higherLowerCopy = {
     copied: "Result copied!",
     copyFailed: "Could not copy the result.",
     noTeam: "No team",
-    teamsNote: "We count the main teams of the career, according to Liquipedia.",
     partnerLabel: "Advertisement",
   },
   es: {
     eyebrow: "Más o menos",
     title: "¿Quién tiene más?",
     intro:
-      "Dos pro players lado a lado. El de arriba muestra el número; di si el de abajo tiene más o menos. Cada acierto suma a tu racha y un error termina la partida. Sin límite diario: juega cuantas veces quieras.",
+      "Dos pro players, una pregunta: ¿quién tiene más? Ves el número de uno de ellos; toca al jugador que crees que tiene más. Cada acierto suma a tu racha y un error termina la partida. Sin límite diario.",
     start: "Empezar",
     category: {
-      majors: { label: "Títulos de Major", unit: unit("Major", "Majors") },
-      top20: { label: "Años en el Top 20 de HLTV", unit: unit("año", "años") },
-      teams: { label: "Equipos en su carrera", unit: unit("equipo", "equipos") },
+      majors: { question: "¿Quién tiene más títulos de Major?", unit: unit("Major", "Majors") },
+      top20: { question: "¿Quién estuvo más años en el Top 20 de HLTV?", unit: unit("año en el Top 20", "años en el Top 20") },
     },
-    question: (name: string) => `¿${name} tiene más o menos?`,
-    higher: "Más",
-    lower: "Menos",
+    hint: "Toca al jugador que tiene más",
+    hasMore: (name: string) => `${name} tiene más`,
     streak: "Racha",
     best: "Récord",
     played: "Partidas",
     gameOver: "Fin del juego",
     result: (score: number) => (score === 1 ? "Acertaste 1 seguida." : `Acertaste ${score} seguidas.`),
+    lastRound: "La ronda que fallaste:",
     newRecord: "¡Nuevo récord!",
     again: "Jugar de nuevo",
     share: "Compartir resultado",
@@ -122,7 +119,6 @@ const higherLowerCopy = {
     copied: "¡Resultado copiado!",
     copyFailed: "No se pudo copiar el resultado.",
     noTeam: "Sin equipo",
-    teamsNote: "Contamos los equipos principales de la carrera, según Liquipedia.",
     partnerLabel: "Publicidad",
   },
 } satisfies Record<Language, unknown>;
@@ -131,9 +127,9 @@ type HigherLowerCopy = (typeof higherLowerCopy)["pt"];
 
 const pick = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)];
 
-// Sorteia a próxima comparação para o jogador de cima. Só entram categorias em que existe gente
-// com mais e com menos que ele, e a direção é sorteada antes do adversário: assim "mais" e
-// "menos" saem na mesma proporção e não há empate. Quem tem 0 Majors não vira "sempre mais".
+// Sorteia a próxima comparação para o jogador da esquerda. Só entram categorias em que existe gente
+// com mais e com menos que ele, e quem ganha é sorteado antes do adversário: assim cada lado ganha
+// na mesma proporção e não há empate. Quem tem 0 Majors não vira "o outro sempre tem mais".
 const nextRound = (left: CsPlayer, recent: string[]): Round => {
   const pool = csPlayers.filter((player) => player.id !== left.id && !recent.includes(player.id));
   const options = (Object.keys(categories) as CategoryId[]).flatMap((category) => {
@@ -178,7 +174,7 @@ export default function HigherOrLowerPage() {
   // O sorteio e o recorde só existem no navegador: o servidor manda o título e a explicação.
   if (!hydrated) {
     return (
-      <main className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center gap-3 px-4 py-4">
+      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col justify-center gap-3 px-4 py-4">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">{copy.eyebrow}</p>
         <h1 className="text-3xl font-bold uppercase leading-none tracking-wide">{copy.title}</h1>
         <p className="font-semibold leading-6 text-cs-text/70">{copy.intro}</p>
@@ -186,18 +182,20 @@ export default function HigherOrLowerPage() {
     );
   }
 
-  return <HigherOrLowerGame copy={copy} language={language} />;
+  return <HigherOrLowerGame copy={copy} />;
 }
 
-function HigherOrLowerGame({ copy, language }: { copy: HigherLowerCopy; language: Language }) {
+function HigherOrLowerGame({ copy }: { copy: HigherLowerCopy }) {
   const [stats, setStats] = useState<PlayerStats>(readStats);
   const [phase, setPhase] = useState<"intro" | "playing" | "over">("intro");
   const [round, setRound] = useState<Round>(firstRound);
   const [recent, setRecent] = useState<string[]>([]);
   const [score, setScore] = useState(0);
-  const [guess, setGuess] = useState<{ direction: Direction; correct: boolean }>();
+  const [guess, setGuess] = useState<{ side: Side; correct: boolean }>();
   const [record, setRecord] = useState(false);
   const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
+  // Sem chave: o anúncio aparece a cada fim de partida, não fica salvo.
+  const [breakSeen, markBreakSeen, resetBreak] = useBreakSeen();
   const partner = useMemo(() => {
     const dateKey = getGameDateKey();
     return getPartnerFor("post-game", dateKey, hashDate(dateKey));
@@ -211,20 +209,23 @@ function HigherOrLowerGame({ copy, language }: { copy: HigherLowerCopy; language
     setGuess(undefined);
     setRecord(false);
     setShareStatus(undefined);
+    resetBreak();
     setPhase("playing");
   };
 
-  const answer = (direction: Direction) => {
-    if (guess) return;
-    const value = categories[round.category];
-    const correct = direction === "higher" ? value(round.right) > value(round.left) : value(round.right) < value(round.left);
-    setGuess({ direction, correct });
+  const value = categories[round.category];
+  const winner: Side = value(round.right) > value(round.left) ? "right" : "left";
 
-    // O número do jogador de baixo aparece por um instante antes da próxima rodada (ou do fim).
+  const answer = (side: Side) => {
+    if (guess) return;
+    const correct = side === winner;
+    setGuess({ side, correct });
+
+    // O número do jogador da direita aparece por um instante antes da próxima rodada (ou do fim).
     window.setTimeout(() => {
-      setGuess(undefined);
       if (correct) {
         const nextRecent = [...recent, round.right.id].slice(-RECENT_LIMIT);
+        setGuess(undefined);
         setScore(score + 1);
         setRecent(nextRecent);
         setRound(nextRound(round.right, nextRecent));
@@ -249,11 +250,10 @@ function HigherOrLowerGame({ copy, language }: { copy: HigherLowerCopy; language
   };
 
   const category = copy.category[round.category];
-  const leftValue = categories[round.category](round.left);
-  const rightValue = categories[round.category](round.right);
+  const tone = (side: Side) => (!guess ? undefined : side === winner ? "win" : side === guess.side ? "loss" : undefined);
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center gap-3 px-4 py-4 sm:gap-4">
+    <main className="mx-auto flex min-h-full w-full max-w-lg flex-col justify-center gap-3 px-4 py-4 sm:gap-4">
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: copy.streak, value: score, color: "text-cs-green" },
@@ -269,64 +269,48 @@ function HigherOrLowerGame({ copy, language }: { copy: HigherLowerCopy; language
       {phase === "playing" ? (
         <div className="cs-cut w-full bg-cs-line p-[2px] shadow-2xl shadow-black/50">
           <div className="cs-cut bg-cs-surface">
-            <div className="border-b-2 border-cs-orange bg-gradient-to-r from-cs-raised to-cs-surface px-4 py-2.5">
+            <div className="border-b-2 border-cs-orange bg-gradient-to-r from-cs-raised to-cs-surface px-4 py-3 text-center">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">{copy.eyebrow}</p>
-              <h1 className="text-2xl font-bold uppercase leading-tight tracking-wide">{category.label}</h1>
-              {round.category === "teams" ? <p className="text-xs font-semibold text-cs-text/45">{copy.teamsNote}</p> : null}
+              <h1 className="text-2xl font-bold uppercase leading-tight tracking-wide sm:text-3xl">{category.question}</h1>
             </div>
 
-            <div className="space-y-2 p-3">
-              <PlayerCard player={round.left} language={language} copy={copy}>
-                <p className="text-3xl font-bold leading-none text-cs-text">
-                  {leftValue} <span className="text-base uppercase tracking-wider text-cs-text/55">{category.unit(leftValue)}</span>
-                </p>
-              </PlayerCard>
-
-              <PlayerCard
-                player={round.right}
-                language={language}
+            <div className="relative grid grid-cols-2 gap-2 p-3">
+              <PlayerChoice
+                player={round.left}
                 copy={copy}
-                tone={guess ? (guess.correct ? "border-cs-green" : "border-cs-red") : "border-cs-orange"}
+                tone={tone("left")}
+                disabled={Boolean(guess)}
+                onClick={() => answer("left")}
+                value={value(round.left)}
+                unit={category.unit}
+              />
+              <PlayerChoice
+                player={round.right}
+                copy={copy}
+                tone={tone("right")}
+                disabled={Boolean(guess)}
+                onClick={() => answer("right")}
+                value={guess ? value(round.right) : undefined}
+                unit={category.unit}
+              />
+              <span
+                className="pointer-events-none absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-cs-line bg-cs-bg text-sm font-bold uppercase text-cs-orange"
+                aria-hidden="true"
               >
-                {guess ? (
-                  <p className="flex items-center gap-2 text-3xl font-bold leading-none text-cs-text" aria-live="polite">
-                    {rightValue} <span className="text-base uppercase tracking-wider text-cs-text/55">{category.unit(rightValue)}</span>
-                    {guess.correct ? <Check className="h-7 w-7 text-cs-green" /> : <X className="h-7 w-7 text-cs-red" />}
-                  </p>
-                ) : (
-                  <p className="text-sm font-bold uppercase tracking-wider text-cs-text/55">{copy.question(round.right.nickname)}</p>
-                )}
-              </PlayerCard>
-
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                {(
-                  [
-                    { direction: "higher", label: copy.higher, icon: ArrowUp },
-                    { direction: "lower", label: copy.lower, icon: ArrowDown },
-                  ] as const
-                ).map((option) => {
-                  const chosen = guess?.direction === option.direction;
-                  const tone = !guess
-                    ? "bg-cs-raised hover:bg-cs-line hover:text-cs-orange"
-                    : chosen
-                      ? guess.correct
-                        ? "bg-[#203047] text-[#d7f0c8]"
-                        : "bg-[#3a1f22] text-[#f6c9ca]"
-                      : "bg-cs-raised opacity-50";
-                  return (
-                    <button
-                      key={option.direction}
-                      type="button"
-                      onClick={() => answer(option.direction)}
-                      disabled={Boolean(guess)}
-                      className={`cs-cut-sm inline-flex items-center justify-center gap-2 px-4 py-3 text-xl font-bold uppercase tracking-wider transition ${tone}`}
-                    >
-                      <option.icon className="h-5 w-5" /> {option.label}
-                    </button>
-                  );
-                })}
-              </div>
+                vs
+              </span>
             </div>
+
+            <p className="px-3 pb-3 text-center text-sm font-bold uppercase tracking-wider text-cs-text/55" aria-live="polite">
+              {guess ? (
+                <span className={`inline-flex items-center gap-1.5 ${guess.correct ? "text-cs-green" : "text-cs-red"}`}>
+                  {guess.correct ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                  {copy.hasMore((winner === "left" ? round.left : round.right).nickname)}
+                </span>
+              ) : (
+                copy.hint
+              )}
+            </p>
           </div>
         </div>
       ) : (
@@ -342,6 +326,20 @@ function HigherOrLowerGame({ copy, language }: { copy: HigherLowerCopy; language
                     <Flame className="h-4 w-4" /> {copy.newRecord}
                   </p>
                 ) : null}
+                <div className="cs-cut-sm space-y-1 bg-cs-raised p-3 text-left">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-cs-text/45">{copy.lastRound}</p>
+                  <p className="text-sm font-bold uppercase tracking-wide text-cs-text/70">{category.question}</p>
+                  {[round.left, round.right].map((player) => (
+                    <p key={player.id} className="flex items-center justify-between gap-2 font-bold uppercase">
+                      <span className={player.id === (winner === "left" ? round.left : round.right).id ? "text-cs-green" : "text-cs-text/70"}>
+                        {getCountryFlag(player.nationality)} {player.nickname}
+                      </span>
+                      <span>
+                        {value(player)} <span className="text-xs text-cs-text/55">{category.unit(value(player))}</span>
+                      </span>
+                    </p>
+                  ))}
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: copy.played, value: stats.played },
@@ -392,43 +390,60 @@ function HigherOrLowerGame({ copy, language }: { copy: HigherLowerCopy; language
         </div>
       )}
 
-      {phase === "over" ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {phase === "over" && breakSeen ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {phase === "over" && !breakSeen ? <PartnerBreakModal partner={partner} onDone={markBreakSeen} /> : null}
     </main>
   );
 }
 
-function PlayerCard({
+function PlayerChoice({
   player,
-  language,
   copy,
-  tone = "border-cs-line",
-  children,
+  tone,
+  disabled,
+  onClick,
+  value,
+  unit,
 }: {
   player: CsPlayer;
-  language: Language;
   copy: HigherLowerCopy;
-  tone?: string;
-  children: React.ReactNode;
+  tone?: "win" | "loss";
+  disabled: boolean;
+  onClick: () => void;
+  // Sem valor, o número fica escondido ("?") até o palpite.
+  value?: number;
+  unit: (value: number) => string;
 }) {
+  const border =
+    tone === "win" ? "border-cs-green bg-[#1d3020]" : tone === "loss" ? "border-cs-red bg-[#3a1f22]" : "border-cs-line bg-cs-raised";
   return (
-    <div className={`cs-cut-sm flex items-center gap-3 border-l-4 bg-cs-raised px-3 py-3 transition-colors ${tone}`}>
-      <span className="grid h-14 w-14 shrink-0 place-items-center bg-cs-bg">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`cs-cut-sm flex min-w-0 flex-col items-center gap-2 border-b-4 px-2 py-4 text-center transition enabled:hover:-translate-y-0.5 enabled:hover:border-cs-orange enabled:hover:bg-cs-line ${border}`}
+    >
+      <span className="grid h-16 w-16 place-items-center bg-cs-bg">
         {player.currentTeam ? (
-          <TeamBadge teamId={player.currentTeam} className="h-10 w-10" size={80} />
+          <TeamBadge teamId={player.currentTeam} className="h-12 w-12" size={96} />
         ) : (
-          <span className="text-3xl" aria-hidden="true">
+          <span className="text-4xl" aria-hidden="true">
             {getCountryFlag(player.nationality)}
           </span>
         )}
       </span>
-      <div className="min-w-0 flex-1 space-y-1">
-        <p className="truncate text-2xl font-bold uppercase leading-none tracking-wide">{player.nickname}</p>
-        <p className="truncate text-xs font-semibold uppercase tracking-wider text-cs-text/45">
-          {getCountryFlag(player.nationality)} {getCountryName(player.nationality, language)} ·{" "}
-          {player.currentTeam ? getTeamName(player.currentTeam) : copy.noTeam}
-        </p>
-        {children}
-      </div>
-    </div>
+      <span className="w-full break-words text-xl font-bold uppercase leading-none tracking-wide sm:text-2xl">{player.nickname}</span>
+      <span className="w-full truncate text-[11px] font-semibold uppercase tracking-wider text-cs-text/45">
+        {getCountryFlag(player.nationality)} {player.currentTeam ? getTeamName(player.currentTeam) : copy.noTeam}
+      </span>
+      {value === undefined ? (
+        <span className="text-4xl font-bold leading-none text-cs-orange">?</span>
+      ) : (
+        <span className="flex flex-col items-center">
+          <span className="text-4xl font-bold leading-none text-cs-text">{value}</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-cs-text/55">{unit(value)}</span>
+        </span>
+      )}
+    </button>
   );
 }

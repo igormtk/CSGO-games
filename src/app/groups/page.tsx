@@ -7,6 +7,7 @@ import { getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPreviousDateKey, getPuzzleNumber, hashDate } from "@/lib/daily";
 import { GROUP_COUNT, GROUP_SIZE, MIN_MAJORS, MIN_TOP20_YEARS, createGroupsPuzzle } from "@/lib/groups";
@@ -238,6 +239,7 @@ function GroupsGame({
   const solvedIds = new Set(shownGroups.flatMap((index) => puzzle.groups[index].playerIds));
   const remaining = order.filter((id) => !solvedIds.has(id));
   const partner = useMemo(() => getPartnerFor("post-game", dateKey, hashDate(dateKey)), [dateKey]);
+  const [breakSeen, markBreakSeen] = useBreakSeen(`${gameKey}-break`);
 
   const toggle = (id: string) => {
     setFeedback(undefined);
@@ -418,7 +420,8 @@ function GroupsGame({
         </div>
       )}
 
-      {isOver ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && breakSeen ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && !breakSeen ? <PartnerBreakModal partner={partner} onDone={markBreakSeen} /> : null}
     </main>
   );
 }
