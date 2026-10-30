@@ -21,8 +21,9 @@ ${siteName} (${siteUrl}) is a set of Counter-Strike (CS2 and CS:GO) mini games f
 - [Career path](${siteUrl}/career-path): daily guessing game. The teams a pro player has played for are shown in order, starting with 2 revealed; each miss reveals the next team, then the country and the role. 6 guesses.
 - [Guess the player](${siteUrl}/guess-name): daily challenge. 20 pro players' nicknames, the same for everyone; the player picks each real name from 4 options within 10 seconds per name, with 3 lives and one attempt per day.
 - [Lineup](${siteUrl}/lineup): daily challenge. One team a day, the same for everyone; the player names 5 pro players who have played for it (any era, main career teams per Liquipedia), with 3 misses allowed. At the end, every player in the database who played for the team is shown.
+- [Sort the 16](${siteUrl}/groups): daily puzzle. 16 pro players hide 4 groups of 4 that share a team, nationality, role (AWPer or IGL), Major MVP status, 2+ Major titles or 5+ HLTV Top 20 years. The player selects 4 and submits; 4 mistakes allowed, with a hint when 3 of 4 are right. Each player fits exactly one group.
 - [Higher or lower](${siteUrl}/higher-or-lower): endless game, no daily limit. Two pro players are shown; the top one reveals a number (Major titles, HLTV Top 20 years or career teams) and the player says whether the bottom one has more or less. There are no ties. Each right answer extends the streak; one miss ends the run.
-- [Challenge archive](${siteUrl}/archive): every past daily challenge of CS Bingo, Mystery player, Career path, Guess the player and Lineup since January 2026, playable at any time (add ?date=YYYY-MM-DD to a daily game's URL). Archive games don't count toward the daily streak.
+- [Challenge archive](${siteUrl}/archive): every past daily challenge of CS Bingo, Mystery player, Career path, Guess the player, Lineup and Sort the 16 since January 2026, playable at any time (add ?date=YYYY-MM-DD to a daily game's URL). Archive games don't count toward the daily streak.
 
 ## Guides and stats
 

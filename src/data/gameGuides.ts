@@ -3,7 +3,7 @@ import type { Language } from "@/lib/language";
 // Texto de "como jogar" de cada jogo. Aparece abaixo do jogo (já no HTML, em inglês, para
 // buscadores e IAs que não executam JavaScript) e alimenta o FAQ dos dados estruturados.
 
-export type GameId = "bingo" | "mystery" | "guessName" | "careerPath" | "higherLower" | "lineup";
+export type GameId = "bingo" | "mystery" | "guessName" | "careerPath" | "higherLower" | "lineup" | "groups";
 
 type GuideCopy = {
   heading: string;
@@ -365,6 +365,68 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
         {
           question: "¿Por qué no valió un jugador que estuvo en el equipo?",
           answer: "Contamos los equipos principales de la carrera de cada jugador según Liquipedia, y solo jugadores de nuestra base. Pasos cortos o equipos de cantera pueden no aparecer.",
+        },
+        { question: "¿Puedo jugar días anteriores?", answer: "Sí. El archivo de desafíos tiene todos los días desde enero de 2026; no cuentan para la racha." },
+        ...commonFaq.es,
+      ],
+    },
+  },
+  groups: {
+    pt: {
+      heading: "Como jogar o Agrupe os 16",
+      intro:
+        "O Agrupe os 16 é um desafio diário de Counter-Strike: 16 pro players escondem 4 grupos de 4 com algo em comum, como um time, um país, uma função ou um feito. O desafio é o mesmo para todo mundo e muda à meia-noite (horário de Brasília).",
+      steps: [
+        "Toque em 4 jogadores que você acha que formam um grupo e clique em Enviar.",
+        "Acertou? O grupo aparece com a característica em comum. Os grupos vão do mais fácil (amarelo) ao mais difícil (roxo).",
+        "Errou? Perde uma das 4 vidas. Se 3 dos 4 estiverem no mesmo grupo, o jogo avisa.",
+        "Cada jogador cabe em um grupo só: a solução é única. Use Embaralhar para ver os nomes de outro jeito.",
+      ],
+      faqHeading: "Perguntas frequentes",
+      faq: [
+        {
+          question: "Que tipo de grupo pode aparecer?",
+          answer: `Jogadores que passaram pelo mesmo time, da mesma nacionalidade, com a mesma função (AWPer ou IGL), MVPs de Major, quem tem 2 ou mais títulos de Major ou quem passou 5 ou mais anos no Top 20 da HLTV.`,
+        },
+        { question: "Posso jogar dias anteriores?", answer: "Sim. O arquivo de desafios tem todos os dias desde janeiro de 2026; eles não contam para a sequência." },
+        ...commonFaq.pt,
+      ],
+    },
+    en: {
+      heading: "How to play Sort the 16",
+      intro:
+        "Sort the 16 is a daily Counter-Strike puzzle: 16 pro players hide 4 groups of 4 that share something, like a team, a country, a role or an achievement. Everyone gets the same puzzle, and a new one arrives at midnight Brasília time (UTC−3).",
+      steps: [
+        "Tap 4 players you think form a group and press Submit.",
+        "Right? The group shows up with what they share. Groups go from easiest (yellow) to hardest (purple).",
+        "Wrong? You lose one of your 4 lives. If 3 of the 4 are in the same group, the game tells you.",
+        "Each player fits only one group: the solution is unique. Use Shuffle to see the names in a new order.",
+      ],
+      faqHeading: "FAQ",
+      faq: [
+        {
+          question: "What kinds of groups can appear?",
+          answer: `Players who played for the same team, share a nationality, share a role (AWPer or IGL), Major MVPs, players with 2 or more Major titles or players with 5 or more years in the HLTV Top 20.`,
+        },
+        { question: "Can I play past days?", answer: "Yes. The challenge archive has every day since January 2026; they don't count toward your streak." },
+        ...commonFaq.en,
+      ],
+    },
+    es: {
+      heading: "Cómo jugar a Agrupa los 16",
+      intro:
+        "Agrupa los 16 es un desafío diario de Counter-Strike: 16 pro players esconden 4 grupos de 4 con algo en común, como un equipo, un país, un rol o un logro. El desafío es el mismo para todos y cambia a medianoche (hora de Brasilia).",
+      steps: [
+        "Toca 4 jugadores que creas que forman un grupo y pulsa Enviar.",
+        "¿Acertaste? El grupo aparece con lo que tienen en común. Los grupos van del más fácil (amarillo) al más difícil (morado).",
+        "¿Fallaste? Pierdes una de tus 4 vidas. Si 3 de los 4 están en el mismo grupo, el juego te avisa.",
+        "Cada jugador cabe en un solo grupo: la solución es única. Usa Mezclar para ver los nombres en otro orden.",
+      ],
+      faqHeading: "Preguntas frecuentes",
+      faq: [
+        {
+          question: "¿Qué tipo de grupos pueden aparecer?",
+          answer: `Jugadores que pasaron por el mismo equipo, de la misma nacionalidad, con el mismo rol (AWPer o IGL), MVPs de Major, quienes tienen 2 o más títulos de Major o quienes pasaron 5 o más años en el Top 20 de HLTV.`,
         },
         { question: "¿Puedo jugar días anteriores?", answer: "Sí. El archivo de desafíos tiene todos los días desde enero de 2026; no cuentan para la racha." },
         ...commonFaq.es,
