@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ArchiveView } from "@/components/daily/ArchiveView";
 
 const description =
-  "Play past daily challenges of CS Bingo, Mystery player, Career path and Guess the player. Every day since January 2026.";
+  "Play past daily challenges of CS Bingo, Mystery player, Career path, Guess the player and Lineup. Every day since January 2026.";
 
 export const metadata: Metadata = {
   title: "Challenge archive",
