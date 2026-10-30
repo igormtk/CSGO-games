@@ -68,7 +68,8 @@ export const config = {
   matcher: [
     {
       // Páginas apenas: arquivos estáticos, imagens e textos gerados não precisam de nonce.
-      source: "/((?!_next/static|_next/image|_vercel/|teams/|partners/|icon.svg|robots.txt|sitemap.xml|llms.txt|ads.txt|opengraph-image).*)",
+      // teams/*.png são as logos; /teams e /teams/navi são páginas e passam pelo proxy.
+      source: "/((?!_next/static|_next/image|_vercel/|teams/[^/]+\\.png|partners/|icon.svg|robots.txt|sitemap.xml|llms.txt|ads.txt|opengraph-image).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

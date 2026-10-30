@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
 import { statPages } from "@/data/articles/stats";
 import { strategyGuides } from "@/data/articles/strategyGuides";
+import { csPlayers } from "@/data/csBingoDatabase";
 import { LANGUAGES, languageAlternates, localizePath } from "@/lib/i18n";
+import { teamsWithPages } from "@/lib/proPages";
 import { siteUrl } from "@/lib/site";
 
 // Os jogos diários mudam todo dia: a data do build serve de última modificação.
@@ -25,6 +27,11 @@ const entries: Entry[] = [
   ...strategyGuides.map((guide): Entry => ({ path: `/guides/${guide.slug}`, changeFrequency: "monthly", priority: 0.6 })),
   // As estatísticas acompanham o sync semanal dos times.
   ...statPages.map((page): Entry => ({ path: `/stats/${page.slug}`, changeFrequency: "weekly", priority: 0.6, dated: true })),
+  // Páginas de jogadores e times: seguem o sync semanal do Liquipedia.
+  { path: "/players", changeFrequency: "weekly", priority: 0.6, dated: true },
+  { path: "/teams", changeFrequency: "weekly", priority: 0.6, dated: true },
+  ...csPlayers.map((player): Entry => ({ path: `/players/${player.id}`, changeFrequency: "weekly", priority: 0.5, dated: true })),
+  ...teamsWithPages.map((team): Entry => ({ path: `/teams/${team.id}`, changeFrequency: "weekly", priority: 0.5, dated: true })),
   { path: "/about", changeFrequency: "yearly", priority: 0.4 },
   { path: "/privacidade", changeFrequency: "yearly", priority: 0.2 },
   { path: "/termos", changeFrequency: "yearly", priority: 0.2 },

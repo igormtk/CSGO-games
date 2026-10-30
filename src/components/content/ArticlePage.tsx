@@ -14,6 +14,8 @@ type ArticlePageProps = {
   content: Localized<ReactNode>;
   // Chamada para o jogo relacionado ao fim do texto.
   cta?: { href: string; label: Localized<string> };
+  // Página de cima no breadcrumb; sem ela, "Guias e estatísticas".
+  crumb?: { href: string; label: Localized<string> };
 };
 
 const articleCopy: Localized<{ guides: string; about: string; home: string }> = {
@@ -23,7 +25,7 @@ const articleCopy: Localized<{ guides: string; about: string; home: string }> = 
 };
 
 // Moldura das páginas de texto (guias, estatísticas, sobre). Como as páginas legais, podem rolar.
-export function ArticlePage({ title, intro, content, cta }: ArticlePageProps) {
+export function ArticlePage({ title, intro, content, cta, crumb }: ArticlePageProps) {
   const language = useLanguage();
   const copy = articleCopy[language];
   useDocumentTitle(`${title[language]} · CS Games`);
@@ -33,7 +35,9 @@ export function ArticlePage({ title, intro, content, cta }: ArticlePageProps) {
       <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap gap-x-2 text-sm font-bold uppercase tracking-wider text-cs-text/45">
         <Link href="/" className="transition hover:text-cs-orange">{copy.home}</Link>
         <span aria-hidden>/</span>
-        <Link href="/guides" className="transition hover:text-cs-orange">{copy.guides}</Link>
+        <Link href={crumb?.href ?? "/guides"} className="transition hover:text-cs-orange">
+          {crumb?.label[language] ?? copy.guides}
+        </Link>
       </nav>
       <div className="cs-cut bg-cs-line p-[2px]">
         <article className="cs-cut space-y-4 bg-cs-surface px-5 py-6 text-base font-semibold leading-7 text-cs-text/75 sm:px-8 [&_a]:text-cs-orange [&_a]:underline [&_h2]:pt-2 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-wider [&_h2]:text-cs-text [&_ol>li]:ml-5 [&_ol>li]:list-decimal [&_strong]:text-cs-text [&_ul>li]:ml-5 [&_ul>li]:list-disc">
