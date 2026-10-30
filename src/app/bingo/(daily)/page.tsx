@@ -37,9 +37,11 @@ import { DECK_SIZE, GRID_SIZE, createBoard, createPlayerQueue, getPossibleAnswer
 import type { BoardCell, GameBoard } from "@/lib/bingo/board";
 import { comboJoiners, getCellCopy, getCriterionCopy } from "@/lib/bingo/copy";
 import { TeamBadge } from "@/components/teams/TeamBadge";
+import { ArchiveLink, ArchiveTag } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
 import { countryFlags } from "@/data/countryFlags";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
 import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
@@ -475,7 +477,12 @@ const recordGame = (stats: PlayerStats, dateKey: string, completed: boolean): Pl
 };
 
 export default function BingoPage() {
-  const dateKey = useMemo(() => getGameDateKey(), []);
+  const { dateKey, archived } = useDailyDate();
+  // A chave troca o jogo inteiro ao navegar entre hoje e um dia do arquivo.
+  return <BingoGame key={dateKey} dateKey={dateKey} archived={archived} />;
+}
+
+function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }) {
   const playerQueue = useMemo(() => createPlayerQueue(dateKey), [dateKey]);
   const board = useMemo(() => createBoard(dateKey, playerQueue), [dateKey, playerQueue]);
   const language = useLanguage();
@@ -517,8 +524,9 @@ export default function BingoPage() {
   // divergência entre o HTML do servidor e o do navegador (erro de hidratação).
   const mounted = useHydrated();
 
-  // Aba aberta na virada do dia: recarrega para trazer a cartela nova.
+  // Aba aberta na virada do dia: recarrega para trazer a cartela nova (no arquivo, a data é fixa).
   useEffect(() => {
+    if (archived) return;
     const checkNewDay = () => {
       if (getGameDateKey() !== dateKey) window.location.reload();
     };
@@ -528,7 +536,7 @@ export default function BingoPage() {
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", checkNewDay);
     };
-  }, [dateKey]);
+  }, [dateKey, archived]);
 
   const totalCells = GRID_SIZE * GRID_SIZE;
   const filledCells = Object.keys(picks).length;
@@ -602,8 +610,8 @@ export default function BingoPage() {
     if (!endsGame) return;
 
     setOpenPanel("result");
-    // A partida terminou nesta jogada: entra nas estatísticas uma vez por dia.
-    if (stats.lastPlayedDate !== dateKey) {
+    // A partida terminou nesta jogada: entra nas estatísticas uma vez por dia (o arquivo não conta).
+    if (!archived && stats.lastPlayedDate !== dateKey) {
       const nextStats = recordGame(stats, dateKey, Object.keys(nextPicks).length === totalCells);
       setStats(nextStats);
       window.localStorage.setItem(STATS_KEY, JSON.stringify(nextStats));
@@ -742,7 +750,7 @@ export default function BingoPage() {
       `🎯 ${score} ${copy.points} · ${"❤️".repeat(livesLeft)}${"🖤".repeat(MAX_LIVES - livesLeft)} · 🔥 ${stats.currentStreak}`,
       ...(mode === "timed" ? [copy.timedShare] : []),
       grid,
-      `${window.location.origin}/bingo`,
+      `${window.location.origin}/bingo${archived ? `?date=${dateKey}` : ""}`,
     ].join("\n");
 
     try {
@@ -776,6 +784,12 @@ export default function BingoPage() {
       <div className="shrink-0 border-b border-cs-line bg-cs-panel/80">
         <div className="mx-auto flex h-10 max-w-[560px] items-center justify-between gap-2 px-3 short:h-9 short:max-w-5xl">
           <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-cs-text/55 sm:text-sm sm:tracking-[0.12em]">
+            {archived ? (
+              <>
+                <ArchiveTag path="/bingo" />
+                <span className="mx-1.5 text-cs-line sm:mx-2">|</span>
+              </>
+            ) : null}
             <span className="font-bold text-cs-orange">#{getPuzzleNumber(dateKey)}</span>
             <span className="mx-1.5 text-cs-line sm:mx-2">|</span>
             <span className="sr-only">{copy.puzzleDate} </span>
@@ -1088,10 +1102,15 @@ export default function BingoPage() {
               {shareStatus === "copied" ? copy.shareCopied : copy.shareFailed}
             </p>
           ) : null}
-          <div className="mt-4 border-t border-cs-line pt-3 text-center">
-            {finishedBeforeLoad ? <p className="mb-1 text-sm font-semibold text-cs-text/60">{copy.alreadyPlayed}</p> : null}
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextPuzzle}</p>
-            <NextPuzzleCountdown />
+          <div className="mt-4 space-y-2 border-t border-cs-line pt-3 text-center">
+            {archived ? null : (
+              <div>
+                {finishedBeforeLoad ? <p className="mb-1 text-sm font-semibold text-cs-text/60">{copy.alreadyPlayed}</p> : null}
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextPuzzle}</p>
+                <NextPuzzleCountdown />
+              </div>
+            )}
+            <ArchiveLink path="/bingo" />
           </div>
             </>
           ) : (

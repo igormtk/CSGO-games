@@ -6,12 +6,14 @@ import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
+import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
-import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
+import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 
 const MAX_GUESSES = 6;
 // Depois desses erros, mostramos um time antigo do jogador como dica.
@@ -261,6 +263,7 @@ export default function MysteryPlayerPage() {
   const copy = mysteryCopy[useLanguage()];
   useDocumentTitle(`${copy.eyebrow} · CS Games`);
   const hydrated = useHydrated();
+  const { dateKey, archived } = useDailyDate();
 
   // A data e o progresso salvo só existem no navegador: o servidor manda só o título (que
   // buscadores e IAs leem) e o jogo monta no cliente, já com tudo carregado.
@@ -275,11 +278,11 @@ export default function MysteryPlayerPage() {
     );
   }
 
-  return <MysteryGame copy={copy} />;
+  // A chave troca o jogo inteiro ao navegar entre hoje e um dia do arquivo.
+  return <MysteryGame key={dateKey} copy={copy} dateKey={dateKey} archived={archived} />;
 }
 
-function MysteryGame({ copy }: { copy: MysteryCopy }) {
-  const [dateKey] = useState(getGameDateKey);
+function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: string; archived: boolean }) {
   const [guessIds, setGuessIds] = useState<string[]>(
     () => readJson<{ guessIds: string[] }>(`${GAME_KEY_PREFIX}-${dateKey}`, { guessIds: [] }).guessIds
   );
@@ -321,7 +324,7 @@ function MysteryGame({ copy }: { copy: MysteryCopy }) {
     writeJson(`${GAME_KEY_PREFIX}-${dateKey}`, { guessIds: nextGuessIds });
 
     const nextWon = player.id === target.id;
-    if (nextWon || nextGuessIds.length >= MAX_GUESSES) {
+    if (!archived && (nextWon || nextGuessIds.length >= MAX_GUESSES)) {
       const nextStats = recordGame(stats, dateKey, nextWon);
       setStats(nextStats);
       writeJson(STATS_KEY, nextStats);
@@ -334,7 +337,7 @@ function MysteryGame({ copy }: { copy: MysteryCopy }) {
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${won ? guesses.length : "X"}/${MAX_GUESSES} · 🔥 ${stats.currentStreak}`,
       rows,
-      `${window.location.origin}/jogador-misterioso`,
+      `${window.location.origin}/jogador-misterioso${archived ? `?date=${dateKey}` : ""}`,
     ].join("\n");
 
     try {
@@ -348,6 +351,7 @@ function MysteryGame({ copy }: { copy: MysteryCopy }) {
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">
+      {archived ? <ArchiveBanner dateKey={dateKey} path="/jogador-misterioso" /> : null}
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">
@@ -480,7 +484,8 @@ function MysteryGame({ copy }: { copy: MysteryCopy }) {
                 {shareStatus === "copied" ? copy.copied : copy.copyFailed}
               </p>
             ) : null}
-            <p className="text-xs font-semibold uppercase tracking-wider text-cs-text/45">{copy.nextPlayer}</p>
+            {archived ? null : <p className="text-xs font-semibold uppercase tracking-wider text-cs-text/45">{copy.nextPlayer}</p>}
+            <ArchiveLink path="/jogador-misterioso" />
           </div>
         </div>
       ) : null}

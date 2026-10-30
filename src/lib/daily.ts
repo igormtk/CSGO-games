@@ -16,10 +16,29 @@ export const getPreviousDateKey = (dateKey: string) =>
 export const hashDate = (dateKey: string) =>
   dateKey.split("").reduce((hash, char) => (hash * 33 + char.charCodeAt(0)) % 233280, 5381) || 1;
 
-const FIRST_PUZZLE_DATE = "2026-01-01";
+export const FIRST_PUZZLE_DATE = "2026-01-01";
 
 export const getPuzzleNumber = (dateKey: string) =>
   Math.floor((Date.parse(dateKey) - Date.parse(FIRST_PUZZLE_DATE)) / (24 * 60 * 60 * 1000)) + 1;
+
+// Arquivo: qualquer dia entre o primeiro desafio e ontem. Hoje e o futuro ficam de fora (o de
+// hoje é o desafio normal, e o futuro estragaria a surpresa).
+export const isArchiveDate = (value: string | null | undefined, today: string): value is string =>
+  Boolean(
+    value &&
+      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+      !Number.isNaN(Date.parse(value)) &&
+      new Date(Date.parse(value)).toISOString().slice(0, 10) === value &&
+      value >= FIRST_PUZZLE_DATE &&
+      value < today
+  );
+
+// Dias do arquivo, do mais recente (ontem) para o mais antigo.
+export const getArchiveDates = (today: string) => {
+  const dates: string[] = [];
+  for (let date = getPreviousDateKey(today); date >= FIRST_PUZZLE_DATE; date = getPreviousDateKey(date)) dates.push(date);
+  return dates;
+};
 
 export const seededShuffle = <T,>(items: T[], seed: number) => {
   const result = [...items];
