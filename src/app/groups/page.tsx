@@ -35,7 +35,7 @@ const groupEmoji = ["🟨", "🟩", "🟦", "🟪"];
 const groupsCopy = {
   pt: {
     eyebrow: "Agrupe os 16",
-    title: "Agrupe os 16",
+    title: "Encontre os 4 grupos",
     intro: `16 pro players escondem ${GROUP_COUNT} grupos de ${GROUP_SIZE} com algo em comum: um time, um país, uma função ou um feito. Selecione ${GROUP_SIZE} e envie. São ${MAX_MISTAKES} erros e um desafio por dia.`,
     pick: (count: number) => `Selecione ${GROUP_SIZE} jogadores (${count}/${GROUP_SIZE})`,
     submit: "Enviar",
@@ -74,7 +74,7 @@ const groupsCopy = {
   },
   en: {
     eyebrow: "Sort the 16",
-    title: "Sort the 16",
+    title: "Find the 4 groups",
     intro: `16 pro players hide ${GROUP_COUNT} groups of ${GROUP_SIZE} with something in common: a team, a country, a role or an achievement. Select ${GROUP_SIZE} and submit. ${MAX_MISTAKES} mistakes and one challenge per day.`,
     pick: (count: number) => `Select ${GROUP_SIZE} players (${count}/${GROUP_SIZE})`,
     submit: "Submit",
@@ -113,7 +113,7 @@ const groupsCopy = {
   },
   es: {
     eyebrow: "Agrupa los 16",
-    title: "Agrupa los 16",
+    title: "Encuentra los 4 grupos",
     intro: `16 pro players esconden ${GROUP_COUNT} grupos de ${GROUP_SIZE} con algo en común: un equipo, un país, un rol o un logro. Selecciona ${GROUP_SIZE} y envía. ${MAX_MISTAKES} errores y un desafío por día.`,
     pick: (count: number) => `Selecciona ${GROUP_SIZE} jugadores (${count}/${GROUP_SIZE})`,
     submit: "Enviar",
