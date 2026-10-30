@@ -3,7 +3,7 @@ import type { Language } from "@/lib/language";
 // Texto de "como jogar" de cada jogo. Aparece abaixo do jogo (já no HTML, em inglês, para
 // buscadores e IAs que não executam JavaScript) e alimenta o FAQ dos dados estruturados.
 
-export type GameId = "bingo" | "mystery" | "guessName" | "careerPath" | "higherLower";
+export type GameId = "bingo" | "mystery" | "guessName" | "careerPath" | "higherLower" | "lineup";
 
 type GuideCopy = {
   heading: string;
@@ -305,6 +305,68 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
       faqHeading: "Preguntas frecuentes",
       faq: [
         { question: "¿Puedo jugar más de una vez al día?", answer: "Sí. Más o menos no es diario: cada partida sortea jugadores nuevos y tu récord queda guardado en tu navegador." },
+        ...commonFaq.es,
+      ],
+    },
+  },
+  lineup: {
+    pt: {
+      heading: "Como jogar a Escalação",
+      intro:
+        "A Escalação é um desafio diário de Counter-Strike: aparece um time e você cita 5 pro players que já jogaram por ele, em qualquer época. O time é o mesmo para todo mundo e muda à meia-noite (horário de Brasília).",
+      steps: [
+        "Veja o time do dia no topo da tela.",
+        "Digite o nick de um jogador que já passou pelo time e escolha na lista. Vale qualquer época da carreira.",
+        "Cada acerto ocupa uma das 5 vagas. Cada erro custa uma das 3 vidas.",
+        "Preencha as 5 vagas para vencer. No fim aparecem todos os jogadores da nossa base que passaram pelo time.",
+      ],
+      faqHeading: "Perguntas frequentes",
+      faq: [
+        {
+          question: "Por que um jogador que passou pelo time não valeu?",
+          answer: "Contamos os times principais da carreira de cada jogador, segundo o Liquipedia, e só os jogadores que estão na nossa base. Passagens curtas ou por times de base podem não aparecer.",
+        },
+        { question: "Posso jogar dias anteriores?", answer: "Sim. O arquivo de desafios tem todos os dias desde janeiro de 2026; eles não contam para a sequência." },
+        ...commonFaq.pt,
+      ],
+    },
+    en: {
+      heading: "How to play Lineup",
+      intro:
+        "Lineup is a daily Counter-Strike challenge: a team appears and you name 5 pro players who have played for it, from any era. Everyone gets the same team, and a new one arrives at midnight Brasília time (UTC−3).",
+      steps: [
+        "See today's team at the top of the screen.",
+        "Type the nickname of a player who has played for the team and pick it from the list. Any point of their career counts.",
+        "Each right answer fills one of the 5 slots. Each miss costs one of your 3 lives.",
+        "Fill all 5 slots to win. At the end you see every player in our database who played for the team.",
+      ],
+      faqHeading: "FAQ",
+      faq: [
+        {
+          question: "Why didn't a player who was on the team count?",
+          answer: "We count each player's main career teams according to Liquipedia, and only players in our database. Short stints or academy teams may be missing.",
+        },
+        { question: "Can I play past days?", answer: "Yes. The challenge archive has every day since January 2026; they don't count toward your streak." },
+        ...commonFaq.en,
+      ],
+    },
+    es: {
+      heading: "Cómo jugar a Alineación",
+      intro:
+        "Alineación es un desafío diario de Counter-Strike: aparece un equipo y nombras 5 pro players que hayan jugado en él, de cualquier época. El equipo es el mismo para todos y cambia a medianoche (hora de Brasilia).",
+      steps: [
+        "Mira el equipo del día arriba de la pantalla.",
+        "Escribe el nick de un jugador que haya pasado por el equipo y elígelo de la lista. Vale cualquier momento de su carrera.",
+        "Cada acierto ocupa uno de los 5 puestos. Cada error cuesta una de tus 3 vidas.",
+        "Completa los 5 puestos para ganar. Al final aparecen todos los jugadores de nuestra base que pasaron por el equipo.",
+      ],
+      faqHeading: "Preguntas frecuentes",
+      faq: [
+        {
+          question: "¿Por qué no valió un jugador que estuvo en el equipo?",
+          answer: "Contamos los equipos principales de la carrera de cada jugador según Liquipedia, y solo jugadores de nuestra base. Pasos cortos o equipos de cantera pueden no aparecer.",
+        },
+        { question: "¿Puedo jugar días anteriores?", answer: "Sí. El archivo de desafíos tiene todos los días desde enero de 2026; no cuentan para la racha." },
         ...commonFaq.es,
       ],
     },

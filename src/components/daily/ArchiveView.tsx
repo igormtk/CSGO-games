@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Check, Grid3x3, Route, ScanFace, UserSearch } from "lucide-react";
+import { Check, Grid3x3, Route, ScanFace, Shirt, UserSearch } from "lucide-react";
 import { getArchiveDates, getGameDateKey, getPuzzleNumber } from "@/lib/daily";
 import { cn } from "@/lib/utils";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
@@ -31,6 +31,7 @@ const dailyGames = [
     icon: UserSearch,
     title: { pt: "Adivinhe o jogador", en: "Guess the player", es: "Adivina el jugador" },
   },
+  { path: "/lineup", storageKey: "cs-lineup-daily-v1", icon: Shirt, title: { pt: "Escalação", en: "Lineup", es: "Alineación" } },
 ];
 
 const viewCopy: Record<Language, { title: string; intro: string; played: string; locale: string }> = {
