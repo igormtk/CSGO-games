@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "@/components/LocalLink";
 import { getStatPage } from "@/data/articles/stats";
 import type { StatPage } from "@/data/articles/stats";
 import { useLanguage } from "@/lib/language";
@@ -51,7 +52,9 @@ function StatTable({ page }: { page: StatPage }) {
               <tr key={row.player.id} className="border-b border-cs-line/50">
                 <td className="py-2 pr-2 text-cs-text/45">{index + 1}</td>
                 <td className="py-2 pr-2">
-                  <span className="font-bold text-cs-text">{row.player.nickname}</span>
+                  <Link href={`/players/${row.player.id}`} className="font-bold">
+                    {row.player.nickname}
+                  </Link>
                   <span className="block text-xs text-cs-text/50">{row.player.fullName}</span>
                 </td>
                 <td className="py-2 pr-2">{row.player.nationality}</td>

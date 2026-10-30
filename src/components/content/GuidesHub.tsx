@@ -5,6 +5,7 @@ import { BarChart3, BookOpen } from "lucide-react";
 import { statPages } from "@/data/articles/stats";
 import { strategyGuides } from "@/data/articles/strategyGuides";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { playersIndexSeo, teamsIndexSeo } from "@/lib/proPages";
 import type { Language } from "@/lib/language";
 
 const hubCopy: Record<Language, { title: string; intro: string; guides: string; stats: string; about: string; aboutText: string }> = {
@@ -79,7 +80,9 @@ export function GuidesHub() {
         </ul>
       </section>
 
-      <ul>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        <HubCard href="/players" title={playersIndexSeo.title[language]} text={playersIndexSeo.description[language]} />
+        <HubCard href="/teams" title={teamsIndexSeo.title[language]} text={teamsIndexSeo.description[language]} />
         <HubCard href="/about" title={copy.about} text={copy.aboutText} />
       </ul>
     </main>

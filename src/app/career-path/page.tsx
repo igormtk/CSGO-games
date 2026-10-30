@@ -8,6 +8,7 @@ import { getCountryFlag, getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import Link from "@/components/LocalLink";
 import { PartnerBreakModal } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
@@ -348,7 +349,11 @@ function CareerGame({
           <div className="cs-cut space-y-3 bg-cs-surface p-4 text-center">
             {won ? <Trophy className="mx-auto h-8 w-8 text-cs-orange" /> : <X className="mx-auto h-8 w-8 text-cs-red" />}
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-cs-text/60">{won ? copy.wonIn(guessIds.length) : copy.lost}</p>
-            <h2 className="text-4xl font-bold uppercase leading-none tracking-wide">{target.nickname}</h2>
+            <h2 className="text-4xl font-bold uppercase leading-none tracking-wide">
+              <Link href={`/players/${target.id}`} className="transition hover:text-cs-orange">
+                {target.nickname}
+              </Link>
+            </h2>
             <p className="text-sm font-semibold text-cs-text/60">
               {getCountryFlag(target.nationality)} {target.fullName}
             </p>

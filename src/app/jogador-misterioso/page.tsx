@@ -7,6 +7,7 @@ import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
+import Link from "@/components/LocalLink";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
@@ -451,7 +452,11 @@ function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: 
             <div className="flex items-center justify-center gap-3">
               {target.currentTeam ? <TeamBadge teamId={target.currentTeam} className="h-12 w-12" size={96} /> : null}
               <div className="text-left">
-                <h2 className="text-4xl font-bold uppercase leading-none tracking-wide">{target.nickname}</h2>
+                <h2 className="text-4xl font-bold uppercase leading-none tracking-wide">
+                  <Link href={`/players/${target.id}`} className="transition hover:text-cs-orange">
+                    {target.nickname}
+                  </Link>
+                </h2>
                 <p className="text-sm font-semibold text-cs-text/60">
                   {getCountryFlag(target.nationality)} {target.fullName}
                 </p>
