@@ -3,7 +3,7 @@
 import { DefaultCard } from "@/components/cards/DefaultCard";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Grid3x3, Route, ScanFace, UserSearch, Users } from "lucide-react";
+import { ArrowUpDown, Grid3x3, Route, ScanFace, UserSearch, Users } from "lucide-react";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPartnerFor } from "@/data/partners";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
@@ -53,6 +53,11 @@ const homeCopy: Record<
         description: "Os times de um pro player, em ordem: descubra de quem é a carreira em 6 palpites.",
         tag: "Diário",
       },
+      "/higher-or-lower": {
+        title: "Mais ou menos",
+        description: "Quem tem mais Majors, mais anos no Top 20 ou mais times? Acerte o máximo seguido.",
+        tag: "Infinito",
+      },
       "/bingo/multiplayer": {
         title: "Bingo multiplayer",
         description: "Crie uma sala, mande o código para os amigos e disputem a mesma cartela em tempo real.",
@@ -93,6 +98,11 @@ const homeCopy: Record<
         title: "Career path",
         description: "A pro player's teams, in order: find out whose career it is in 6 guesses.",
         tag: "Daily",
+      },
+      "/higher-or-lower": {
+        title: "Higher or lower",
+        description: "Who has more Majors, more Top 20 years or more teams? Get as many in a row as you can.",
+        tag: "Endless",
       },
       "/bingo/multiplayer": {
         title: "Bingo multiplayer",
@@ -135,6 +145,11 @@ const homeCopy: Record<
         description: "Los equipos de un pro player, en orden: descubre de quién es la carrera en 6 intentos.",
         tag: "Diario",
       },
+      "/higher-or-lower": {
+        title: "Más o menos",
+        description: "¿Quién tiene más Majors, más años en el Top 20 o más equipos? Acierta todas las que puedas seguidas.",
+        tag: "Infinito",
+      },
       "/bingo/multiplayer": {
         title: "Bingo multijugador",
         description: "Crea una sala, envía el código a tus amigos y compitan en el mismo cartón en tiempo real.",
@@ -157,6 +172,7 @@ const games = [
   { linkTo: "/jogador-misterioso", icon: ScanFace },
   { linkTo: "/guess-name", icon: UserSearch },
   { linkTo: "/career-path", icon: Route },
+  { linkTo: "/higher-or-lower", icon: ArrowUpDown },
   { linkTo: "/bingo/multiplayer", icon: Users },
 ];
 

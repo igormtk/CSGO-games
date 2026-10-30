@@ -3,7 +3,7 @@ import type { Language } from "@/lib/language";
 // Texto de "como jogar" de cada jogo. Aparece abaixo do jogo (já no HTML, em inglês, para
 // buscadores e IAs que não executam JavaScript) e alimenta o FAQ dos dados estruturados.
 
-export type GameId = "bingo" | "mystery" | "guessName" | "careerPath";
+export type GameId = "bingo" | "mystery" | "guessName" | "careerPath" | "higherLower";
 
 type GuideCopy = {
   heading: string;
@@ -255,6 +255,56 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
       faqHeading: "Preguntas frecuentes",
       faq: [
         { question: "¿Cuándo cambia la carrera del día?", answer: "Todos los días a medianoche, hora de Brasilia (UTC−3). El jugador es el mismo para todos." },
+        ...commonFaq.es,
+      ],
+    },
+  },
+  higherLower: {
+    pt: {
+      heading: "Como jogar o Mais ou menos",
+      intro:
+        "O Mais ou menos é um jogo infinito de Counter-Strike: dois pro players aparecem e você diz qual tem mais títulos de Major, mais anos no Top 20 da HLTV ou mais times na carreira. Não tem limite diário.",
+      steps: [
+        "O jogador de cima mostra o número da rodada; o de baixo fica escondido.",
+        "Escolha Mais se acha que o de baixo tem um número maior, ou Menos se acha que tem um número menor. Nunca há empate.",
+        "Acertou? O jogador de baixo sobe, um novo aparece e a categoria pode mudar.",
+        "Um erro encerra a partida. Compartilhe a sua sequência e tente bater o seu recorde.",
+      ],
+      faqHeading: "Perguntas frequentes",
+      faq: [
+        { question: "Posso jogar mais de uma vez por dia?", answer: "Sim. O Mais ou menos não é diário: cada partida sorteia jogadores novos, e o seu recorde fica salvo no navegador." },
+        ...commonFaq.pt,
+      ],
+    },
+    en: {
+      heading: "How to play Higher or lower",
+      intro:
+        "Higher or lower is an endless Counter-Strike game: two pro players appear and you say which one has more Major titles, more years in the HLTV Top 20 or more teams in their career. There is no daily limit.",
+      steps: [
+        "The top player shows the number for the round; the bottom one stays hidden.",
+        "Pick Higher if you think the bottom player has a bigger number, or Lower if you think it's smaller. There are never ties.",
+        "Right? The bottom player moves up, a new one appears and the category may change.",
+        "One miss ends the run. Share your streak and try to beat your record.",
+      ],
+      faqHeading: "FAQ",
+      faq: [
+        { question: "Can I play more than once a day?", answer: "Yes. Higher or lower isn't daily: every run draws new players, and your record is saved in your browser." },
+        ...commonFaq.en,
+      ],
+    },
+    es: {
+      heading: "Cómo jugar a Más o menos",
+      intro:
+        "Más o menos es un juego infinito de Counter-Strike: aparecen dos pro players y dices cuál tiene más títulos de Major, más años en el Top 20 de HLTV o más equipos en su carrera. No tiene límite diario.",
+      steps: [
+        "El jugador de arriba muestra el número de la ronda; el de abajo queda oculto.",
+        "Elige Más si crees que el de abajo tiene un número mayor, o Menos si crees que es menor. Nunca hay empate.",
+        "¿Acertaste? El jugador de abajo sube, aparece uno nuevo y la categoría puede cambiar.",
+        "Un error termina la partida. Comparte tu racha e intenta superar tu récord.",
+      ],
+      faqHeading: "Preguntas frecuentes",
+      faq: [
+        { question: "¿Puedo jugar más de una vez al día?", answer: "Sí. Más o menos no es diario: cada partida sortea jugadores nuevos y tu récord queda guardado en tu navegador." },
         ...commonFaq.es,
       ],
     },
