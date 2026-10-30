@@ -3,7 +3,7 @@
 import { DefaultCard } from "@/components/cards/DefaultCard";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowUpDown, Grid3x3, Route, ScanFace, Shirt, UserSearch, Users } from "lucide-react";
+import { ArrowUpDown, Grid3x3, LayoutGrid, Route, ScanFace, Shirt, UserSearch, Users } from "lucide-react";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPartnerFor } from "@/data/partners";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
@@ -59,6 +59,11 @@ const homeCopy: Record<
         description: "Um time por dia: cite 5 pro players que já jogaram por ele, com até 3 erros.",
         tag: "Diário",
       },
+      "/groups": {
+        title: "Agrupe os 16",
+        description: "16 pro players, 4 grupos escondidos: time, país, função ou feito em comum.",
+        tag: "Diário",
+      },
       "/higher-or-lower": {
         title: "Mais ou menos",
         description: "Quem tem mais Majors, mais anos no Top 20 ou mais times? Acerte o máximo seguido.",
@@ -109,6 +114,11 @@ const homeCopy: Record<
       "/lineup": {
         title: "Lineup",
         description: "One team a day: name 5 pro players who have played for it, with up to 3 misses.",
+        tag: "Daily",
+      },
+      "/groups": {
+        title: "Sort the 16",
+        description: "16 pro players, 4 hidden groups: a shared team, country, role or achievement.",
         tag: "Daily",
       },
       "/higher-or-lower": {
@@ -163,6 +173,11 @@ const homeCopy: Record<
         description: "Un equipo por día: nombra 5 pro players que hayan jugado en él, con hasta 3 errores.",
         tag: "Diario",
       },
+      "/groups": {
+        title: "Agrupa los 16",
+        description: "16 pro players, 4 grupos ocultos: equipo, país, rol o logro en común.",
+        tag: "Diario",
+      },
       "/higher-or-lower": {
         title: "Más o menos",
         description: "¿Quién tiene más Majors, más años en el Top 20 o más equipos? Acierta todas las que puedas seguidas.",
@@ -192,6 +207,7 @@ const games = [
   { linkTo: "/guess-name", icon: UserSearch },
   { linkTo: "/career-path", icon: Route },
   { linkTo: "/lineup", icon: Shirt },
+  { linkTo: "/groups", icon: LayoutGrid },
   { linkTo: "/higher-or-lower", icon: ArrowUpDown },
   { linkTo: "/bingo/multiplayer", icon: Users },
 ];
