@@ -6,13 +6,15 @@ import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag, getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
+import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
 import { PartnerBreak } from "@/components/partners/PartnerBreak";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
-import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
+import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
+import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 
 const MAX_GUESSES = 6;
@@ -155,6 +157,7 @@ export default function CareerPathPage() {
   const copy = careerCopy[language];
   useDocumentTitle(`${copy.eyebrow} · CS Games`);
   const hydrated = useHydrated();
+  const { dateKey, archived } = useDailyDate();
 
   if (!hydrated) {
     return (
@@ -166,11 +169,21 @@ export default function CareerPathPage() {
     );
   }
 
-  return <CareerGame copy={copy} language={language} />;
+  // A chave troca o jogo inteiro ao navegar entre hoje e um dia do arquivo.
+  return <CareerGame key={dateKey} copy={copy} language={language} dateKey={dateKey} archived={archived} />;
 }
 
-function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }) {
-  const [dateKey] = useState(getGameDateKey);
+function CareerGame({
+  copy,
+  language,
+  dateKey,
+  archived,
+}: {
+  copy: CareerCopy;
+  language: Language;
+  dateKey: string;
+  archived: boolean;
+}) {
   const gameKey = `${GAME_KEY_PREFIX}-${dateKey}`;
   const target = useMemo(() => getCareerTarget(dateKey), [dateKey]);
   const [guessIds, setGuessIds] = useState<string[]>(() => readJson<{ guessIds: string[] }>(gameKey, { guessIds: [] }).guessIds);
@@ -208,7 +221,7 @@ function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }
     setSearch("");
     writeJson(gameKey, { guessIds: nextGuessIds });
     const nextWon = player.id === target.id;
-    if (nextWon || nextGuessIds.length >= MAX_GUESSES) {
+    if (!archived && (nextWon || nextGuessIds.length >= MAX_GUESSES)) {
       const nextStats = recordGame(stats, dateKey, nextWon);
       setStats(nextStats);
       writeJson(STATS_KEY, nextStats);
@@ -221,7 +234,7 @@ function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${won ? guessIds.length : "X"}/${MAX_GUESSES} · 🔥 ${stats.currentStreak}`,
       squares,
-      `${window.location.origin}/career-path`,
+      `${window.location.origin}/career-path${archived ? `?date=${dateKey}` : ""}`,
     ].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);
@@ -237,6 +250,7 @@ function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">
+      {archived ? <ArchiveBanner dateKey={dateKey} path="/career-path" /> : null}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-orange">
           {copy.eyebrow} · #{getPuzzleNumber(dateKey)}
@@ -361,9 +375,14 @@ function CareerGame({ copy, language }: { copy: CareerCopy; language: Language }
             {shareStatus ? (
               <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
             ) : null}
-            <div className="border-t border-cs-line pt-3">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextChallenge}</p>
-              <NextPuzzleCountdown />
+            <div className="space-y-2 border-t border-cs-line pt-3">
+              {archived ? null : (
+                <>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextChallenge}</p>
+                  <NextPuzzleCountdown />
+                </>
+              )}
+              <ArchiveLink path="/career-path" />
             </div>
           </div>
         </div>

@@ -6,12 +6,14 @@ import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
+import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
-import { getGameDateKey, getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
+import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
+import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 
 // Desafio diário: os mesmos nomes, na mesma ordem e com as mesmas opções para todo mundo.
@@ -172,6 +174,7 @@ export default function GuessNamePage() {
   const copy = guessNameCopy[language];
   useDocumentTitle(`${copy.eyebrow} · CS Games`);
   const hydrated = useHydrated();
+  const { dateKey, archived } = useDailyDate();
 
   // A data e o progresso salvo só existem no navegador: o servidor manda só o título (que
   // buscadores e IAs leem) e o jogo monta no cliente, já com tudo carregado.
@@ -185,11 +188,21 @@ export default function GuessNamePage() {
     );
   }
 
-  return <GuessNameGame copy={copy} language={language} />;
+  // A chave troca o jogo inteiro ao navegar entre hoje e um dia do arquivo.
+  return <GuessNameGame key={dateKey} copy={copy} language={language} dateKey={dateKey} archived={archived} />;
 }
 
-function GuessNameGame({ copy, language }: { copy: GuessNameCopy; language: Language }) {
-  const [dateKey] = useState(getGameDateKey);
+function GuessNameGame({
+  copy,
+  language,
+  dateKey,
+  archived,
+}: {
+  copy: GuessNameCopy;
+  language: Language;
+  dateKey: string;
+  archived: boolean;
+}) {
   const gameKey = `${GAME_KEY_PREFIX}-${dateKey}`;
   const queue = useMemo(() => createDailyQueue(dateKey), [dateKey]);
 
@@ -241,7 +254,7 @@ function GuessNameGame({ copy, language }: { copy: GuessNameCopy; language: Lang
     writeJson(gameKey, { outcomes: nextOutcomes });
 
     const finished = isFinished(nextOutcomes);
-    if (finished && stats.lastPlayedDate !== dateKey) {
+    if (finished && !archived && stats.lastPlayedDate !== dateKey) {
       const nextStats = recordGame(stats, dateKey, nextOutcomes.filter((entry) => entry === "hit").length);
       setStats(nextStats);
       writeJson(STATS_KEY, nextStats);
@@ -276,7 +289,7 @@ function GuessNameGame({ copy, language }: { copy: GuessNameCopy; language: Lang
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${score}/${DAILY_NAMES} · 🔥 ${stats.currentStreak}`,
       outcomes.map((outcome) => outcomeEmoji[outcome]).join(""),
-      `${window.location.origin}/guess-name`,
+      `${window.location.origin}/guess-name${archived ? `?date=${dateKey}` : ""}`,
     ].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);
@@ -293,6 +306,7 @@ function GuessNameGame({ copy, language }: { copy: GuessNameCopy; language: Lang
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center gap-3 px-4 py-4 sm:gap-4">
+      {archived ? <ArchiveBanner dateKey={dateKey} path="/guess-name" /> : null}
       <div className="grid grid-cols-3 gap-2">
         <div className="cs-cut-sm bg-cs-surface p-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-cs-text/45">{copy.lives}</p>
@@ -408,9 +422,14 @@ function GuessNameGame({ copy, language }: { copy: GuessNameCopy; language: Lang
                 {shareStatus ? (
                   <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
                 ) : null}
-                <div className="border-t border-cs-line pt-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextChallenge}</p>
-                  <NextPuzzleCountdown />
+                <div className="space-y-2 border-t border-cs-line pt-3">
+                  {archived ? null : (
+                    <>
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-cs-text/45">{copy.nextChallenge}</p>
+                      <NextPuzzleCountdown />
+                    </>
+                  )}
+                  <ArchiveLink path="/guess-name" />
                 </div>
               </>
             ) : (

@@ -20,6 +20,7 @@ const homeCopy: Record<
     play: string;
     partnerLabel: string;
     guides: string;
+    archive: string;
     about: string;
     privacy: string;
     terms: string;
@@ -67,6 +68,7 @@ const homeCopy: Record<
     play: "Jogar",
     partnerLabel: "Publicidade",
     guides: "Guias e estatísticas",
+    archive: "Arquivo de desafios",
     about: "Sobre",
     privacy: "Privacidade",
     terms: "Termos",
@@ -113,6 +115,7 @@ const homeCopy: Record<
     play: "Play",
     partnerLabel: "Advertisement",
     guides: "Guides and stats",
+    archive: "Challenge archive",
     about: "About",
     privacy: "Privacy",
     terms: "Terms",
@@ -159,6 +162,7 @@ const homeCopy: Record<
     play: "Jugar",
     partnerLabel: "Publicidad",
     guides: "Guías y estadísticas",
+    archive: "Archivo de desafíos",
     about: "Acerca de",
     privacy: "Privacidad",
     terms: "Términos",
@@ -215,6 +219,7 @@ export default function Home() {
 
         <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-cs-text/40">
           <Link href="/guides" className="transition hover:text-cs-orange">{copy.guides}</Link>
+          <Link href="/archive" className="transition hover:text-cs-orange">{copy.archive}</Link>
           <Link href="/about" className="transition hover:text-cs-orange">{copy.about}</Link>
           <Link href="/privacidade" className="transition hover:text-cs-orange">{copy.privacy}</Link>
           <Link href="/termos" className="transition hover:text-cs-orange">{copy.terms}</Link>
