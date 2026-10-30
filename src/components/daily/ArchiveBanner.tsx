@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import { CalendarDays } from "lucide-react";
 import { getPuzzleNumber } from "@/lib/daily";
 import { useLanguage } from "@/lib/language";

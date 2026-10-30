@@ -1,12 +1,33 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { adsenseClient, adsenseCsp } from "@/lib/adsense";
+import { DEFAULT_LANGUAGE, LANGUAGE_HEADER, splitLanguage } from "@/lib/i18n";
 
-// Proxy (no Next 15 se chamava middleware). Política de conteúdo com nonce: a cada visita sai um
-// código novo, e só os scripts que o Next marca com ele podem rodar ('strict-dynamic' libera os
-// que esses scripts carregarem). Sem nonce seria preciso 'unsafe-inline', que deixa passar
-// qualquer script injetado na página.
+// Proxy (no Next 15 se chamava middleware).
+//
+// Idioma: /pt/... e /es/... são as mesmas páginas sem o prefixo, reescritas por dentro com o
+// idioma num cabeçalho que o layout lê. /en/... redireciona para o endereço sem prefixo, que já
+// é o inglês, para não ter a mesma página em dois endereços.
+//
+// Política de conteúdo com nonce: a cada visita sai um código novo, e só os scripts que o Next
+// marca com ele podem rodar ('strict-dynamic' libera os que esses scripts carregarem). Sem nonce
+// seria preciso 'unsafe-inline', que deixa passar qualquer script injetado na página.
 export function proxy(request: NextRequest) {
+  const { language, path } = splitLanguage(request.nextUrl.pathname);
+  if (language === DEFAULT_LANGUAGE) {
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    return NextResponse.redirect(url, 308);
+  }
+  const rewriteUrl = language ? new URL(`${path}${request.nextUrl.search}`, request.url) : undefined;
+
+  // Pré-carregamento de link (só chega aqui com prefixo de idioma): basta reescrever.
+  if (request.headers.get("next-router-prefetch") || request.headers.get("purpose") === "prefetch") {
+    const requestHeaders = new Headers(request.headers);
+    if (language) requestHeaders.set(LANGUAGE_HEADER, language);
+    return rewriteUrl ? NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } }) : NextResponse.next();
+  }
+
   const nonce = btoa(crypto.randomUUID());
   const isDev = process.env.NODE_ENV === "development";
   // Com o AdSense ligado, liberamos os iframes e chamadas do Google; as imagens dos anúncios vêm de
@@ -33,8 +54,12 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
+  if (language) requestHeaders.set(LANGUAGE_HEADER, language);
+  else requestHeaders.delete(LANGUAGE_HEADER);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = rewriteUrl
+    ? NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } })
+    : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
   return response;
 }
@@ -49,5 +74,8 @@ export const config = {
         { type: "header", key: "purpose", value: "prefetch" },
       ],
     },
+    // Endereços com idioma passam sempre, inclusive no pré-carregamento, para serem reescritos.
+    "/:language(pt|es|en)",
+    "/:language(pt|es|en)/:path*",
   ],
 };

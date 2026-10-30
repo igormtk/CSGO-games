@@ -1,10 +1,8 @@
-import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { pageSeo } from "@/data/pageSeo";
+import { localizedMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Terms of use",
-  alternates: { canonical: "/termos" },
-};
+export const generateMetadata = () => localizedMetadata(pageSeo.terms);
 
 const linkClass = "text-cs-orange underline";
 

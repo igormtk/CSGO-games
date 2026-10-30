@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import { Crosshair } from "lucide-react";
 import { Navigation } from "../navigations/Navigation";
 import { LanguageSelect } from "./LanguageSelect";

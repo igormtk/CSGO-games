@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import { BarChart3, BookOpen } from "lucide-react";
 import { statPages } from "@/data/articles/stats";
 import { strategyGuides } from "@/data/articles/strategyGuides";

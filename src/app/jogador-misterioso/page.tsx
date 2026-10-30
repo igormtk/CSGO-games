@@ -10,7 +10,7 @@ import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
@@ -339,7 +339,7 @@ function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: 
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${won ? guesses.length : "X"}/${MAX_GUESSES} · 🔥 ${stats.currentStreak}`,
       rows,
-      `${window.location.origin}/jogador-misterioso${archived ? `?date=${dateKey}` : ""}`,
+      getShareUrl(`/jogador-misterioso${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
 
     try {

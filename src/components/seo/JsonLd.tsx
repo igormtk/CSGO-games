@@ -1,5 +1,7 @@
 import { gameGuides } from "@/data/gameGuides";
 import type { GameId } from "@/data/gameGuides";
+import { htmlLang, localizePath } from "@/lib/i18n";
+import type { Language } from "@/lib/i18n";
 import { siteName, siteUrl } from "@/lib/site";
 
 // Dados estruturados (schema.org) que o Google e as IAs usam para entender a página.
@@ -13,7 +15,10 @@ export function JsonLd({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-export const gameJsonLd = (game: GameId, path: string, name: string, description: string) => ({
+// Endereço da página no idioma dela (/pt/bingo); os @id ficam sem prefixo, iguais nos três idiomas.
+const pageUrl = (path: string, language: Language) => `${siteUrl}${localizePath(path, language)}`;
+
+export const gameJsonLd = (game: GameId, path: string, name: string, description: string, language: Language) => ({
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -21,12 +26,12 @@ export const gameJsonLd = (game: GameId, path: string, name: string, description
       "@id": `${siteUrl}${path}#game`,
       name,
       description,
-      url: `${siteUrl}${path}`,
+      url: pageUrl(path, language),
       applicationCategory: "GameApplication",
       genre: ["Trivia", "Puzzle", "Esports"],
       gamePlatform: "Web browser",
       operatingSystem: "Any",
-      inLanguage: ["en", "pt-BR", "es"],
+      inLanguage: htmlLang(language),
       isAccessibleForFree: true,
       offers: { "@type": "Offer", price: 0, priceCurrency: "BRL" },
       about: { "@type": "VideoGame", name: "Counter-Strike 2" },
@@ -35,8 +40,9 @@ export const gameJsonLd = (game: GameId, path: string, name: string, description
     },
     {
       "@type": "FAQPage",
-      "@id": `${siteUrl}${path}#faq`,
-      mainEntity: gameGuides[game].en.faq.map((item) => ({
+      "@id": `${pageUrl(path, language)}#faq`,
+      inLanguage: htmlLang(language),
+      mainEntity: gameGuides[game][language].faq.map((item) => ({
         "@type": "Question",
         name: item.question,
         acceptedAnswer: { "@type": "Answer", text: item.answer },
@@ -45,7 +51,11 @@ export const gameJsonLd = (game: GameId, path: string, name: string, description
   ],
 });
 
-export const siteJsonLd = (games: { name: string; path: string; description: string }[], description: string) => ({
+export const siteJsonLd = (
+  games: { name: string; path: string; description: string }[],
+  description: string,
+  language: Language
+) => ({
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -70,7 +80,7 @@ export const siteJsonLd = (games: { name: string; path: string; description: str
       itemListElement: games.map((game, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        url: `${siteUrl}${game.path}`,
+        url: pageUrl(game.path, language),
         name: game.name,
         description: game.description,
       })),

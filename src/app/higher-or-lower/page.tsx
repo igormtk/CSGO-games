@@ -10,7 +10,7 @@ import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBr
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getGameDateKey, hashDate } from "@/lib/daily";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { useHydrated } from "@/lib/useHydrated";
 
@@ -240,7 +240,7 @@ function HigherOrLowerGame({ copy }: { copy: HigherLowerCopy }) {
   };
 
   const handleShare = async () => {
-    const shareText = [`CS Games · ${copy.eyebrow}`, copy.shareLine(score), `${window.location.origin}/higher-or-lower`].join("\n");
+    const shareText = [`CS Games · ${copy.eyebrow}`, copy.shareLine(score), getShareUrl("/higher-or-lower")].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);
       setShareStatus("copied");

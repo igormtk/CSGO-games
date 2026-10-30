@@ -1,26 +1,47 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useSyncExternalStore } from "react";
+import type { ReactNode } from "react";
+import { DEFAULT_LANGUAGE, LANGUAGES, htmlLang, isLanguage, localizePath, splitLanguage } from "./i18n";
+import type { Language } from "./i18n";
+
+export { DEFAULT_LANGUAGE, LANGUAGES };
+export type { Language };
 
 // Idioma escolhido vale para o site todo. A chave antiga do bingo continua para não perder a escolha.
-export type Language = "pt" | "en" | "es";
-
-// Inglês é o idioma base: é o que vai no HTML (buscadores e IAs) e o padrão de quem não tem
-// navegador em português ou espanhol.
-export const DEFAULT_LANGUAGE: Language = "en";
-
-export const LANGUAGES: { code: Language; name: string }[] = [
-  { code: "en", name: "English" },
-  { code: "pt", name: "Português" },
-  { code: "es", name: "Español" },
-];
-
-const htmlLang = (language: Language) => (language === "pt" ? "pt-BR" : language);
-
 const LANGUAGE_KEY = "cs-bingo-language";
 const LANGUAGE_EVENT = "cs-language-change";
 
-const isLanguage = (value: unknown): value is Language => LANGUAGES.some((language) => language.code === value);
+// Idioma do endereço (/pt/... ou /es/...), lido pelo layout no servidor. Nele o idioma é fixo, inclusive
+// no HTML do servidor; sem prefixo vale a escolha salva (e o inglês no HTML).
+const RouteLanguageContext = createContext<Language | undefined>(undefined);
+
+export function RouteLanguageProvider({ language, children }: { language?: Language; children: ReactNode }) {
+  return createElement(RouteLanguageContext.Provider, { value: language }, children);
+}
+
+export const useRouteLanguage = () => useContext(RouteLanguageContext);
+
+// Link interno no idioma do endereço atual: em /pt/..., "/bingo" vira "/pt/bingo".
+export const useLocalizePath = () => {
+  const routeLanguage = useRouteLanguage();
+  return useCallback((path: string) => localizePath(path, routeLanguage), [routeLanguage]);
+};
+
+// Link do resultado compartilhado, no idioma de quem compartilha: quem recebe abre o jogo no mesmo
+// idioma, e cada link espalhado aponta para a página daquele idioma.
+export const getShareUrl = (path: string) => {
+  const language = splitLanguage(window.location.pathname).language ?? getStoredLanguage();
+  return `${window.location.origin}${localizePath(path, language)}`;
+};
+
+// Leva para o mesmo endereço em outro idioma (recarrega: o idioma do endereço vem do servidor).
+export const goToLanguage = (language: Language) => {
+  const { path } = splitLanguage(window.location.pathname);
+  // Recarregar de propósito: o layout (que guarda o idioma do endereço) não é refeito na navegação do Next.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.assign(`${localizePath(path, language)}${window.location.search}`);
+};
 
 export const getStoredLanguage = (): Language => {
   if (typeof window === "undefined") return DEFAULT_LANGUAGE;
@@ -73,10 +94,13 @@ const subscribeToLanguage = (onChange: () => void) => {
   };
 };
 
-// No servidor e na hidratação vale o idioma base (o do HTML); no navegador, o salvo ou o do
-// navegador. O useSyncExternalStore faz essa troca sem divergir na hidratação.
+// Em /pt/... e /es/... vale o idioma do endereço, já no servidor. Sem prefixo, no servidor e na
+// hidratação vale o idioma base (o do HTML); no navegador, o salvo ou o do navegador. O
+// useSyncExternalStore faz essa troca sem divergir na hidratação.
 export const useLanguage = () => {
-  const language = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => DEFAULT_LANGUAGE);
+  const routeLanguage = useRouteLanguage();
+  const storedLanguage = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => DEFAULT_LANGUAGE);
+  const language = routeLanguage ?? storedLanguage;
 
   useEffect(() => {
     document.documentElement.lang = htmlLang(language);

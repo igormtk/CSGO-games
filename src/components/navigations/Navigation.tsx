@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Link from "@/components/LocalLink";
+import { splitLanguage } from "@/lib/i18n";
 import { Grid3x3, ScanFace, Home, Menu, UserSearch, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -27,7 +28,8 @@ const menuCopy: Record<Language, { nav: string; open: string; close: string }> =
 };
 
 export function Navigation() {
-  const pathname = usePathname();
+  // Sem o prefixo de idioma: "/pt/bingo" e "/bingo" marcam o mesmo item.
+  const pathname = splitLanguage(usePathname()).path;
   // Guarda a página em que o menu foi aberto: ao navegar, deixa de bater e o menu fecha.
   const [openOnPath, setOpenOnPath] = useState<string>();
   const open = openOnPath === pathname;

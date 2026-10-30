@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
