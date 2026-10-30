@@ -20,6 +20,7 @@ ${siteName} (${siteUrl}) is a set of Counter-Strike (CS2 and CS:GO) mini games f
 - [Mystery player](${siteUrl}/jogador-misterioso): daily guessing game. Find the pro player of the day in up to 6 guesses; each guess compares current team, country, region, role, Majors and HLTV Top 20 years with the mystery player.
 - [Career path](${siteUrl}/career-path): daily guessing game. The teams a pro player has played for are shown in order, starting with 2 revealed; each miss reveals the next team, then the country and the role. 6 guesses.
 - [Guess the player](${siteUrl}/guess-name): daily challenge. 20 pro players' nicknames, the same for everyone; the player picks each real name from 4 options within 10 seconds per name, with 3 lives and one attempt per day.
+- [Higher or lower](${siteUrl}/higher-or-lower): endless game, no daily limit. Two pro players are shown; the top one reveals a number (Major titles, HLTV Top 20 years or career teams) and the player says whether the bottom one has more or less. There are no ties. Each right answer extends the streak; one miss ends the run.
 
 ## Guides and stats
 

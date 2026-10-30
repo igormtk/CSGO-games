@@ -39,6 +39,7 @@ const games = [
   { name: "CS Bingo", path: "/bingo", description: "Daily 4x4 board of Counter-Strike pro players." },
   { name: "Mystery player", path: "/jogador-misterioso", description: "Find today's pro player in 6 guesses." },
   { name: "Guess the player", path: "/guess-name", description: "Name the pro players' real names." },
+  { name: "Higher or lower", path: "/higher-or-lower", description: "Endless streak game comparing pro players' stats." },
 ];
 
 export const viewport: Viewport = {

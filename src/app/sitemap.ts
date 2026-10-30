@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${siteUrl}/jogador-misterioso`, lastModified, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/career-path`, lastModified, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/guess-name`, lastModified, changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/higher-or-lower`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${siteUrl}/guides`, changeFrequency: "monthly", priority: 0.6 },
     ...strategyGuides.map((guide) => ({ url: `${siteUrl}/guides/${guide.slug}`, changeFrequency: "monthly" as const, priority: 0.6 })),
     // As estatísticas acompanham o sync semanal dos times.
