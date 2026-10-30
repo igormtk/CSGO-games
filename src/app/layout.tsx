@@ -41,6 +41,7 @@ const games = [
   { name: "Guess the player", path: "/guess-name", description: "Name the pro players' real names." },
   { name: "Lineup", path: "/lineup", description: "Name 5 pro players who played for today's team." },
   { name: "Sort the 16", path: "/groups", description: "Sort 16 pro players into 4 hidden groups." },
+  { name: "60 seconds", path: "/60-seconds", description: "Name as many pro players matching today's theme in 60 seconds." },
   { name: "Higher or lower", path: "/higher-or-lower", description: "Endless streak game comparing pro players' stats." },
 ];
 

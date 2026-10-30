@@ -44,9 +44,10 @@ export const matchesCriterion = (player: CsPlayer, criterion: GroupCriterion) =>
   }
 };
 
-const countMatches = (criterion: GroupCriterion) => csPlayers.filter((player) => matchesCriterion(player, criterion)).length;
+export const countMatches = (criterion: GroupCriterion) => csPlayers.filter((player) => matchesCriterion(player, criterion)).length;
 
-const candidateCriteria: GroupCriterion[] = [
+// Critérios conhecidos o bastante para virar tema (também usados pelo 60 segundos).
+export const candidateCriteria: GroupCriterion[] = [
   // Times de base (academy/NXT) e times com poucos nomes na base ficam de fora: ninguém conhece.
   ...csTeams
     .filter((team) => !/academy|nxt/i.test(team.id) && countMatches({ kind: "team", value: team.id }) >= MIN_TEAM_PLAYERS)

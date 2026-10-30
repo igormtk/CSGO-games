@@ -3,7 +3,7 @@ import type { Language } from "@/lib/language";
 // Texto de "como jogar" de cada jogo. Aparece abaixo do jogo (já no HTML, em inglês, para
 // buscadores e IAs que não executam JavaScript) e alimenta o FAQ dos dados estruturados.
 
-export type GameId = "bingo" | "mystery" | "guessName" | "careerPath" | "higherLower" | "lineup" | "groups";
+export type GameId = "bingo" | "mystery" | "guessName" | "careerPath" | "higherLower" | "lineup" | "groups" | "sixtySeconds";
 
 type GuideCopy = {
   heading: string;
@@ -427,6 +427,68 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
         {
           question: "¿Qué tipo de grupos pueden aparecer?",
           answer: `Jugadores que pasaron por el mismo equipo, de la misma nacionalidad, con el mismo rol (AWPer o IGL), MVPs de Major, quienes tienen 2 o más títulos de Major o quienes pasaron 5 o más años en el Top 20 de HLTV.`,
+        },
+        { question: "¿Puedo jugar días anteriores?", answer: "Sí. El archivo de desafíos tiene todos los días desde enero de 2026; no cuentan para la racha." },
+        ...commonFaq.es,
+      ],
+    },
+  },
+  sixtySeconds: {
+    pt: {
+      heading: "Como jogar o 60 segundos",
+      intro:
+        "O 60 segundos é um desafio diário de Counter-Strike: aparece um tema, como um time, um país ou um feito, e você digita o máximo de pro players que se encaixam nele em um minuto. O tema é o mesmo para todo mundo e muda à meia-noite (horário de Brasília).",
+      steps: [
+        "Leia o tema do dia e clique em Começar: o relógio de 60 segundos dispara.",
+        "Digite o nick de um jogador e aperte Enter. Maiúsculas, acentos e espaços não importam.",
+        "Não há sugestões enquanto você digita: vale o que você lembrar. Nomes fora do tema não tiram pontos.",
+        "No fim aparecem os jogadores da nossa base que faltaram. Recarregar a página não pausa o relógio.",
+      ],
+      faqHeading: "Perguntas frequentes",
+      faq: [
+        {
+          question: "Por que um jogador que eu digitei não valeu?",
+          answer: "Só contam jogadores da nossa base (mais de 200 pro players do Liquipedia), escritos com o nick usado lá. Para times, valem os times principais da carreira.",
+        },
+        { question: "Posso jogar dias anteriores?", answer: "Sim. O arquivo de desafios tem todos os dias desde janeiro de 2026; eles não contam para a sequência." },
+        ...commonFaq.pt,
+      ],
+    },
+    en: {
+      heading: "How to play 60 seconds",
+      intro:
+        "60 seconds is a daily Counter-Strike challenge: a theme appears, like a team, a country or an achievement, and you type as many matching pro players as you can in one minute. Everyone gets the same theme, and a new one arrives at midnight Brasília time (UTC−3).",
+      steps: [
+        "Read today's theme and click Start: the 60-second clock begins.",
+        "Type a player's nickname and press Enter. Capitals, accents and spaces don't matter.",
+        "There are no suggestions while you type: it's all memory. Names outside the theme don't cost points.",
+        "At the end you see the players in our database you missed. Reloading the page doesn't pause the clock.",
+      ],
+      faqHeading: "FAQ",
+      faq: [
+        {
+          question: "Why didn't a player I typed count?",
+          answer: "Only players in our database count (200+ pro players from Liquipedia), spelled with the nickname used there. For teams, each player's main career teams count.",
+        },
+        { question: "Can I play past days?", answer: "Yes. The challenge archive has every day since January 2026; they don't count toward your streak." },
+        ...commonFaq.en,
+      ],
+    },
+    es: {
+      heading: "Cómo jugar a 60 segundos",
+      intro:
+        "60 segundos es un desafío diario de Counter-Strike: aparece un tema, como un equipo, un país o un logro, y escribes todos los pro players que encajan en él en un minuto. El tema es el mismo para todos y cambia a medianoche (hora de Brasilia).",
+      steps: [
+        "Lee el tema del día y haz clic en Empezar: arranca el reloj de 60 segundos.",
+        "Escribe el nick de un jugador y pulsa Enter. Mayúsculas, acentos y espacios no importan.",
+        "No hay sugerencias mientras escribes: vale lo que recuerdes. Los nombres fuera del tema no restan.",
+        "Al final aparecen los jugadores de nuestra base que faltaron. Recargar la página no pausa el reloj.",
+      ],
+      faqHeading: "Preguntas frecuentes",
+      faq: [
+        {
+          question: "¿Por qué no valió un jugador que escribí?",
+          answer: "Solo cuentan jugadores de nuestra base (más de 200 pro players de Liquipedia), escritos con el nick que se usa allí. Para equipos, valen los equipos principales de la carrera.",
         },
         { question: "¿Puedo jugar días anteriores?", answer: "Sí. El archivo de desafíos tiene todos los días desde enero de 2026; no cuentan para la racha." },
         ...commonFaq.es,

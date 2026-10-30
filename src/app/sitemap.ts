@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${siteUrl}/guess-name`, lastModified, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/lineup`, lastModified, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/groups`, lastModified, changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/60-seconds`, lastModified, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/higher-or-lower`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${siteUrl}/archive`, lastModified, changeFrequency: "daily", priority: 0.7 },
     { url: `${siteUrl}/guides`, changeFrequency: "monthly", priority: 0.6 },

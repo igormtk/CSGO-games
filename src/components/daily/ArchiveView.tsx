@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Check, Grid3x3, LayoutGrid, Route, ScanFace, Shirt, UserSearch } from "lucide-react";
+import { Check, Grid3x3, LayoutGrid, Route, ScanFace, Shirt, Timer, UserSearch } from "lucide-react";
 import { getArchiveDates, getGameDateKey, getPuzzleNumber } from "@/lib/daily";
 import { cn } from "@/lib/utils";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
@@ -38,6 +38,7 @@ const dailyGames = [
     icon: LayoutGrid,
     title: { pt: "Agrupe os 16", en: "Sort the 16", es: "Agrupa los 16" },
   },
+  { path: "/60-seconds", storageKey: "cs-sixty-daily-v1", icon: Timer, title: { pt: "60 segundos", en: "60 seconds", es: "60 segundos" } },
 ];
 
 const viewCopy: Record<Language, { title: string; intro: string; played: string; locale: string }> = {
