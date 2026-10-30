@@ -8,6 +8,7 @@ import { getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
@@ -233,6 +234,7 @@ function GuessNameGame({
     [queue, questionIndex, dateKey]
   );
   const partner = useMemo(() => getPartnerFor("post-game", dateKey, hashDate(dateKey)), [dateKey]);
+  const [breakSeen, markBreakSeen] = useBreakSeen(`${gameKey}-break`);
   const secondsLeft = deadline ? Math.max(0, Math.ceil((deadline - now) / 1000)) : SECONDS_PER_NAME;
   const timeShare = deadline ? Math.max(0, (deadline - now) / (SECONDS_PER_NAME * 1000)) : 1;
 
@@ -456,7 +458,8 @@ function GuessNameGame({
         </div>
       )}
 
-      {isOver ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && breakSeen ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && !breakSeen ? <PartnerBreakModal partner={partner} onDone={markBreakSeen} /> : null}
     </main>
   );
 }

@@ -263,11 +263,11 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
     pt: {
       heading: "Como jogar o Mais ou menos",
       intro:
-        "O Mais ou menos é um jogo infinito de Counter-Strike: dois pro players aparecem e você diz qual tem mais títulos de Major, mais anos no Top 20 da HLTV ou mais times na carreira. Não tem limite diário.",
+        "O Mais ou menos é um jogo infinito de Counter-Strike: dois pro players aparecem lado a lado e você diz qual tem mais títulos de Major ou mais anos no Top 20 da HLTV. Não tem limite diário.",
       steps: [
-        "O jogador de cima mostra o número da rodada; o de baixo fica escondido.",
-        "Escolha Mais se acha que o de baixo tem um número maior, ou Menos se acha que tem um número menor. Nunca há empate.",
-        "Acertou? O jogador de baixo sobe, um novo aparece e a categoria pode mudar.",
+        "Leia a pergunta da rodada, como \"Quem tem mais títulos de Major?\".",
+        "O jogador da esquerda mostra o número; o da direita fica escondido. Toque em quem você acha que tem mais. Nunca há empate.",
+        "Acertou? O jogador da direita passa para a esquerda, um novo aparece e a pergunta pode mudar.",
         "Um erro encerra a partida. Compartilhe a sua sequência e tente bater o seu recorde.",
       ],
       faqHeading: "Perguntas frequentes",
@@ -279,11 +279,11 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
     en: {
       heading: "How to play Higher or lower",
       intro:
-        "Higher or lower is an endless Counter-Strike game: two pro players appear and you say which one has more Major titles, more years in the HLTV Top 20 or more teams in their career. There is no daily limit.",
+        "Higher or lower is an endless Counter-Strike game: two pro players appear side by side and you say which one has more Major titles or more years in the HLTV Top 20. There is no daily limit.",
       steps: [
-        "The top player shows the number for the round; the bottom one stays hidden.",
-        "Pick Higher if you think the bottom player has a bigger number, or Lower if you think it's smaller. There are never ties.",
-        "Right? The bottom player moves up, a new one appears and the category may change.",
+        "Read the round's question, like \"Who has more Major titles?\".",
+        "The player on the left shows the number; the one on the right stays hidden. Tap whoever you think has more. There are never ties.",
+        "Right? The player on the right moves to the left, a new one appears and the question may change.",
         "One miss ends the run. Share your streak and try to beat your record.",
       ],
       faqHeading: "FAQ",
@@ -295,11 +295,11 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
     es: {
       heading: "Cómo jugar a Más o menos",
       intro:
-        "Más o menos es un juego infinito de Counter-Strike: aparecen dos pro players y dices cuál tiene más títulos de Major, más años en el Top 20 de HLTV o más equipos en su carrera. No tiene límite diario.",
+        "Más o menos es un juego infinito de Counter-Strike: aparecen dos pro players lado a lado y dices cuál tiene más títulos de Major o más años en el Top 20 de HLTV. No tiene límite diario.",
       steps: [
-        "El jugador de arriba muestra el número de la ronda; el de abajo queda oculto.",
-        "Elige Más si crees que el de abajo tiene un número mayor, o Menos si crees que es menor. Nunca hay empate.",
-        "¿Acertaste? El jugador de abajo sube, aparece uno nuevo y la categoría puede cambiar.",
+        "Lee la pregunta de la ronda, como \"¿Quién tiene más títulos de Major?\".",
+        "El jugador de la izquierda muestra el número; el de la derecha queda oculto. Toca a quien creas que tiene más. Nunca hay empate.",
+        "¿Acertaste? El jugador de la derecha pasa a la izquierda, aparece uno nuevo y la pregunta puede cambiar.",
         "Un error termina la partida. Comparte tu racha e intenta superar tu récord.",
       ],
       faqHeading: "Preguntas frecuentes",
@@ -440,8 +440,8 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
         "O 60 segundos é um desafio diário de Counter-Strike: aparece um tema, como um time, um país ou um feito, e você digita o máximo de pro players que se encaixam nele em um minuto. O tema é o mesmo para todo mundo e muda à meia-noite (horário de Brasília).",
       steps: [
         "Leia o tema do dia e clique em Começar: o relógio de 60 segundos dispara.",
-        "Digite o nick de um jogador e aperte Enter. Maiúsculas, acentos e espaços não importam.",
-        "Não há sugestões enquanto você digita: vale o que você lembrar. Nomes fora do tema não tiram pontos.",
+        "Comece a digitar o nick e escolha o jogador na lista, ou aperte Enter para ficar com o primeiro.",
+        "A lista mostra jogadores de toda a base, não só do tema: ela ajuda a escrever, mas a resposta é sua. Nomes fora do tema não tiram pontos.",
         "No fim aparecem os jogadores da nossa base que faltaram. Recarregar a página não pausa o relógio.",
       ],
       faqHeading: "Perguntas frequentes",
@@ -460,8 +460,8 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
         "60 seconds is a daily Counter-Strike challenge: a theme appears, like a team, a country or an achievement, and you type as many matching pro players as you can in one minute. Everyone gets the same theme, and a new one arrives at midnight Brasília time (UTC−3).",
       steps: [
         "Read today's theme and click Start: the 60-second clock begins.",
-        "Type a player's nickname and press Enter. Capitals, accents and spaces don't matter.",
-        "There are no suggestions while you type: it's all memory. Names outside the theme don't cost points.",
+        "Start typing the nickname and pick the player from the list, or press Enter to take the first one.",
+        "The list shows players from the whole database, not just the theme: it helps with spelling, but the answer is yours. Names outside the theme don't cost points.",
         "At the end you see the players in our database you missed. Reloading the page doesn't pause the clock.",
       ],
       faqHeading: "FAQ",
@@ -480,8 +480,8 @@ export const gameGuides: Record<GameId, Record<Language, GuideCopy>> = {
         "60 segundos es un desafío diario de Counter-Strike: aparece un tema, como un equipo, un país o un logro, y escribes todos los pro players que encajan en él en un minuto. El tema es el mismo para todos y cambia a medianoche (hora de Brasilia).",
       steps: [
         "Lee el tema del día y haz clic en Empezar: arranca el reloj de 60 segundos.",
-        "Escribe el nick de un jugador y pulsa Enter. Mayúsculas, acentos y espacios no importan.",
-        "No hay sugerencias mientras escribes: vale lo que recuerdes. Los nombres fuera del tema no restan.",
+        "Empieza a escribir el nick y elige al jugador de la lista, o pulsa Enter para quedarte con el primero.",
+        "La lista muestra jugadores de toda la base, no solo del tema: ayuda a escribir, pero la respuesta es tuya. Los nombres fuera del tema no restan.",
         "Al final aparecen los jugadores de nuestra base que faltaron. Recargar la página no pausa el reloj.",
       ],
       faqHeading: "Preguntas frecuentes",

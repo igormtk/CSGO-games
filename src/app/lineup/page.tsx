@@ -8,6 +8,7 @@ import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
@@ -179,6 +180,7 @@ function LineupGame({ copy, dateKey, archived }: { copy: LineupCopy; dateKey: st
   const won = hits.length >= LINEUP_SIZE;
   const isOver = won || misses >= MAX_MISSES;
   const partner = useMemo(() => getPartnerFor("post-game", dateKey, hashDate(dateKey)), [dateKey]);
+  const [breakSeen, markBreakSeen] = useBreakSeen(`${gameKey}-break`);
   const findPlayer = (id: string) => csPlayers.find((player) => player.id === id);
 
   const suggestions = useMemo(() => {
@@ -376,7 +378,8 @@ function LineupGame({ copy, dateKey, archived }: { copy: LineupCopy; dateKey: st
         </ul>
       ) : null}
 
-      {isOver ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && breakSeen ? <PartnerSpot partner={partner} label={copy.partnerLabel} variant="card" /> : null}
+      {isOver && !breakSeen ? <PartnerBreakModal partner={partner} onDone={markBreakSeen} /> : null}
     </main>
   );
 }

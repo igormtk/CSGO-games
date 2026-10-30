@@ -3,7 +3,7 @@ import { GameGuide } from "@/components/seo/GameGuide";
 import { JsonLd, gameJsonLd } from "@/components/seo/JsonLd";
 
 const description =
-  "Endless Counter-Strike game: two pro players, guess who has more Major titles, HLTV Top 20 years or career teams. Keep the streak going.";
+  "Endless Counter-Strike game: two pro players, guess who has more Major titles or more years in the HLTV Top 20. Keep the streak going.";
 
 export const metadata: Metadata = {
   title: "Higher or lower",
