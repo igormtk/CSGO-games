@@ -8,7 +8,7 @@ const rawClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT?.trim();
 // Validado porque o valor entra na política de conteúdo, no ads.txt e no HTML.
 export const adsenseClient = rawClient && /^ca-pub-\d{10,20}$/.test(rawClient) ? rawClient : undefined;
 
-// "pub-..." é o formato do ads.txt e da meta tag de verificação.
+// "pub-..." é o formato do ads.txt. A meta tag de verificação usa o código completo (ca-pub-...).
 export const adsensePublisherId = adsenseClient?.replace(/^ca-/, "");
 
 const slot = (value: string | undefined) => (value && /^\d{6,20}$/.test(value.trim()) ? value.trim() : undefined);

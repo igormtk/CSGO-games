@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
 import { JsonLd, siteJsonLd } from "@/components/seo/JsonLd";
 import { SideRails } from "@/components/partners/SideRails";
-import { adsensePublisherId, adsenseScriptSrc } from "@/lib/adsense";
+import { adsenseClient, adsenseScriptSrc } from "@/lib/adsense";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   // (Hostinger); o Bing Webmaster Tools usa esta meta tag. Os códigos são públicos por natureza.
   verification: { other: { "msvalidate.01": "B1CC63B45848CAE0795F86FA799A8070" } },
   // Confirma ao AdSense que o site é desta conta (junto com o /ads.txt).
-  ...(adsensePublisherId ? { other: { "google-adsense-account": adsensePublisherId } } : {}),
+  ...(adsenseClient ? { other: { "google-adsense-account": adsenseClient } } : {}),
 };
 
 const games = [
