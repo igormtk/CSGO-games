@@ -12,7 +12,7 @@ import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBr
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 
@@ -213,7 +213,7 @@ function LineupGame({ copy, dateKey, archived }: { copy: LineupCopy; dateKey: st
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${team.name} · ${hits.length}/${LINEUP_SIZE} · 🔥 ${stats.currentStreak}`,
       guessIds.map((id) => (isHit(id) ? "🟩" : "🟥")).join(""),
-      `${window.location.origin}/lineup${archived ? `?date=${dateKey}` : ""}`,
+      getShareUrl(`/lineup${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);

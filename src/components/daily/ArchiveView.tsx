@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import { useSearchParams } from "next/navigation";
 import { Check, Grid3x3, LayoutGrid, Route, ScanFace, Shirt, Timer, UserSearch } from "lucide-react";
 import { getArchiveDates, getGameDateKey, getPuzzleNumber } from "@/lib/daily";

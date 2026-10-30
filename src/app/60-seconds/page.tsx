@@ -13,7 +13,7 @@ import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
 import { MIN_MAJORS, MIN_TOP20_YEARS, candidateCriteria, countMatches, matchesCriterion } from "@/lib/groups";
 import type { GroupCriterion } from "@/lib/groups";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
@@ -341,7 +341,7 @@ function SixtyGame({
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       label,
       `⏱️ ${game.foundIds.length}/${answers.length} · 🔥 ${stats.currentStreak}`,
-      `${window.location.origin}/60-seconds${archived ? `?date=${dateKey}` : ""}`,
+      getShareUrl(`/60-seconds${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);

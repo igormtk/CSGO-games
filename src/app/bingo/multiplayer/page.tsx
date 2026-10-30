@@ -8,6 +8,7 @@ import type { CsPlayer } from "@/data/csBingoDatabase";
 import { CriterionIcon } from "@/components/bingo/CriterionIcon";
 import { GRID_SIZE, createBoard, createPlayerQueue, playerFitsCell } from "@/lib/bingo/board";
 import { comboJoiners, getCellCopy, getCriterionCopy } from "@/lib/bingo/copy";
+import { localizePath, splitLanguage } from "@/lib/i18n";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { getSupabase } from "@/lib/supabase";
@@ -208,7 +209,10 @@ const readModeFromUrl = (): RoomMode | undefined => {
   return value === "timed" || value === "classic" ? value : undefined;
 };
 
-const roomUrl = (code: string, mode?: RoomMode) => `/bingo/multiplayer?sala=${code}${mode ? `&modo=${mode}` : ""}`;
+// Mantém o prefixo de idioma do endereço atual (/pt/bingo/multiplayer?sala=...).
+const inCurrentLanguage = (path: string) => localizePath(path, splitLanguage(window.location.pathname).language);
+const roomUrl = (code: string, mode?: RoomMode) =>
+  inCurrentLanguage(`/bingo/multiplayer?sala=${code}${mode ? `&modo=${mode}` : ""}`);
 
 // Mais pontos primeiro; no empate, quem terminou antes.
 const rankPlayers = (players: PlayerState[]) =>
@@ -255,7 +259,7 @@ function Multiplayer({ copy, language }: { copy: MultiplayerCopy; language: Lang
   const leaveRoom = () => {
     setJoined(false);
     setRoom("");
-    window.history.replaceState(null, "", "/bingo/multiplayer");
+    window.history.replaceState(null, "", inCurrentLanguage("/bingo/multiplayer"));
   };
 
   if (joined && room) {

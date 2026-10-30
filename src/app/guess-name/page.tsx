@@ -12,7 +12,7 @@ import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBr
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
@@ -291,7 +291,7 @@ function GuessNameGame({
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${score}/${DAILY_NAMES} · 🔥 ${stats.currentStreak}`,
       outcomes.map((outcome) => outcomeEmoji[outcome]).join(""),
-      `${window.location.origin}/guess-name${archived ? `?date=${dateKey}` : ""}`,
+      getShareUrl(`/guess-name${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);

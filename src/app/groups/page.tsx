@@ -12,7 +12,7 @@ import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPreviousDateKey, getPuzzleNumber, hashDate } from "@/lib/daily";
 import { GROUP_COUNT, GROUP_SIZE, MIN_MAJORS, MIN_TOP20_YEARS, createGroupsPuzzle } from "@/lib/groups";
 import type { GroupCriterion, PuzzleGroup } from "@/lib/groups";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
@@ -278,7 +278,7 @@ function GroupsGame({
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${solved.length}/${GROUP_COUNT} · 🔥 ${stats.currentStreak}`,
       ...attempts.map((attempt) => attempt.map((id) => groupEmoji[groupIndexOf(id)]).join("")),
-      `${window.location.origin}/groups${archived ? `?date=${dateKey}` : ""}`,
+      getShareUrl(`/groups${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);

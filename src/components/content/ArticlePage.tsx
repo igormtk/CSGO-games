@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { useDocumentTitle, useLanguage } from "@/lib/language";

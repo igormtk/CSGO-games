@@ -1,11 +1,9 @@
-import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { pageSeo } from "@/data/pageSeo";
 import { adsenseClient } from "@/lib/adsense";
+import { localizedMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Privacy policy",
-  alternates: { canonical: "/privacidade" },
-};
+export const generateMetadata = () => localizedMetadata(pageSeo.privacy);
 
 // Os textos sobre o Google só aparecem quando o AdSense está configurado (ver src/lib/adsense.ts).
 const googleAds = Boolean(adsenseClient);

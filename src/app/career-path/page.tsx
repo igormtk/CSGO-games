@@ -12,7 +12,7 @@ import { PartnerBreakModal } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
@@ -234,7 +234,7 @@ function CareerGame({
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${won ? guessIds.length : "X"}/${MAX_GUESSES} · 🔥 ${stats.currentStreak}`,
       squares,
-      `${window.location.origin}/career-path${archived ? `?date=${dateKey}` : ""}`,
+      getShareUrl(`/career-path${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
     try {
       await navigator.clipboard.writeText(shareText);

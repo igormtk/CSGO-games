@@ -1,13 +1,10 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import { LegalPage } from "@/components/legal/LegalPage";
 import { csPlayers, csTeams } from "@/data/csBingoDatabase";
+import { pageSeo } from "@/data/pageSeo";
+import { localizedMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: "Who makes CS Games, where the Counter-Strike data comes from and how the daily challenges work.",
-  alternates: { canonical: "/about" },
-};
+export const generateMetadata = () => localizedMetadata(pageSeo.about);
 
 const players = csPlayers.length;
 const teams = csTeams.length;

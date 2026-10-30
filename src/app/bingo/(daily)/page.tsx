@@ -21,7 +21,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import {
   bingoCriteria,
   csPlayers,
@@ -40,7 +40,7 @@ import { TeamBadge } from "@/components/teams/TeamBadge";
 import { ArchiveLink, ArchiveTag } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
 import { countryFlags } from "@/data/countryFlags";
-import { useDocumentTitle, useLanguage } from "@/lib/language";
+import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
 import { useHydrated } from "@/lib/useHydrated";
 import type { Language } from "@/lib/language";
@@ -750,7 +750,7 @@ function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }
       `🎯 ${score} ${copy.points} · ${"❤️".repeat(livesLeft)}${"🖤".repeat(MAX_LIVES - livesLeft)} · 🔥 ${stats.currentStreak}`,
       ...(mode === "timed" ? [copy.timedShare] : []),
       grid,
-      `${window.location.origin}/bingo${archived ? `?date=${dateKey}` : ""}`,
+      getShareUrl(`/bingo${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
 
     try {

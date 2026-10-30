@@ -1,7 +1,7 @@
 "use client";
 
 import { DefaultCard } from "@/components/cards/DefaultCard";
-import Link from "next/link";
+import Link from "@/components/LocalLink";
 import { motion } from "framer-motion";
 import { ArrowUpDown, Grid3x3, LayoutGrid, Route, ScanFace, Shirt, Timer, UserSearch, Users } from "lucide-react";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";

@@ -11,6 +11,8 @@ export function GET() {
 
 > ${siteDescription} Free, no sign-up, available in English, Portuguese and Spanish.
 
+Every page exists in three languages: English at the plain address (${siteUrl}/bingo), Portuguese under /pt (${siteUrl}/pt/bingo) and Spanish under /es (${siteUrl}/es/bingo).
+
 ${siteName} (${siteUrl}) is a set of Counter-Strike (CS2 and CS:GO) mini games for fans of the pro scene. Daily challenges reset at midnight Brasília time (UTC−3) and are the same for every player. The database covers ${csPlayers.length} pro players and ${csTeams.length} teams, sourced from Liquipedia (CC BY-SA): teams, career history, nationality, roles, Major titles, Major MVPs and HLTV Top 20 appearances.
 
 ## Games
