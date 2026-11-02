@@ -2,7 +2,7 @@ import { GameSeo } from "@/components/seo/GameSeo";
 import { pageSeo } from "@/data/pageSeo";
 import { localizedMetadata } from "@/lib/seo";
 
-export const generateMetadata = () => localizedMetadata(pageSeo.sixtySeconds);
+export const generateMetadata = () => localizedMetadata(pageSeo.sixtySeconds, { game: "sixtySeconds" });
 
 export default function SixtySecondsLayout({ children }: { children: React.ReactNode }) {
   return (

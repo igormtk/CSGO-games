@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Check, Lock, Search, Share2, Trophy, X } from "lucide-react";
+import { ArrowRight, Check, Lock, Search, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag, getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { ShareResult } from "@/components/daily/ShareResult";
 import Link from "@/components/LocalLink";
 import { PartnerBreakModal } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
@@ -47,9 +48,6 @@ const careerCopy = {
     played: "Jogos",
     wins: "Vitórias",
     streak: "Sequência",
-    share: "Compartilhar resultado",
-    copied: "Resultado copiado!",
-    copyFailed: "Não foi possível copiar o resultado.",
     nextChallenge: "Próximo desafio em",
     guesses: "Palpites",
     partnerLabel: "Publicidade",
@@ -71,9 +69,6 @@ const careerCopy = {
     played: "Played",
     wins: "Wins",
     streak: "Streak",
-    share: "Share result",
-    copied: "Result copied!",
-    copyFailed: "Could not copy the result.",
     nextChallenge: "Next challenge in",
     guesses: "Guesses",
     partnerLabel: "Advertisement",
@@ -95,9 +90,6 @@ const careerCopy = {
     played: "Partidas",
     wins: "Victorias",
     streak: "Racha",
-    share: "Compartir resultado",
-    copied: "¡Resultado copiado!",
-    copyFailed: "No se pudo copiar el resultado.",
     nextChallenge: "Próximo desafío en",
     guesses: "Intentos",
     partnerLabel: "Publicidad",
@@ -190,7 +182,6 @@ function CareerGame({
   const [guessIds, setGuessIds] = useState<string[]>(() => readJson<{ guessIds: string[] }>(gameKey, { guessIds: [] }).guessIds);
   const [stats, setStats] = useState<PlayerStats>(() => readJson(STATS_KEY, emptyStats));
   const [search, setSearch] = useState("");
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   // A resposta só aparece depois do anúncio de fim de jogo (igual ao bingo); fica salvo que já foi vista.
   const revealKey = `${gameKey}-revealed`;
   const [revealed, setRevealed] = useState(() => readJson<{ revealed: boolean }>(revealKey, { revealed: false }).revealed);
@@ -229,21 +220,13 @@ function CareerGame({
     }
   };
 
-  const handleShare = async () => {
-    const squares = guessIds.map((id) => (id === target.id ? "🟩" : "⬛")).join("");
-    const shareText = [
+  const shareText = () =>
+    [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${won ? guessIds.length : "X"}/${MAX_GUESSES} · 🔥 ${stats.currentStreak}`,
-      squares,
+      guessIds.map((id) => (id === target.id ? "🟩" : "⬛")).join(""),
       getShareUrl(`/career-path${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
-  };
 
   const guessedPlayers = guessIds
     .map((id) => csPlayers.find((player) => player.id === id))
@@ -369,16 +352,7 @@ function CareerGame({
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
-            >
-              <Share2 className="h-4 w-4" /> {copy.share}
-            </button>
-            {shareStatus ? (
-              <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
-            ) : null}
+            <ShareResult getText={shareText} />
             <div className="space-y-2 border-t border-cs-line pt-3">
               {archived ? null : (
                 <>

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
-import { Check, Play, Share2, Timer, Trophy, X } from "lucide-react";
+import { Check, Play, Timer, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag, getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { ShareResult } from "@/components/daily/ShareResult";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPreviousDateKey, getPuzzleNumber, hashDate, seededShuffle } from "@/lib/daily";
@@ -105,9 +106,6 @@ const sixtyCopy = {
     played: "Jogos",
     best: "Recorde",
     streak: "Sequência",
-    share: "Compartilhar resultado",
-    copied: "Resultado copiado!",
-    copyFailed: "Não foi possível copiar o resultado.",
     nextChallenge: "Próximo desafio em",
     partnerLabel: "Publicidade",
   },
@@ -129,9 +127,6 @@ const sixtyCopy = {
     played: "Played",
     best: "Best",
     streak: "Streak",
-    share: "Share result",
-    copied: "Result copied!",
-    copyFailed: "Could not copy the result.",
     nextChallenge: "Next challenge in",
     partnerLabel: "Advertisement",
   },
@@ -153,9 +148,6 @@ const sixtyCopy = {
     played: "Partidas",
     best: "Récord",
     streak: "Racha",
-    share: "Compartir resultado",
-    copied: "¡Resultado copiado!",
-    copyFailed: "No se pudo copiar el resultado.",
     nextChallenge: "Próximo desafío en",
     partnerLabel: "Publicidad",
   },
@@ -253,7 +245,6 @@ function SixtyGame({
   const [now, setNow] = useState(() => Date.now());
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<{ text: string; good: boolean }>();
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const [breakSeen, markBreakSeen] = useBreakSeen(`${gameKey}-break`);
@@ -336,20 +327,13 @@ function SixtyGame({
     save(hit ? { ...game, foundIds: [...game.foundIds, player.id] } : { ...game, misses: [...game.misses, player.id] });
   };
 
-  const handleShare = async () => {
-    const shareText = [
+  const shareText = () =>
+    [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       label,
       `⏱️ ${game.foundIds.length}/${answers.length} · 🔥 ${stats.currentStreak}`,
       getShareUrl(`/60-seconds${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
-  };
 
   const nickname = (id: string) => csPlayers.find((player) => player.id === id)?.nickname ?? id;
 
@@ -485,16 +469,7 @@ function SixtyGame({
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
-            >
-              <Share2 className="h-4 w-4" /> {copy.share}
-            </button>
-            {shareStatus ? (
-              <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
-            ) : null}
+            <ShareResult getText={shareText} />
             <div className="space-y-2 border-t border-cs-line pt-3">
               {archived ? null : (
                 <>

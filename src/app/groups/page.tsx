@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Heart, Shuffle, Share2, Trophy, X } from "lucide-react";
+import { Heart, Shuffle, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import { getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { ShareResult } from "@/components/daily/ShareResult";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { getPreviousDateKey, getPuzzleNumber, hashDate } from "@/lib/daily";
@@ -67,9 +68,6 @@ const groupsCopy = {
     played: "Jogos",
     wins: "Vitórias",
     streak: "Sequência",
-    share: "Compartilhar resultado",
-    copied: "Resultado copiado!",
-    copyFailed: "Não foi possível copiar o resultado.",
     nextChallenge: "Próximo desafio em",
     partnerLabel: "Publicidade",
   },
@@ -106,9 +104,6 @@ const groupsCopy = {
     played: "Played",
     wins: "Wins",
     streak: "Streak",
-    share: "Share result",
-    copied: "Result copied!",
-    copyFailed: "Could not copy the result.",
     nextChallenge: "Next challenge in",
     partnerLabel: "Advertisement",
   },
@@ -145,9 +140,6 @@ const groupsCopy = {
     played: "Partidas",
     wins: "Victorias",
     streak: "Racha",
-    share: "Compartir resultado",
-    copied: "¡Resultado copiado!",
-    copyFailed: "No se pudo copiar el resultado.",
     nextChallenge: "Próximo desafío en",
     partnerLabel: "Publicidad",
   },
@@ -228,7 +220,6 @@ function GroupsGame({
   const [order, setOrder] = useState(puzzle.tiles);
   const [selected, setSelected] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string>();
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
 
   const solved = attempts.map((attempt) => solvedGroupOf(puzzle.groups, attempt)).filter((index) => index >= 0);
   const mistakes = attempts.length - solved.length;
@@ -273,20 +264,13 @@ function GroupsGame({
 
   const groupIndexOf = (id: string) => puzzle.groups.findIndex((group) => group.playerIds.includes(id));
 
-  const handleShare = async () => {
-    const shareText = [
+  const shareText = () =>
+    [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${solved.length}/${GROUP_COUNT} · 🔥 ${stats.currentStreak}`,
       ...attempts.map((attempt) => attempt.map((id) => groupEmoji[groupIndexOf(id)]).join("")),
       getShareUrl(`/groups${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
-  };
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-xl flex-col gap-3 px-4 py-4 sm:gap-4">
@@ -397,16 +381,7 @@ function GroupsGame({
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
-            >
-              <Share2 className="h-4 w-4" /> {copy.share}
-            </button>
-            {shareStatus ? (
-              <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
-            ) : null}
+            <ShareResult getText={shareText} />
             <div className="space-y-2 border-t border-cs-line pt-3">
               {archived ? null : (
                 <>
