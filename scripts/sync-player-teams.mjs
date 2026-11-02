@@ -43,7 +43,9 @@ const supabase = async (path, options = {}) => {
     headers: { apikey: supabaseKey, "Content-Type": "application/json", ...options.headers },
   });
   if (!response.ok) throw new Error(`Supabase ${options.method ?? "GET"} ${path}: ${response.status} ${await response.text()}`);
-  return response.status === 204 ? null : response.json();
+  // "return=minimal" responde 201/204 sem corpo: só faz parse quando veio algo.
+  const body = await response.text();
+  return body ? JSON.parse(body) : null;
 };
 
 const loadDatabase = async () => {
