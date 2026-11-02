@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
-import { Check, Heart, Play, Share2, Timer, Trophy, X } from "lucide-react";
+import { Check, Heart, Play, Timer, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryName } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { ShareResult } from "@/components/daily/ShareResult";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
@@ -60,9 +61,6 @@ const guessNameCopy = {
     resume: (index: number) => `Continuar · ${index + 1}/${DAILY_NAMES}`,
     resumeNote: "O nome que estava na tela quando você saiu contou como tempo esgotado.",
     nextChallenge: "Próximo desafio em",
-    share: "Compartilhar resultado",
-    copied: "Resultado copiado!",
-    copyFailed: "Não foi possível copiar o resultado.",
     played: "Jogos",
     streak: "Sequência",
     secondsLeft: (seconds: number) => `${seconds}s`,
@@ -83,9 +81,6 @@ const guessNameCopy = {
     resume: (index: number) => `Continue · ${index + 1}/${DAILY_NAMES}`,
     resumeNote: "The name on screen when you left counted as time's up.",
     nextChallenge: "Next challenge in",
-    share: "Share result",
-    copied: "Result copied!",
-    copyFailed: "Could not copy the result.",
     played: "Played",
     streak: "Streak",
     secondsLeft: (seconds: number) => `${seconds}s`,
@@ -106,9 +101,6 @@ const guessNameCopy = {
     resume: (index: number) => `Continuar · ${index + 1}/${DAILY_NAMES}`,
     resumeNote: "El nombre que estaba en pantalla cuando saliste contó como tiempo agotado.",
     nextChallenge: "Próximo desafío en",
-    share: "Compartir resultado",
-    copied: "¡Resultado copiado!",
-    copyFailed: "No se pudo copiar el resultado.",
     played: "Partidas",
     streak: "Racha",
     secondsLeft: (seconds: number) => `${seconds}s`,
@@ -220,7 +212,6 @@ function GuessNameGame({
   const [answer, setAnswer] = useState<string>();
   const [deadline, setDeadline] = useState<number>();
   const [now, setNow] = useState(() => Date.now());
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
 
   const index = outcomes.length;
   const score = outcomes.filter((outcome) => outcome === "hit").length;
@@ -286,20 +277,13 @@ function GuessNameGame({
     return () => window.clearInterval(interval);
   }, [deadline]);
 
-  const handleShare = async () => {
-    const shareText = [
+  const shareText = () =>
+    [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${score}/${DAILY_NAMES} · 🔥 ${stats.currentStreak}`,
       outcomes.map((outcome) => outcomeEmoji[outcome]).join(""),
       getShareUrl(`/guess-name${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
-  };
 
   const topStats = [
     { label: copy.hits, value: score, color: "text-cs-green" },
@@ -414,16 +398,7 @@ function GuessNameGame({
                     </div>
                   ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
-                >
-                  <Share2 className="h-4 w-4" /> {copy.share}
-                </button>
-                {shareStatus ? (
-                  <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
-                ) : null}
+                <ShareResult getText={shareText} />
                 <div className="space-y-2 border-t border-cs-line pt-3">
                   {archived ? null : (
                     <>

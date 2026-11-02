@@ -2,7 +2,7 @@ import { GameSeo } from "@/components/seo/GameSeo";
 import { pageSeo } from "@/data/pageSeo";
 import { localizedMetadata } from "@/lib/seo";
 
-export const generateMetadata = () => localizedMetadata(pageSeo.lineup);
+export const generateMetadata = () => localizedMetadata(pageSeo.lineup, { game: "lineup" });
 
 export default function LineupLayout({ children }: { children: React.ReactNode }) {
   return (

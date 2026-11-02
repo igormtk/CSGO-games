@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Flame, Play, RotateCcw, Share2, Trophy, X } from "lucide-react";
+import { Check, Flame, Play, RotateCcw, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
+import { ShareResult } from "@/components/daily/ShareResult";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
@@ -60,10 +61,7 @@ const higherLowerCopy = {
     lastRound: "A rodada que você errou:",
     newRecord: "Novo recorde!",
     again: "Jogar de novo",
-    share: "Compartilhar resultado",
     shareLine: (score: number) => `🔥 ${score} acertos seguidos`,
-    copied: "Resultado copiado!",
-    copyFailed: "Não foi possível copiar o resultado.",
     noTeam: "Sem time",
     partnerLabel: "Publicidade",
   },
@@ -87,10 +85,7 @@ const higherLowerCopy = {
     lastRound: "The round you missed:",
     newRecord: "New record!",
     again: "Play again",
-    share: "Share result",
     shareLine: (score: number) => `🔥 ${score} in a row`,
-    copied: "Result copied!",
-    copyFailed: "Could not copy the result.",
     noTeam: "No team",
     partnerLabel: "Advertisement",
   },
@@ -114,10 +109,7 @@ const higherLowerCopy = {
     lastRound: "La ronda que fallaste:",
     newRecord: "¡Nuevo récord!",
     again: "Jugar de nuevo",
-    share: "Compartir resultado",
     shareLine: (score: number) => `🔥 ${score} aciertos seguidos`,
-    copied: "¡Resultado copiado!",
-    copyFailed: "No se pudo copiar el resultado.",
     noTeam: "Sin equipo",
     partnerLabel: "Publicidad",
   },
@@ -193,7 +185,6 @@ function HigherOrLowerGame({ copy }: { copy: HigherLowerCopy }) {
   const [score, setScore] = useState(0);
   const [guess, setGuess] = useState<{ side: Side; correct: boolean }>();
   const [record, setRecord] = useState(false);
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   // Sem chave: o anúncio aparece a cada fim de partida, não fica salvo.
   const [breakSeen, markBreakSeen, resetBreak] = useBreakSeen();
   const partner = useMemo(() => {
@@ -208,7 +199,6 @@ function HigherOrLowerGame({ copy }: { copy: HigherLowerCopy }) {
     setScore(0);
     setGuess(undefined);
     setRecord(false);
-    setShareStatus(undefined);
     resetBreak();
     setPhase("playing");
   };
@@ -239,15 +229,7 @@ function HigherOrLowerGame({ copy }: { copy: HigherLowerCopy }) {
     }, REVEAL_DELAY_MS);
   };
 
-  const handleShare = async () => {
-    const shareText = [`CS Games · ${copy.eyebrow}`, copy.shareLine(score), getShareUrl("/higher-or-lower")].join("\n");
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
-  };
+  const shareText = () => [`CS Games · ${copy.eyebrow}`, copy.shareLine(score), getShareUrl("/higher-or-lower")].join("\n");
 
   const category = copy.category[round.category];
   const tone = (side: Side) => (!guess ? undefined : side === winner ? "win" : side === guess.side ? "loss" : undefined);
@@ -351,25 +333,16 @@ function HigherOrLowerGame({ copy }: { copy: HigherLowerCopy }) {
                     </div>
                   ))}
                 </div>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="space-y-2">
                   <button
                     type="button"
                     onClick={start}
-                    className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
+                    className="cs-cut-sm inline-flex w-full items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
                   >
                     <RotateCcw className="h-4 w-4" /> {copy.again}
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-raised px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-text transition hover:text-cs-orange"
-                  >
-                    <Share2 className="h-4 w-4" /> {copy.share}
-                  </button>
+                  <ShareResult getText={shareText} tone="secondary" />
                 </div>
-                {shareStatus ? (
-                  <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
-                ) : null}
               </>
             ) : (
               <>

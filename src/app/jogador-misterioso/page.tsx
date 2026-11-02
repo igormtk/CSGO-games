@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Flame, HelpCircle, Search, Share2, Trophy, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Flame, HelpCircle, Search, Trophy, X } from "lucide-react";
 import { csPlayers, getTeamName } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
+import { ShareResult } from "@/components/daily/ShareResult";
 import Link from "@/components/LocalLink";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
@@ -71,9 +72,6 @@ const mysteryCopy = {
     played: "Jogos",
     wins: "Vitórias",
     bestStreak: "Melhor seq.",
-    share: "Compartilhar resultado",
-    copied: "Resultado copiado!",
-    copyFailed: "Não foi possível copiar o resultado.",
     nextPlayer: "Novo jogador à meia-noite",
     more: "Mais",
     less: "Menos",
@@ -106,9 +104,6 @@ const mysteryCopy = {
     played: "Played",
     wins: "Wins",
     bestStreak: "Best streak",
-    share: "Share result",
-    copied: "Result copied!",
-    copyFailed: "Could not copy the result.",
     nextPlayer: "New player at midnight",
     more: "Higher",
     less: "Lower",
@@ -141,9 +136,6 @@ const mysteryCopy = {
     played: "Partidas",
     wins: "Victorias",
     bestStreak: "Mejor racha",
-    share: "Compartir resultado",
-    copied: "¡Resultado copiado!",
-    copyFailed: "No se pudo copiar el resultado.",
     nextPlayer: "Nuevo jugador a medianoche",
     more: "Mayor",
     less: "Menor",
@@ -290,7 +282,6 @@ function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: 
   );
   const [stats, setStats] = useState<PlayerStats>(() => readJson(STATS_KEY, emptyStats));
   const [search, setSearch] = useState("");
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   const [showRules, setShowRules] = useState(false);
 
   const target = useMemo(() => getMysteryPlayer(dateKey), [dateKey]);
@@ -334,22 +325,13 @@ function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: 
     }
   };
 
-  const handleShare = async () => {
-    const rows = guesses.map((guess) => getClues(guess, target, copy).map((clue) => toneEmoji[clue.tone]).join("")).join("\n");
-    const shareText = [
+  const shareText = () =>
+    [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${won ? guesses.length : "X"}/${MAX_GUESSES} · 🔥 ${stats.currentStreak}`,
-      rows,
+      guesses.map((guess) => getClues(guess, target, copy).map((clue) => toneEmoji[clue.tone]).join("")).join("\n"),
       getShareUrl(`/jogador-misterioso${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
-
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
-  };
 
 
   return (
@@ -479,18 +461,7 @@ function MysteryGame({ copy, dateKey, archived }: { copy: MysteryCopy; dateKey: 
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
-            >
-              <Share2 className="h-4 w-4" /> {copy.share}
-            </button>
-            {shareStatus ? (
-              <p className="text-sm font-semibold text-cs-text/70">
-                {shareStatus === "copied" ? copy.copied : copy.copyFailed}
-              </p>
-            ) : null}
+            <ShareResult getText={shareText} />
             {archived ? null : <p className="text-xs font-semibold uppercase tracking-wider text-cs-text/45">{copy.nextPlayer}</p>}
             <ArchiveLink path="/jogador-misterioso" />
           </div>

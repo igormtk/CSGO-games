@@ -2,7 +2,7 @@ import { GameSeo } from "@/components/seo/GameSeo";
 import { pageSeo } from "@/data/pageSeo";
 import { localizedMetadata } from "@/lib/seo";
 
-export const generateMetadata = () => localizedMetadata(pageSeo.groups);
+export const generateMetadata = () => localizedMetadata(pageSeo.groups, { game: "groups" });
 
 export default function GroupsLayout({ children }: { children: React.ReactNode }) {
   return (

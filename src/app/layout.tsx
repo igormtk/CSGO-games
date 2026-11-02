@@ -31,7 +31,6 @@ export const generateMetadata = async (): Promise<Metadata> => {
     title: { default: pageSeo.home.title[await getPageLanguage()], template: `%s · ${siteName}` },
     applicationName: siteName,
     category: "games",
-    twitter: { card: "summary_large_image" },
     robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
     // Verificação de propriedade dos buscadores. O Google está verificado por registro TXT no DNS
     // (Hostinger); o Bing Webmaster Tools usa esta meta tag. Os códigos são públicos por natureza.

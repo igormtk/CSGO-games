@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Heart, Search, Share2, Trophy, UserRound, X } from "lucide-react";
+import { Heart, Search, Trophy, UserRound, X } from "lucide-react";
 import { csPlayers, csTeams } from "@/data/csBingoDatabase";
 import type { CsPlayer } from "@/data/csBingoDatabase";
 import { getCountryFlag } from "@/data/countryFlags";
 import { getPartnerFor } from "@/data/partners";
 import { ArchiveBanner, ArchiveLink } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { ShareResult } from "@/components/daily/ShareResult";
 import { PartnerBreakModal, useBreakSeen } from "@/components/partners/PartnerBreakModal";
 import { PartnerSpot } from "@/components/partners/PartnerSpot";
 import { TeamBadge } from "@/components/teams/TeamBadge";
@@ -48,9 +49,6 @@ const lineupCopy = {
     played: "Jogos",
     wins: "Vitórias",
     streak: "Sequência",
-    share: "Compartilhar resultado",
-    copied: "Resultado copiado!",
-    copyFailed: "Não foi possível copiar o resultado.",
     nextChallenge: "Próximo desafio em",
     partnerLabel: "Publicidade",
   },
@@ -70,9 +68,6 @@ const lineupCopy = {
     played: "Played",
     wins: "Wins",
     streak: "Streak",
-    share: "Share result",
-    copied: "Result copied!",
-    copyFailed: "Could not copy the result.",
     nextChallenge: "Next challenge in",
     partnerLabel: "Advertisement",
   },
@@ -92,9 +87,6 @@ const lineupCopy = {
     played: "Partidas",
     wins: "Victorias",
     streak: "Racha",
-    share: "Compartir resultado",
-    copied: "¡Resultado copiado!",
-    copyFailed: "No se pudo copiar el resultado.",
     nextChallenge: "Próximo desafío en",
     partnerLabel: "Publicidad",
   },
@@ -172,7 +164,6 @@ function LineupGame({ copy, dateKey, archived }: { copy: LineupCopy; dateKey: st
   const [guessIds, setGuessIds] = useState<string[]>(() => readJson<{ guessIds: string[] }>(gameKey, { guessIds: [] }).guessIds);
   const [stats, setStats] = useState<PlayerStats>(() => readJson(STATS_KEY, emptyStats));
   const [search, setSearch] = useState("");
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
 
   const isHit = (id: string) => roster.some((player) => player.id === id);
   const hits = guessIds.filter(isHit);
@@ -208,20 +199,13 @@ function LineupGame({ copy, dateKey, archived }: { copy: LineupCopy; dateKey: st
     }
   };
 
-  const handleShare = async () => {
-    const shareText = [
+  const shareText = () =>
+    [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       `${team.name} · ${hits.length}/${LINEUP_SIZE} · 🔥 ${stats.currentStreak}`,
       guessIds.map((id) => (isHit(id) ? "🟩" : "🟥")).join(""),
       getShareUrl(`/lineup${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
-  };
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-3 px-4 py-4 sm:gap-4">
@@ -340,16 +324,7 @@ function LineupGame({ copy, dateKey, archived }: { copy: LineupCopy; dateKey: st
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-4 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
-            >
-              <Share2 className="h-4 w-4" /> {copy.share}
-            </button>
-            {shareStatus ? (
-              <p className="text-sm font-semibold text-cs-text/70">{shareStatus === "copied" ? copy.copied : copy.copyFailed}</p>
-            ) : null}
+            <ShareResult getText={shareText} />
             <div className="space-y-2 border-t border-cs-line pt-3">
               {archived ? null : (
                 <>

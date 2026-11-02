@@ -12,7 +12,6 @@ import {
   Heart,
   HelpCircle,
   RotateCcw,
-  Share2,
   SkipForward,
   Sparkles,
   Trophy,
@@ -39,6 +38,7 @@ import { comboJoiners, getCellCopy, getCriterionCopy } from "@/lib/bingo/copy";
 import { TeamBadge } from "@/components/teams/TeamBadge";
 import { ArchiveLink, ArchiveTag } from "@/components/daily/ArchiveBanner";
 import { NextPuzzleCountdown } from "@/components/daily/NextPuzzleCountdown";
+import { ShareResult } from "@/components/daily/ShareResult";
 import { countryFlags } from "@/data/countryFlags";
 import { getShareUrl, useDocumentTitle, useLanguage } from "@/lib/language";
 import { useDailyDate } from "@/lib/useDailyDate";
@@ -135,9 +135,6 @@ type TranslationCopy = {
   viewBoard: string;
   hitsLabel: string;
   perfectBonus: string;
-  share: string;
-  shareCopied: string;
-  shareFailed: string;
   statsTitle: string;
   played: string;
   finished: string;
@@ -197,9 +194,6 @@ const translations: Record<Language, TranslationCopy> = {
     viewBoard: "Ver cartela",
     hitsLabel: "Acertos",
     perfectBonus: "Bônus de cartela perfeita",
-    share: "Compartilhar resultado",
-    shareCopied: "Resultado copiado!",
-    shareFailed: "Não foi possível copiar o resultado.",
     statsTitle: "Estatísticas",
     played: "Jogos",
     finished: "Bingos",
@@ -267,9 +261,6 @@ const translations: Record<Language, TranslationCopy> = {
     viewBoard: "View board",
     hitsLabel: "Hits",
     perfectBonus: "Perfect board bonus",
-    share: "Share result",
-    shareCopied: "Result copied!",
-    shareFailed: "Could not copy the result.",
     statsTitle: "Statistics",
     played: "Played",
     finished: "Bingos",
@@ -337,9 +328,6 @@ const translations: Record<Language, TranslationCopy> = {
     viewBoard: "Ver cartela",
     hitsLabel: "Aciertos",
     perfectBonus: "Bono de cartela perfecta",
-    share: "Compartir resultado",
-    shareCopied: "¡Resultado copiado!",
-    shareFailed: "No se pudo copiar el resultado.",
     statsTitle: "Estadísticas",
     played: "Partidas",
     finished: "Bingos",
@@ -519,7 +507,6 @@ function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }
   const [openPanel, setOpenPanel] = useState<"rules" | "stats" | "result" | undefined>(() =>
     finishedBeforeLoad ? "result" : undefined
   );
-  const [shareStatus, setShareStatus] = useState<"copied" | "failed">();
   // O jogo salvo, o idioma e as estatísticas vêm do localStorage; esperar a montagem evita
   // divergência entre o HTML do servidor e o do navegador (erro de hidratação).
   const mounted = useHydrated();
@@ -592,7 +579,6 @@ function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }
     setSkippedPlayerIds(nextSkippedPlayerIds);
     setMistakes(nextMistakes);
     setWildcardUsed(nextWildcardUsed);
-    setShareStatus(undefined);
     saveGame(dateKey, mode, nextPicks, nextPlayerIndex, nextSkippedPlayerIds, nextMistakes, nextWildcardUsed);
 
     const endsGame =
@@ -688,7 +674,6 @@ function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }
     setMode(undefined);
     setDeadline(undefined);
     setLastHitKeys([]);
-    setShareStatus(undefined);
     setOpenPanel(undefined);
     showMessage(copy.resetMessage, "neutral");
     setFlashKey(0);
@@ -734,7 +719,7 @@ function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }
     window.localStorage.setItem(getRevealedKey(dateKey), "1");
   };
 
-  const handleShare = async () => {
+  const shareText = () => {
     const grid = Array.from({ length: GRID_SIZE }, (_, rowIndex) =>
       board
         .slice(rowIndex * GRID_SIZE, (rowIndex + 1) * GRID_SIZE)
@@ -745,20 +730,13 @@ function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }
         })
         .join("")
     ).join("\n");
-    const shareText = [
+    return [
       `CS Bingo #${getPuzzleNumber(dateKey)} · ${dateKey}`,
       `🎯 ${score} ${copy.points} · ${"❤️".repeat(livesLeft)}${"🖤".repeat(MAX_LIVES - livesLeft)} · 🔥 ${stats.currentStreak}`,
       ...(mode === "timed" ? [copy.timedShare] : []),
       grid,
       getShareUrl(`/bingo${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
-
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setShareStatus("copied");
-    } catch {
-      setShareStatus("failed");
-    }
   };
 
   // Mensagens no estilo kill feed: faixa escura com borda colorida à esquerda.
@@ -1081,27 +1059,16 @@ function BingoGame({ dateKey, archived }: { dateKey: string; archived: boolean }
               <dd className="text-xl font-bold text-cs-green">{score} {copy.points}</dd>
             </div>
           </dl>
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 space-y-2">
+            <ShareResult getText={shareText} />
             <button
               type="button"
               onClick={() => setOpenPanel(undefined)}
-              className="cs-cut-sm bg-cs-raised px-3 py-2.5 text-base font-bold uppercase tracking-wider transition hover:text-cs-orange"
+              className="cs-cut-sm w-full bg-cs-raised px-3 py-2.5 text-base font-bold uppercase tracking-wider transition hover:text-cs-orange"
             >
               {copy.viewBoard}
             </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="cs-cut-sm inline-flex items-center justify-center gap-2 bg-cs-orange px-3 py-2.5 text-base font-bold uppercase tracking-wider text-cs-bg transition hover:bg-[#ffb85a]"
-            >
-              <Share2 className="h-4 w-4" /> {copy.share}
-            </button>
           </div>
-          {shareStatus ? (
-            <p className="mt-2 text-center text-sm font-semibold text-cs-text/70">
-              {shareStatus === "copied" ? copy.shareCopied : copy.shareFailed}
-            </p>
-          ) : null}
           <div className="mt-4 space-y-2 border-t border-cs-line pt-3 text-center">
             {archived ? null : (
               <div>
