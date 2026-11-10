@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
 import type { Language } from "@/lib/language";
+import { gearGuides } from "./gearGuides";
 
 // Guias de estratégia de cada jogo (/guides/<slug>). Texto próprio, complementar ao "como jogar"
-// que aparece abaixo de cada jogo (src/data/gameGuides.ts).
+// que aparece abaixo de cada jogo (src/data/gameGuides.ts). Os guias de equipamento
+// (gearGuides.tsx) usam o mesmo formato e entram no fim da lista.
 
 type Localized<T> = Record<Language, T>;
 
 export type StrategyGuide = {
   slug: string;
   gameHref: string;
+  // "gear": guia de equipamento, listado à parte no hub de guias.
+  kind?: "gear";
   title: Localized<string>;
   intro: Localized<string>;
   cta: Localized<string>;
@@ -476,6 +480,7 @@ export const strategyGuides: StrategyGuide[] = [
       ),
     },
   },
+  ...gearGuides,
 ];
 
 export const getStrategyGuide = (slug: string) => strategyGuides.find((guide) => guide.slug === slug);
