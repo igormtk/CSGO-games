@@ -3,6 +3,7 @@
 // (src/lib/adsense.ts), ou com o "Anuncie aqui".
 // Nomes de arquivos e classes evitam "ad"/"ads": bloqueadores escondem esses elementos.
 
+import { gearProducts } from "@/data/gear";
 import type { Language } from "@/lib/language";
 
 // sidebar: colunas laterais (160x600) que aparecem só em telas largas.
@@ -28,6 +29,9 @@ export type Partner = {
   placements: PartnerPlacement[];
   // Textos em outros idiomas; sem tradução, aparece o texto principal.
   translations?: Partial<Record<Language, PartnerCopy>>;
+  // Rótulo no lugar de "Publicidade" (ex.: links de afiliado) e aviso curto no rodapé da caixa.
+  label?: Record<Language, string>;
+  note?: Record<Language, string>;
 };
 
 // Adicione aqui cada campanha vendida. Exemplo:
@@ -63,11 +67,35 @@ export const housePartner: Partner = {
   },
 };
 
+// Colunas laterais sem campanha vendida mostram equipamento com link de afiliado da Amazon
+// (src/data/gear.ts). O aviso "como associado da Amazon..." é exigido perto do link.
+const gearPartners: Partner[] = gearProducts.map((product) => ({
+  id: `amazon-${product.id}`,
+  sponsor: "Amazon",
+  headline: product.name,
+  description: product.pitch.pt,
+  href: `/go/amazon/${product.id}`,
+  cta: "Ver na Amazon",
+  placements: ["sidebar"],
+  translations: {
+    en: { headline: product.name, description: product.pitch.en, cta: "See on Amazon" },
+    es: { headline: product.name, description: product.pitch.es, cta: "Ver en Amazon" },
+  },
+  label: { pt: "Link de afiliado", en: "Affiliate link", es: "Enlace de afiliado" },
+  note: {
+    pt: "Como associado da Amazon, ganhamos com compras qualificadas.",
+    en: "As an Amazon Associate we earn from qualifying purchases.",
+    es: "Como asociado de Amazon, ganamos con compras que cumplen los requisitos.",
+  },
+}));
+
 const isRunning = (partner: Partner, dateKey: string) =>
   (!partner.startsOn || partner.startsOn <= dateKey) && (!partner.endsOn || dateKey <= partner.endsOn);
 
 // Escolhe uma campanha ativa para o espaço; com várias, alterna por dia.
 export const getPartnerFor = (placement: PartnerPlacement, dateKey: string, seed: number): Partner => {
   const running = partners.filter((partner) => partner.placements.includes(placement) && isRunning(partner, dateKey));
-  return running.length ? running[seed % running.length] : housePartner;
+  if (running.length) return running[seed % running.length];
+  if (placement === "sidebar") return gearPartners[seed % gearPartners.length];
+  return housePartner;
 };

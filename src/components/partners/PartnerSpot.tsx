@@ -31,7 +31,7 @@ export const hasSpotContent = (partner: Partner, variant: PartnerSpotProps["vari
 // sem ela, o Google AdSense (quando configurado) ocupa o lugar do "Anuncie aqui".
 export function PartnerSpot({ partner, label: labelProp, variant }: PartnerSpotProps) {
   const language = useLanguage();
-  const label = labelProp ?? defaultLabel[language];
+  const label = labelProp ?? partner.label?.[language] ?? defaultLabel[language];
   const direct = <DirectSpot partner={partner} label={label} variant={variant} />;
   const slot = googleSlotFor(partner, variant);
   return slot ? <GoogleSpot slot={slot} variant={variant} label={label} fallback={direct} /> : direct;
@@ -67,6 +67,9 @@ function DirectSpot({ partner: basePartner, label, variant }: PartnerSpotProps &
           <span className="flex items-center justify-center gap-1 py-2 text-xs font-bold uppercase tracking-wider text-cs-gold">
             {partner.cta} <ExternalLink className="h-3 w-3" />
           </span>
+        ) : null}
+        {partner.note ? (
+          <span className="px-2 pb-2 text-center text-[10px] font-semibold leading-3 text-cs-text/40">{partner.note[language]}</span>
         ) : null}
       </Wrapper>
     );
