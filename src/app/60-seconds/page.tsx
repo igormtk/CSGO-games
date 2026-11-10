@@ -327,11 +327,15 @@ function SixtyGame({
     save(hit ? { ...game, foundIds: [...game.foundIds, player.id] } : { ...game, misses: [...game.misses, player.id] });
   };
 
+  // Barra de 10 quadrados com a fração de respostas encontradas, como no Wordle.
+  const foundBlocks = answers.length ? Math.round((game.foundIds.length / answers.length) * 10) : 0;
+  const progressLine = `${"🟩".repeat(foundBlocks)}${"⬛".repeat(10 - foundBlocks)}`;
   const shareText = () =>
     [
       `CS Games · ${copy.eyebrow} #${getPuzzleNumber(dateKey)}`,
       label,
       `⏱️ ${game.foundIds.length}/${answers.length} · 🔥 ${stats.currentStreak}`,
+      progressLine,
       getShareUrl(`/60-seconds${archived ? `?date=${dateKey}` : ""}`),
     ].join("\n");
 
