@@ -16,18 +16,60 @@ export type GearProduct = {
   // Foto do produto em public/gear/ (ex.: "/gear/zowie-g-sr.jpg"). Opcional: sem ela, a caixa mostra
   // só o texto. Provisório até a API de produtos da Amazon: tirar a foto se o produto sair de linha.
   image?: string;
+  // Aparece nas colunas laterais. Sem nenhum marcado, as colunas usam a lista toda.
+  rail?: boolean;
   pitch: Record<Language, string>;
 };
 
 export const gearProducts: GearProduct[] = [
   {
     id: "logitech-g-pro-x-superlight-2",
-    name: "Logitech G Pro X Superlight 2",
-    query: "Logitech G Pro X Superlight 2",
+    name: "Logitech G Pro X Superlight 2c SE",
+    query: "Logitech G Pro X Superlight 2c SE",
+    asin: { br: "B0HLTG9S6N" },
+    image: "/gear/logitech-g-pro-x-superlight-2.jpg",
+    rail: true,
     pitch: {
-      pt: "Mouse sem fio leve e simétrico, para quase toda pegada.",
-      en: "Light, symmetrical wireless mouse for almost any grip.",
-      es: "Mouse inalámbrico liviano y simétrico, para casi cualquier agarre.",
+      pt: "Mouse sem fio compacto e ultraleve, com só 51 g.",
+      en: "Compact, ultralight wireless mouse at just 51 g.",
+      es: "Mouse inalámbrico compacto y ultraliviano, de solo 51 g.",
+    },
+  },
+  {
+    id: "zowie-h-tr",
+    name: "Zowie H-TR",
+    query: "Zowie H-TR mousepad",
+    asin: { br: "B0DRN98ZTX" },
+    image: "/gear/zowie-h-tr.jpg",
+    rail: true,
+    pitch: {
+      pt: "Mousepad grande de 50 x 50 cm, feito para esports.",
+      en: "Large 50 x 50 cm mousepad built for esports.",
+      es: "Mousepad grande de 50 x 50 cm, hecho para esports.",
+    },
+  },
+  {
+    id: "hyperx-cloud-usb",
+    name: "HyperX Cloud (USB)",
+    query: "HyperX Cloud USB headset",
+    asin: { br: "B0C3BV19Q3" },
+    rail: true,
+    pitch: {
+      pt: "Headset gamer com conexão USB para ouvir os passos.",
+      en: "USB gaming headset for hearing footsteps.",
+      es: "Auriculares gamer USB para oír los pasos.",
+    },
+  },
+  {
+    id: "lg-ultragear",
+    name: "LG UltraGear",
+    query: "LG UltraGear gaming monitor",
+    asin: { br: "B0D8DPT7ZY" },
+    rail: true,
+    pitch: {
+      pt: "Monitor gamer com DisplayPort e FreeSync.",
+      en: "Gaming monitor with DisplayPort and FreeSync.",
+      es: "Monitor gamer con DisplayPort y FreeSync.",
     },
   },
   {
@@ -115,8 +157,10 @@ export const gearProducts: GearProduct[] = [
 
 export const getGearProduct = (id: string) => gearProducts.find((product) => product.id === id);
 
-// Produtos das colunas laterais no dia: quatro seguidos na lista, que alterna tipos de equipamento.
+// Produtos das colunas laterais no dia: quatro seguidos entre os marcados com rail (ou a lista
+// toda), começando num ponto diferente a cada dia.
 export function gearForDay(seed: number, count = 4): GearProduct[] {
-  const start = seed % gearProducts.length;
-  return Array.from({ length: Math.min(count, gearProducts.length) }, (_, index) => gearProducts[(start + index) % gearProducts.length]);
+  const pool = gearProducts.some((product) => product.rail) ? gearProducts.filter((product) => product.rail) : gearProducts;
+  const start = seed % pool.length;
+  return Array.from({ length: Math.min(count, pool.length) }, (_, index) => pool[(start + index) % pool.length]);
 }
