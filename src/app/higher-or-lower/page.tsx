@@ -229,7 +229,10 @@ function HigherOrLowerGame({ copy }: { copy: HigherLowerCopy }) {
     }, REVEAL_DELAY_MS);
   };
 
-  const shareText = () => [`CS Games · ${copy.eyebrow}`, copy.shareLine(score), getShareUrl("/higher-or-lower")].join("\n");
+  // Sequência em emojis, como no Wordle: um quadrado verde por acerto (até 15) e o vermelho do erro.
+  const streakLine = `${"🟩".repeat(Math.min(score, 15))}${score > 15 ? "…" : ""}🟥`;
+  const shareText = () =>
+    [`CS Games · ${copy.eyebrow}`, copy.shareLine(score), streakLine, getShareUrl("/higher-or-lower")].join("\n");
 
   const category = copy.category[round.category];
   const tone = (side: Side) => (!guess ? undefined : side === winner ? "win" : side === guess.side ? "loss" : undefined);
