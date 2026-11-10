@@ -158,9 +158,18 @@ export const gearProducts: GearProduct[] = [
 export const getGearProduct = (id: string) => gearProducts.find((product) => product.id === id);
 
 // Produtos das colunas laterais no dia: quatro seguidos entre os marcados com rail (ou a lista
-// toda), começando num ponto diferente a cada dia.
+// toda), começando num ponto diferente a cada dia. Com foto e sem foto vão intercalados, para cada
+// coluna (dois produtos seguidos) ter pelo menos uma foto quando houver.
 export function gearForDay(seed: number, count = 4): GearProduct[] {
-  const pool = gearProducts.some((product) => product.rail) ? gearProducts.filter((product) => product.rail) : gearProducts;
+  const candidates = gearProducts.some((product) => product.rail) ? gearProducts.filter((product) => product.rail) : gearProducts;
+  const withImage = candidates.filter((product) => product.image);
+  const withoutImage = candidates.filter((product) => !product.image);
+  const pool = Array.from({ length: Math.max(withImage.length, withoutImage.length) }, (_, index) => [
+    withImage[index],
+    withoutImage[index],
+  ])
+    .flat()
+    .filter((product): product is GearProduct => Boolean(product));
   const start = seed % pool.length;
   return Array.from({ length: Math.min(count, pool.length) }, (_, index) => pool[(start + index) % pool.length]);
 }
