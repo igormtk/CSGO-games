@@ -5,7 +5,6 @@ import { housePartner } from "@/data/partners";
 import type { Partner } from "@/data/partners";
 import { adsenseClient, adsenseSlots } from "@/lib/adsense";
 import { useLanguage } from "@/lib/language";
-import { GearIllustration } from "./GearIllustration";
 import { GoogleSpot } from "./GoogleSpot";
 
 type PartnerSpotProps = {
@@ -32,7 +31,7 @@ export const hasSpotContent = (partner: Partner, variant: PartnerSpotProps["vari
 // sem ela, o Google AdSense (quando configurado) ocupa o lugar do "Anuncie aqui".
 export function PartnerSpot({ partner, label: labelProp, variant }: PartnerSpotProps) {
   const language = useLanguage();
-  const label = labelProp ?? partner.label?.[language] ?? defaultLabel[language];
+  const label = labelProp ?? defaultLabel[language];
   const direct = <DirectSpot partner={partner} label={label} variant={variant} />;
   const slot = googleSlotFor(partner, variant);
   return slot ? <GoogleSpot slot={slot} variant={variant} label={label} fallback={direct} /> : direct;
@@ -58,12 +57,6 @@ function DirectSpot({ partner: basePartner, label, variant }: PartnerSpotProps &
           <img src={partner.railImageSrc} alt={partner.sponsor} className="mt-2 w-full flex-1 object-cover" />
         ) : (
           <div className="cs-grid-bg mt-2 flex flex-1 flex-col items-center justify-center gap-4 bg-cs-bg px-3 text-center">
-            {partner.gearCategory ? (
-              <GearIllustration
-                category={partner.gearCategory}
-                className="h-28 w-28 text-cs-gold transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105"
-              />
-            ) : null}
             <p className="text-2xl font-bold uppercase leading-tight tracking-wide text-cs-gold">{partner.headline}</p>
             {partner.description ? (
               <p className="text-sm font-semibold leading-5 text-cs-text/60">{partner.description}</p>
@@ -74,9 +67,6 @@ function DirectSpot({ partner: basePartner, label, variant }: PartnerSpotProps &
           <span className="flex items-center justify-center gap-1 py-2 text-xs font-bold uppercase tracking-wider text-cs-gold">
             {partner.cta} <ExternalLink className="h-3 w-3" />
           </span>
-        ) : null}
-        {partner.note ? (
-          <span className="px-2 pb-2 text-center text-[10px] font-semibold leading-3 text-cs-text/40">{partner.note[language]}</span>
         ) : null}
       </Wrapper>
     );
