@@ -22,8 +22,9 @@ const AI_CRAWLERS = [
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: "*", allow: "/" },
-      { userAgent: AI_CRAWLERS, allow: "/" },
+      // /go/ só redireciona para lojas (links de afiliado): não há o que indexar.
+      { userAgent: "*", allow: "/", disallow: "/go/" },
+      { userAgent: AI_CRAWLERS, allow: "/", disallow: "/go/" },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl,

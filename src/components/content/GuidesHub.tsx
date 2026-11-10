@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "@/components/LocalLink";
-import { BarChart3, BookOpen } from "lucide-react";
+import { BarChart3, BookOpen, Mouse } from "lucide-react";
 import { statPages } from "@/data/articles/stats";
 import { strategyGuides } from "@/data/articles/strategyGuides";
 import { useDocumentTitle, useLanguage } from "@/lib/language";
 import { playersIndexSeo, teamsIndexSeo } from "@/lib/proPages";
 import type { Language } from "@/lib/language";
 
-const hubCopy: Record<Language, { title: string; intro: string; guides: string; stats: string; about: string; aboutText: string }> = {
+const hubCopy: Record<Language, { title: string; intro: string; guides: string; gear: string; stats: string; about: string; aboutText: string }> = {
   pt: {
     title: "Guias e estatísticas",
     intro: "Dicas para cada jogo do CS Games e listas da cena profissional de Counter-Strike, montadas a partir da nossa base de dados.",
     guides: "Guias de estratégia",
+    gear: "Equipamento",
     stats: "Estatísticas da cena",
     about: "Sobre o CS Games",
     aboutText: "Quem faz o site, de onde vêm os dados e como os desafios diários são montados.",
@@ -21,6 +22,7 @@ const hubCopy: Record<Language, { title: string; intro: string; guides: string; 
     title: "Guides and stats",
     intro: "Tips for every CS Games game and lists from the Counter-Strike pro scene, built from our database.",
     guides: "Strategy guides",
+    gear: "Gear",
     stats: "Scene stats",
     about: "About CS Games",
     aboutText: "Who makes the site, where the data comes from and how the daily challenges are built.",
@@ -29,6 +31,7 @@ const hubCopy: Record<Language, { title: string; intro: string; guides: string; 
     title: "Guías y estadísticas",
     intro: "Consejos para cada juego de CS Games y listas de la escena profesional de Counter-Strike, armadas con nuestra base de datos.",
     guides: "Guías de estrategia",
+    gear: "Equipo",
     stats: "Estadísticas de la escena",
     about: "Acerca de CS Games",
     aboutText: "Quién hace el sitio, de dónde salen los datos y cómo se arman los desafíos diarios.",
@@ -63,9 +66,24 @@ export function GuidesHub() {
           <BookOpen className="h-5 w-5" /> {copy.guides}
         </h2>
         <ul className="grid gap-3 sm:grid-cols-2">
-          {strategyGuides.map((guide) => (
-            <HubCard key={guide.slug} href={`/guides/${guide.slug}`} title={guide.title[language]} text={guide.intro[language]} />
-          ))}
+          {strategyGuides
+            .filter((guide) => !guide.kind)
+            .map((guide) => (
+              <HubCard key={guide.slug} href={`/guides/${guide.slug}`} title={guide.title[language]} text={guide.intro[language]} />
+            ))}
+        </ul>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-xl font-bold uppercase tracking-wider text-cs-orange">
+          <Mouse className="h-5 w-5" /> {copy.gear}
+        </h2>
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {strategyGuides
+            .filter((guide) => guide.kind === "gear")
+            .map((guide) => (
+              <HubCard key={guide.slug} href={`/guides/${guide.slug}`} title={guide.title[language]} text={guide.intro[language]} />
+            ))}
         </ul>
       </section>
 
