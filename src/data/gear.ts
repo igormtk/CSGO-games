@@ -13,6 +13,9 @@ export type GearProduct = {
   name: string;
   query: string;
   asin?: { br?: string; us?: string };
+  // Foto do produto em public/gear/ (ex.: "/gear/zowie-g-sr.jpg"). Opcional: sem ela, a caixa mostra
+  // só o texto. Provisório até a API de produtos da Amazon: tirar a foto se o produto sair de linha.
+  image?: string;
   pitch: Record<Language, string>;
 };
 

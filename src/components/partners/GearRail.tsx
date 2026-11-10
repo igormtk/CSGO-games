@@ -28,10 +28,26 @@ export function GearRail({ products }: { products: GearProduct[] }) {
             href={`/go/amazon/${product.id}`}
             target="_blank"
             rel="sponsored nofollow noopener"
-            className="flex flex-1 flex-col items-center justify-center gap-3 px-3 text-center transition hover:bg-cs-raised"
+            className="group flex flex-1 flex-col items-center justify-center gap-2 px-3 text-center transition hover:bg-cs-raised"
           >
-            <span className="text-xl font-bold uppercase leading-tight tracking-wide text-cs-gold">{product.name}</span>
-            <span className="text-sm font-semibold leading-5 text-cs-text/60">{product.pitch[language]}</span>
+            {product.image ? (
+              // Fotos de produto costumam ter fundo branco: o quadro claro evita um recorte feio no tema escuro.
+              <span className="cs-cut-sm grid h-24 w-full place-items-center bg-white p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  loading="lazy"
+                  className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                />
+              </span>
+            ) : null}
+            <span className={`${product.image ? "text-base" : "text-xl"} font-bold uppercase leading-tight tracking-wide text-cs-gold`}>
+              {product.name}
+            </span>
+            <span className={`${product.image ? "text-xs leading-4" : "text-sm leading-5"} font-semibold text-cs-text/60`}>
+              {product.pitch[language]}
+            </span>
             <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-cs-gold">
               {text.cta} <ExternalLink className="h-3 w-3" />
             </span>
