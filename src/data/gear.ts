@@ -5,13 +5,16 @@ import type { Language } from "@/lib/language";
 // (src/app/go/amazon/[product]/route.ts). Sem preço: ele muda e o programa da Amazon não permite
 // mostrar valores copiados da loja.
 
-export type GearProduct = { id: string; name: string; query: string; pitch: Record<Language, string> };
+export type GearCategory = "mouse" | "mousepad" | "headset" | "keyboard" | "monitor";
+
+export type GearProduct = { id: string; name: string; query: string; category: GearCategory; pitch: Record<Language, string> };
 
 export const gearProducts: GearProduct[] = [
   {
     id: "logitech-g-pro-x-superlight-2",
     name: "Logitech G Pro X Superlight 2",
     query: "Logitech G Pro X Superlight 2",
+    category: "mouse",
     pitch: {
       pt: "Mouse sem fio leve e simétrico, para quase toda pegada.",
       en: "Light, symmetrical wireless mouse for almost any grip.",
@@ -22,6 +25,7 @@ export const gearProducts: GearProduct[] = [
     id: "razer-deathadder-v3",
     name: "Razer DeathAdder V3",
     query: "Razer DeathAdder V3",
+    category: "mouse",
     pitch: {
       pt: "Mouse ergonômico e leve para quem apoia a mão inteira.",
       en: "Light ergonomic mouse for palm grip.",
@@ -32,6 +36,7 @@ export const gearProducts: GearProduct[] = [
     id: "zowie-ec2-c",
     name: "Zowie EC2-C",
     query: "Zowie EC2-C mouse",
+    category: "mouse",
     pitch: {
       pt: "Formato ergonômico clássico do competitivo, sem software.",
       en: "Classic competitive ergonomic shape, no software needed.",
@@ -42,6 +47,7 @@ export const gearProducts: GearProduct[] = [
     id: "zowie-g-sr",
     name: "Zowie G-SR",
     query: "Zowie G-SR mousepad",
+    category: "mousepad",
     pitch: {
       pt: "Mousepad grande de controle, para parar a mira no lugar.",
       en: "Large control mousepad that helps stop your crosshair on target.",
@@ -52,6 +58,7 @@ export const gearProducts: GearProduct[] = [
     id: "steelseries-qck-heavy",
     name: "SteelSeries QcK Heavy",
     query: "SteelSeries QcK Heavy",
+    category: "mousepad",
     pitch: {
       pt: "Mousepad grosso de tecido, firme na mesa.",
       en: "Thick cloth mousepad that stays put on the desk.",
@@ -62,6 +69,7 @@ export const gearProducts: GearProduct[] = [
     id: "hyperx-cloud-ii",
     name: "HyperX Cloud II",
     query: "HyperX Cloud II headset",
+    category: "headset",
     pitch: {
       pt: "Headset confortável para ouvir os passos por horas.",
       en: "Comfortable headset for hearing footsteps for hours.",
@@ -72,6 +80,7 @@ export const gearProducts: GearProduct[] = [
     id: "steelseries-apex-pro-tkl",
     name: "SteelSeries Apex Pro TKL",
     query: "SteelSeries Apex Pro TKL",
+    category: "keyboard",
     pitch: {
       pt: "Teclado compacto com acionamento ajustável.",
       en: "Compact keyboard with adjustable actuation.",
@@ -82,6 +91,7 @@ export const gearProducts: GearProduct[] = [
     id: "zowie-xl2546k",
     name: "BenQ Zowie XL2546K",
     query: "BenQ Zowie XL2546K",
+    category: "monitor",
     pitch: {
       pt: "Monitor de 24\" e 240 Hz feito para o competitivo.",
       en: "24\" 240 Hz monitor built for competitive play.",

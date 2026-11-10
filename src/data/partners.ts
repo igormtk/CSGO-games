@@ -4,6 +4,7 @@
 // Nomes de arquivos e classes evitam "ad"/"ads": bloqueadores escondem esses elementos.
 
 import { gearProducts } from "@/data/gear";
+import type { GearCategory } from "@/data/gear";
 import type { Language } from "@/lib/language";
 
 // sidebar: colunas laterais (160x600) que aparecem só em telas largas.
@@ -32,6 +33,8 @@ export type Partner = {
   // Rótulo no lugar de "Publicidade" (ex.: links de afiliado) e aviso curto no rodapé da caixa.
   label?: Record<Language, string>;
   note?: Record<Language, string>;
+  // Ilustração do tipo de equipamento, quando não há imagem.
+  gearCategory?: GearCategory;
 };
 
 // Adicione aqui cada campanha vendida. Exemplo:
@@ -77,6 +80,7 @@ const gearPartners: Partner[] = gearProducts.map((product) => ({
   href: `/go/amazon/${product.id}`,
   cta: "Ver na Amazon",
   placements: ["sidebar"],
+  gearCategory: product.category,
   translations: {
     en: { headline: product.name, description: product.pitch.en, cta: "See on Amazon" },
     es: { headline: product.name, description: product.pitch.es, cta: "Ver en Amazon" },

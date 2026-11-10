@@ -5,6 +5,7 @@ import { housePartner } from "@/data/partners";
 import type { Partner } from "@/data/partners";
 import { adsenseClient, adsenseSlots } from "@/lib/adsense";
 import { useLanguage } from "@/lib/language";
+import { GearIllustration } from "./GearIllustration";
 import { GoogleSpot } from "./GoogleSpot";
 
 type PartnerSpotProps = {
@@ -57,6 +58,12 @@ function DirectSpot({ partner: basePartner, label, variant }: PartnerSpotProps &
           <img src={partner.railImageSrc} alt={partner.sponsor} className="mt-2 w-full flex-1 object-cover" />
         ) : (
           <div className="cs-grid-bg mt-2 flex flex-1 flex-col items-center justify-center gap-4 bg-cs-bg px-3 text-center">
+            {partner.gearCategory ? (
+              <GearIllustration
+                category={partner.gearCategory}
+                className="h-28 w-28 text-cs-gold transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105"
+              />
+            ) : null}
             <p className="text-2xl font-bold uppercase leading-tight tracking-wide text-cs-gold">{partner.headline}</p>
             {partner.description ? (
               <p className="text-sm font-semibold leading-5 text-cs-text/60">{partner.description}</p>
