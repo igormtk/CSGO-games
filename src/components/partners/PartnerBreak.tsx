@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Partner } from "@/data/partners";
-import { PartnerSpot } from "./PartnerSpot";
+import { hasSpotContent, PartnerSpot } from "./PartnerSpot";
 
 // Tempo mínimo de anúncio (com a aba visível) antes de revelar o resultado e as respostas.
 const PARTNER_BREAK_SECONDS = 5;
@@ -21,10 +21,13 @@ export function PartnerBreak({
   revealLabel: string;
   onDone: () => void;
 }) {
-  const [secondsLeft, setSecondsLeft] = useState(PARTNER_BREAK_SECONDS);
+  // Sem anúncio para mostrar, não faz sentido segurar quem jogou numa espera vazia.
+  const hasContent = hasSpotContent(partner, "card");
+  const [secondsLeft, setSecondsLeft] = useState(hasContent ? PARTNER_BREAK_SECONDS : 0);
 
   // Soma só o tempo com a aba visível, medido em milissegundos para garantir os 5 s inteiros.
   useEffect(() => {
+    if (!hasContent) return;
     let visibleMs = 0;
     let lastTick = performance.now();
     const interval = window.setInterval(() => {
@@ -34,7 +37,7 @@ export function PartnerBreak({
       setSecondsLeft(Math.max(Math.ceil((PARTNER_BREAK_SECONDS * 1000 - visibleMs) / 1000), 0));
     }, 200);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [hasContent]);
 
   return (
     <div className="space-y-3">

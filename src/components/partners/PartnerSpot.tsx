@@ -16,18 +16,30 @@ type PartnerSpotProps = {
 
 const defaultLabel = { pt: "Publicidade", en: "Advertisement", es: "Publicidad" };
 
+const googleSlotFor = (partner: Partner, variant: PartnerSpotProps["variant"]) =>
+  partner.id === housePartner.id && adsenseClient ? adsenseSlots[variant] : undefined;
+
+// "Anuncie aqui" sem contato é só uma caixa vazia: o AdSense reprova sites com espaços de anúncio
+// sem anúncio, então nesse caso o espaço não aparece.
+const isEmptyHouseSpot = (partner: Partner) => partner.id === housePartner.id && !partner.href;
+
+// Se o espaço vai mostrar alguma coisa (campanha direta, bloco do Google ou "Anuncie aqui" com contato).
+export const hasSpotContent = (partner: Partner, variant: PartnerSpotProps["variant"]) =>
+  Boolean(googleSlotFor(partner, variant)) || !isEmptyHouseSpot(partner);
+
 // Espaço publicitário identificado como "Publicidade", como exige o CONAR. Campanha direta vem primeiro;
 // sem ela, o Google AdSense (quando configurado) ocupa o lugar do "Anuncie aqui".
 export function PartnerSpot({ partner, label: labelProp, variant }: PartnerSpotProps) {
   const language = useLanguage();
   const label = labelProp ?? defaultLabel[language];
   const direct = <DirectSpot partner={partner} label={label} variant={variant} />;
-  const slot = partner.id === housePartner.id && adsenseClient ? adsenseSlots[variant] : undefined;
+  const slot = googleSlotFor(partner, variant);
   return slot ? <GoogleSpot slot={slot} variant={variant} label={label} fallback={direct} /> : direct;
 }
 
 function DirectSpot({ partner: basePartner, label, variant }: PartnerSpotProps & { label: string }) {
   const language = useLanguage();
+  if (isEmptyHouseSpot(basePartner)) return null;
   const partner = { ...basePartner, ...basePartner.translations?.[language] };
   const hasLink = Boolean(partner.href);
   const Wrapper = hasLink ? "a" : "div";
