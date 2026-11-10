@@ -13,9 +13,10 @@ export type GearProduct = {
   name: string;
   query: string;
   asin?: { br?: string; us?: string };
-  // Foto do produto em public/gear/ (ex.: "/gear/zowie-g-sr.jpg"). Opcional: sem ela, a caixa mostra
-  // só o texto. Provisório até a API de produtos da Amazon: tirar a foto se o produto sair de linha.
-  image?: string;
+  // Foto do produto em public/gear/, por loja (o modelo vendido no Brasil e nos EUA pode diferir).
+  // Sem a da loja, usa a da outra; sem nenhuma, a caixa mostra só o texto. Provisório até a API de
+  // produtos da Amazon: tirar a foto se o produto sair de linha.
+  image?: { br?: string; us?: string };
   // Aparece nas colunas laterais. Sem nenhum marcado, as colunas usam a lista toda.
   rail?: boolean;
   pitch: Record<Language, string>;
@@ -23,16 +24,17 @@ export type GearProduct = {
 
 export const gearProducts: GearProduct[] = [
   {
+    // Brasil: Superlight 2c SE; EUA: Superlight 2. O nome cobre a linha.
     id: "logitech-g-pro-x-superlight-2",
-    name: "Logitech G Pro X Superlight 2c SE",
-    query: "Logitech G Pro X Superlight 2c SE",
-    asin: { br: "B0HLTG9S6N" },
-    image: "/gear/logitech-g-pro-x-superlight-2.jpg",
+    name: "Logitech G Pro X Superlight",
+    query: "Logitech G Pro X Superlight 2",
+    asin: { br: "B0HLTG9S6N", us: "B09NBWL8J5" },
+    image: { br: "/gear/logitech-g-pro-x-superlight-2.jpg", us: "/gear/logitech-g-pro-x-superlight-2-us.jpg" },
     rail: true,
     pitch: {
-      pt: "Mouse sem fio compacto e ultraleve, com só 51 g.",
-      en: "Compact, ultralight wireless mouse at just 51 g.",
-      es: "Mouse inalámbrico compacto y ultraliviano, de solo 51 g.",
+      pt: "Mouse sem fio ultraleve, feito para o competitivo.",
+      en: "Ultralight wireless mouse built for competitive play.",
+      es: "Mouse inalámbrico ultraliviano, hecho para el competitivo.",
     },
   },
   {
@@ -40,7 +42,7 @@ export const gearProducts: GearProduct[] = [
     name: "Zowie H-TR",
     query: "Zowie H-TR mousepad",
     asin: { br: "B0DRN98ZTX" },
-    image: "/gear/zowie-h-tr.jpg",
+    image: { br: "/gear/zowie-h-tr.jpg" },
     rail: true,
     pitch: {
       pt: "Mousepad grande de 50 x 50 cm, feito para esports.",
@@ -50,26 +52,29 @@ export const gearProducts: GearProduct[] = [
   },
   {
     id: "hyperx-cloud-usb",
-    name: "HyperX Cloud (USB)",
-    query: "HyperX Cloud USB headset",
-    asin: { br: "B0C3BV19Q3" },
+    name: "HyperX Cloud III",
+    query: "HyperX Cloud III headset",
+    asin: { br: "B0C3BV19Q3", us: "B0C3BSZ56D" },
+    image: { us: "/gear/hyperx-cloud-iii.jpg" },
     rail: true,
     pitch: {
-      pt: "Headset gamer com conexão USB para ouvir os passos.",
-      en: "USB gaming headset for hearing footsteps.",
-      es: "Auriculares gamer USB para oír los pasos.",
+      pt: "Headset com drivers de 53 mm para ouvir cada passo.",
+      en: "Headset with 53 mm drivers to hear every footstep.",
+      es: "Auriculares con drivers de 53 mm para oír cada paso.",
     },
   },
   {
+    // Brasil: 24GS60F-B (24", 180 Hz); EUA: 27G440A-B (27", 240 Hz). Cada loja mostra a sua foto.
     id: "lg-ultragear",
     name: "LG UltraGear",
-    query: "LG UltraGear gaming monitor",
-    asin: { br: "B0D8DPT7ZY" },
+    query: "LG UltraGear 27G440A-B",
+    asin: { br: "B0D8DPT7ZY", us: "B0FS36DWHY" },
+    image: { br: "/gear/lg-ultragear.jpg", us: "/gear/lg-ultragear-us.jpg" },
     rail: true,
     pitch: {
-      pt: "Monitor gamer com DisplayPort e FreeSync.",
-      en: "Gaming monitor with DisplayPort and FreeSync.",
-      es: "Monitor gamer con DisplayPort y FreeSync.",
+      pt: "Monitor gamer IPS Full HD com 1 ms e FreeSync.",
+      en: "Full HD IPS gaming monitor with 1 ms and FreeSync.",
+      es: "Monitor gamer IPS Full HD con 1 ms y FreeSync.",
     },
   },
   {
@@ -156,6 +161,10 @@ export const gearProducts: GearProduct[] = [
 ];
 
 export const getGearProduct = (id: string) => gearProducts.find((product) => product.id === id);
+
+// Foto do produto para a loja do visitante, ou a da outra loja.
+export const gearImage = (product: GearProduct, store: "br" | "us") =>
+  product.image?.[store] ?? product.image?.br ?? product.image?.us;
 
 // Produtos das colunas laterais no dia: quatro seguidos entre os marcados com rail (ou a lista
 // toda), começando num ponto diferente a cada dia. Com foto e sem foto vão intercalados, para cada
