@@ -8,7 +8,10 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteName, siteUrl } from "@/lib/site";
 import { JsonLd, siteJsonLd } from "@/components/seo/JsonLd";
+import { GearShowcaseProvider } from "@/components/partners/GearShowcase";
 import { SideRails } from "@/components/partners/SideRails";
+import { randomShowcaseStart } from "@/data/gear";
+import { amazonStoreFor } from "@/lib/amazon";
 import { pageSeo } from "@/data/pageSeo";
 import { adsenseClient, adsenseScriptSrc } from "@/lib/adsense";
 import { htmlLang } from "@/lib/i18n";
@@ -60,7 +63,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // Ler os cabeçalhos torna a página dinâmica: cada visita recebe um nonce novo (ver src/proxy.ts).
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // Loja Amazon do país do visitante (fotos dos produtos com link de afiliado).
+  const store = amazonStoreFor(requestHeaders.get("x-vercel-ip-country")).key;
   const routeLanguage = await getRouteLanguage();
   const language = routeLanguage ?? "en";
   return (
@@ -74,11 +80,13 @@ export default async function RootLayout({
       >
         <JsonLd data={siteJsonLd(games, pageSeo.home.description[language], language)} />
         <RouteLanguageProvider language={routeLanguage}>
-          <Header />
-          <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
-            {children}
-          </div>
-          <SideRails />
+          <GearShowcaseProvider store={store} initialStart={randomShowcaseStart()}>
+            <Header />
+            <div className="cs-grid-bg min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_rgba(242,163,58,0.12),_transparent_32rem)]">
+              {children}
+            </div>
+            <SideRails />
+          </GearShowcaseProvider>
         </RouteLanguageProvider>
         {/* Script do AdSense, que também mostra a mensagem de consentimento de cookies do Google a quem
             visita da Europa e do Reino Unido (configurada no painel do AdSense). O React o move para o <head>. */}

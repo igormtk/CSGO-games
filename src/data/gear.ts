@@ -166,19 +166,31 @@ export const getGearProduct = (id: string) => gearProducts.find((product) => pro
 export const gearImage = (product: GearProduct, store: "br" | "us") =>
   product.image?.[store] ?? product.image?.br ?? product.image?.us;
 
-// Produtos das colunas laterais no dia: quatro seguidos entre os marcados com rail (ou a lista
-// toda), começando num ponto diferente a cada dia. Com foto e sem foto vão intercalados, para cada
-// coluna (dois produtos seguidos) ter pelo menos uma foto quando houver.
-export function gearForDay(seed: number, count = 4): GearProduct[] {
-  const candidates = gearProducts.some((product) => product.rail) ? gearProducts.filter((product) => product.rail) : gearProducts;
-  const withImage = candidates.filter((product) => product.image);
-  const withoutImage = candidates.filter((product) => !product.image);
-  const pool = Array.from({ length: Math.max(withImage.length, withoutImage.length) }, (_, index) => [
-    withImage[index],
-    withoutImage[index],
-  ])
-    .flat()
-    .filter((product): product is GearProduct => Boolean(product));
-  const start = seed % pool.length;
-  return Array.from({ length: Math.min(count, pool.length) }, (_, index) => pool[(start + index) % pool.length]);
+// Vitrine dos espaços de anúncio (colunas laterais e fim de jogo): os produtos marcados com rail (ou
+// a lista toda). Com foto e sem foto vão intercalados, para cada coluna (dois produtos seguidos) ter
+// pelo menos uma foto quando houver.
+const showcaseCandidates = gearProducts.some((product) => product.rail) ? gearProducts.filter((product) => product.rail) : gearProducts;
+const showcaseWithImage = showcaseCandidates.filter((product) => product.image);
+const showcaseWithoutImage = showcaseCandidates.filter((product) => !product.image);
+export const gearShowcase: GearProduct[] = Array.from(
+  { length: Math.max(showcaseWithImage.length, showcaseWithoutImage.length) },
+  (_, index) => [showcaseWithImage[index], showcaseWithoutImage[index]]
+)
+  .flat()
+  .filter((product): product is GearProduct => Boolean(product));
+
+// count produtos seguidos da vitrine a partir de start (dá a volta no fim da lista).
+export function gearFrom(start: number, count: number): GearProduct[] {
+  const size = gearShowcase.length;
+  return Array.from({ length: Math.min(count, size) }, (_, index) => gearShowcase[(((start + index) % size) + size) % size]);
+}
+
+// Ponto de partida sorteado a cada visita. Sempre par, para as colunas laterais manterem os pares
+// com foto e sem foto da vitrine.
+export const randomShowcaseStart = () => 2 * Math.floor(Math.random() * Math.ceil(gearShowcase.length / 2));
+
+// Primeiro produto com foto a partir de start (no fim de jogo, a foto chama mais atenção).
+export function gearFeatured(start: number): GearProduct {
+  const ordered = gearFrom(start, gearShowcase.length);
+  return ordered.find((product) => product.image) ?? ordered[0];
 }
