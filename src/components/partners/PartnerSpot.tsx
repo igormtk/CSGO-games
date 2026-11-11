@@ -5,6 +5,7 @@ import { housePartner } from "@/data/partners";
 import type { Partner } from "@/data/partners";
 import { adsenseClient, adsenseSlots } from "@/lib/adsense";
 import { useLanguage } from "@/lib/language";
+import { GearCard } from "./GearCard";
 import { GoogleSpot } from "./GoogleSpot";
 
 type PartnerSpotProps = {
@@ -23,14 +24,20 @@ const googleSlotFor = (partner: Partner, variant: PartnerSpotProps["variant"]) =
 // sem anúncio, então nesse caso o espaço não aparece.
 const isEmptyHouseSpot = (partner: Partner) => partner.id === housePartner.id && !partner.href;
 
-// Se o espaço vai mostrar alguma coisa (campanha direta, bloco do Google ou "Anuncie aqui" com contato).
+// Fim de jogo sem campanha vendida: produto com link de afiliado, que aparece em qualquer tela (as
+// colunas laterais, que já fazem isso, só existem em telas largas).
+const showsGear = (partner: Partner, variant: PartnerSpotProps["variant"]) => partner.id === housePartner.id && variant === "card";
+
+// Se o espaço vai mostrar alguma coisa (campanha direta, produto, bloco do Google ou "Anuncie aqui" com contato).
 export const hasSpotContent = (partner: Partner, variant: PartnerSpotProps["variant"]) =>
-  Boolean(googleSlotFor(partner, variant)) || !isEmptyHouseSpot(partner);
+  showsGear(partner, variant) || Boolean(googleSlotFor(partner, variant)) || !isEmptyHouseSpot(partner);
 
 // Espaço publicitário identificado como "Publicidade", como exige o CONAR. Campanha direta vem primeiro;
-// sem ela, o Google AdSense (quando configurado) ocupa o lugar do "Anuncie aqui".
+// sem ela, o fim de jogo mostra um produto da Amazon e os outros espaços o Google AdSense (quando
+// configurado) no lugar do "Anuncie aqui".
 export function PartnerSpot({ partner, label: labelProp, variant }: PartnerSpotProps) {
   const language = useLanguage();
+  if (showsGear(partner, variant)) return <GearCard />;
   const label = labelProp ?? defaultLabel[language];
   const direct = <DirectSpot partner={partner} label={label} variant={variant} />;
   const slot = googleSlotFor(partner, variant);

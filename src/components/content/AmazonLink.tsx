@@ -9,7 +9,7 @@ export function AmazonLink({ product, children }: { product: string; children?: 
   const item = getGearProduct(product);
   if (!item) return <>{children}</>;
   return (
-    <a href={`/go/amazon/${item.id}`} target="_blank" rel="sponsored nofollow noopener" className="inline-flex items-center gap-1">
+    <a href={`/go/amazon/${item.id}?from=guide`} target="_blank" rel="sponsored nofollow noopener" className="inline-flex items-center gap-1">
       {children ?? item.name} <ExternalLink className="h-3.5 w-3.5" aria-hidden />
     </a>
   );

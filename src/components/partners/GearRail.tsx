@@ -1,24 +1,26 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { gearImage } from "@/data/gear";
-import type { GearProduct } from "@/data/gear";
+import { gearFrom, gearImage } from "@/data/gear";
 import { useLanguage } from "@/lib/language";
 import type { Language } from "@/lib/language";
+import { useGearShowcase } from "./GearShowcase";
 
 // Coluna lateral sem campanha vendida: dois produtos de equipamento com link de afiliado da Amazon.
 // O aviso de associado da Amazon é exigido perto dos links.
 
-const copy: Record<Language, { label: string; cta: string; note: string }> = {
+export const gearCopy: Record<Language, { label: string; cta: string; note: string }> = {
   pt: { label: "Links de afiliado", cta: "Ver na Amazon", note: "Como associado da Amazon, ganhamos com compras qualificadas." },
   en: { label: "Affiliate links", cta: "See on Amazon", note: "As an Amazon Associate we earn from qualifying purchases." },
   es: { label: "Enlaces de afiliado", cta: "Ver en Amazon", note: "Como asociado de Amazon, ganamos con compras que cumplen los requisitos." },
 };
 
-// store: loja Amazon do visitante, para mostrar a foto do modelo vendido nela.
-export function GearRail({ products, store }: { products: GearProduct[]; store: "br" | "us" }) {
+// side: 0 é a coluna da esquerda (dois primeiros produtos em exibição), 1 a da direita (os dois seguintes).
+export function GearRail({ side }: { side: 0 | 1 }) {
   const language = useLanguage();
-  const text = copy[language];
+  const text = gearCopy[language];
+  const { store, start } = useGearShowcase();
+  const products = gearFrom(start + side * 2, 2);
 
   return (
     <div className="cs-cut-sm flex h-[600px] w-[160px] flex-col overflow-hidden border-t-2 border-cs-gold bg-cs-surface/90">
@@ -29,7 +31,7 @@ export function GearRail({ products, store }: { products: GearProduct[]; store: 
           return (
           <a
             key={product.id}
-            href={`/go/amazon/${product.id}`}
+            href={`/go/amazon/${product.id}?from=rail`}
             target="_blank"
             rel="sponsored nofollow noopener"
             className="group flex flex-1 flex-col items-center justify-center gap-2 px-3 text-center transition hover:bg-cs-raised"

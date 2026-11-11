@@ -44,6 +44,10 @@ const content = {
         o tipo de dispositivo, o sistema e o navegador. Não há como ligar esses números a uma pessoa, e eles não são
         usados para publicidade.
       </p>
+      <p>
+        Também contamos os cliques nos links de afiliado da Amazon: guardamos só qual produto foi clicado, em que parte do
+        site, a loja e o país, sem endereço IP nem nada que identifique você.
+      </p>
 
       <h2>Publicidade</h2>
       {googleAds ? (
@@ -115,6 +119,10 @@ const content = {
         device type, operating system and browser. These numbers cannot be tied to a person and are not used for
         advertising.
       </p>
+      <p>
+        We also count clicks on Amazon affiliate links: we only store which product was clicked, on which part of the
+        site, the store and the country, with no IP address or anything that identifies you.
+      </p>
 
       <h2>Advertising</h2>
       {googleAds ? (
@@ -184,6 +192,10 @@ const content = {
         identifica: registra de forma anónima y agregada la página visitada, el sitio de origen, el país, el tipo de
         dispositivo, el sistema operativo y el navegador. Estos números no se pueden vincular a una persona y no se usan
         para publicidad.
+      </p>
+      <p>
+        También contamos los clics en los enlaces de afiliado de Amazon: solo guardamos en qué producto se hizo clic, en qué
+        parte del sitio, la tienda y el país, sin dirección IP ni nada que te identifique.
       </p>
 
       <h2>Publicidad</h2>
